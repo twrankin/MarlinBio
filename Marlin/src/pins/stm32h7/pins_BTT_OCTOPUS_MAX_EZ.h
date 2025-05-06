@@ -117,46 +117,48 @@
   #define Z2_CS_PIN                         PG11
 #endif
 
-#define E0_STEP_PIN                         PB5   // MOTOR 5
-#define E0_DIR_PIN                          PB4
-#define E0_ENABLE_PIN                       PB6
+// MarlinBio: The following pin changes are needed because only motors 1-6 have homing capabilities,
+// and we need homing for the Z axes but not the E axes.
+#define Z3_STEP_PIN                         PB5   // MOTOR 5
+#define Z3_DIR_PIN                          PB4
+#define Z3_ENABLE_PIN                       PB6
+#ifndef Z3_CS_PIN
+  #define Z3_CS_PIN                         PG10
+#endif
+
+#define Z4_STEP_PIN                         PG15  // MOTOR 6
+#define Z4_DIR_PIN                          PB3
+#define Z4_ENABLE_PIN                       PD5
+#ifndef Z4_CS_PIN
+  #define Z4_CS_PIN                         PG9
+#endif
+
+#define E0_STEP_PIN                         PD3   // MOTOR 7
+#define E0_DIR_PIN                          PD2
+#define E0_ENABLE_PIN                       PD4
 #ifndef E0_CS_PIN
-  #define E0_CS_PIN                         PG10
+  #define E0_CS_PIN                         PD7
 #endif
 
-#define E1_STEP_PIN                         PG15  // MOTOR 6
-#define E1_DIR_PIN                          PB3
-#define E1_ENABLE_PIN                       PD5
+#define E1_STEP_PIN                         PA10  // MOTOR 8
+#define E1_DIR_PIN                          PA9
+#define E1_ENABLE_PIN                       PA15
 #ifndef E1_CS_PIN
-  #define E1_CS_PIN                         PG9
+  #define E1_CS_PIN                         PD6
 #endif
 
-#define E2_STEP_PIN                         PD3   // MOTOR 7
-#define E2_DIR_PIN                          PD2
-#define E2_ENABLE_PIN                       PD4
+#define E2_STEP_PIN                         PA8   // MOTOR 9
+#define E2_DIR_PIN                          PC7
+#define E2_ENABLE_PIN                       PC9
 #ifndef E2_CS_PIN
-  #define E2_CS_PIN                         PD7
+  #define E2_CS_PIN                         PG8
 #endif
 
-#define E3_STEP_PIN                         PA10  // MOTOR 8
-#define E3_DIR_PIN                          PA9
-#define E3_ENABLE_PIN                       PA15
+#define E3_STEP_PIN                         PG6   // MOTOR 10
+#define E3_DIR_PIN                          PC6
+#define E3_ENABLE_PIN                       PC8
 #ifndef E3_CS_PIN
-  #define E3_CS_PIN                         PD6
-#endif
-
-#define E4_STEP_PIN                         PA8   // MOTOR 9
-#define E4_DIR_PIN                          PC7
-#define E4_ENABLE_PIN                       PC9
-#ifndef E4_CS_PIN
-  #define E4_CS_PIN                         PG8
-#endif
-
-#define E5_STEP_PIN                         PG6   // MOTOR 10
-#define E5_DIR_PIN                          PC6
-#define E5_ENABLE_PIN                       PC8
-#ifndef E5_CS_PIN
-  #define E5_CS_PIN                         PG7
+  #define E3_CS_PIN                         PG7
 #endif
 
 //
@@ -202,7 +204,11 @@
 //
 // Misc. Functions
 //
-#define LED_PIN                             PA14
+// MarlinBio: The SWCLK pin is used for the board's heartbeat LED.
+// Disable this when building for debug, so SWD works.
+#if !defined(__PLATFORMIO_BUILD_DEBUG__)
+  #define LED_PIN                             PA14
+#endif
 #ifndef FILWIDTH_PIN
   #define FILWIDTH_PIN                      PC0
 #endif
@@ -257,14 +263,14 @@
   #define Y_SERIAL_TX_PIN                   PG13
   #define Z_SERIAL_TX_PIN                   PG12
   #define Z2_SERIAL_TX_PIN                  PG11
-  #define E0_SERIAL_TX_PIN                  PG10
-  #define E1_SERIAL_TX_PIN                  PG9
-  #define E2_SERIAL_TX_PIN                  PD7
-  #define E3_SERIAL_TX_PIN                  PD6
-  #define E4_SERIAL_TX_PIN                  PG8
-  #define E4_SERIAL_RX_PIN      E3_SERIAL_RX_PIN
-  #define E5_SERIAL_TX_PIN                  PG7
-  #define E5_SERIAL_RX_PIN      E3_SERIAL_RX_PIN
+  #define Z3_SERIAL_TX_PIN                  PG10
+  #define Z4_SERIAL_TX_PIN                  PG9
+  #define E0_SERIAL_TX_PIN                  PD7
+  #define E1_SERIAL_TX_PIN                  PD6
+  #define E2_SERIAL_TX_PIN                  PG8
+  //#define E4_SERIAL_RX_PIN      E3_SERIAL_RX_PIN
+  #define E3_SERIAL_TX_PIN                  PG7
+  //#define E5_SERIAL_RX_PIN      E3_SERIAL_RX_PIN
 
   // Reduce baud rate to improve software serial reliability
   #ifndef TMC_BAUD_RATE
