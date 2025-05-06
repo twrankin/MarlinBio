@@ -372,10 +372,17 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  *   - This implementation supports up to two mixing extruders.
  *   - Enable DIRECT_MIXING_IN_G1 for M165 and mixing in G1 (from Pia Taubert's reference implementation).
  */
+// MarlinBio: MIXING_EXTRUDER has limited functionality for now, as the changes required are a bit complex.
+// Virtual tools must be limited such that virtual tool 0 corresponds to nozzle 0, and so on.
+// So do not use M163/M164 to set a mix to tool 0 that contains nozzles other than 0, etc..
+// Also, all extruders combined by a mixing extruder must be included in the mix.
+// So do not have a 3 extruder combined system and only use 2 of them in the mix, etc..
+// We can update this in the future as more complexity is needed.
+// Make sure to update the hotend (nozzle) offsets below.
 //#define MIXING_EXTRUDER
 #if ENABLED(MIXING_EXTRUDER)
-  #define MIXING_STEPPERS 2        // Number of steppers in your mixing extruder
-  #define MIXING_VIRTUAL_TOOLS 16  // Use the Virtual Tool method with M163 and M164
+  #define MIXING_STEPPERS 4        // MarlinBio: Total number of extruders.
+  #define MIXING_VIRTUAL_TOOLS EXTRUDERS
   //#define DIRECT_MIXING_IN_G1    // Allow ABCDHI mix factors in G1 movement commands
   //#define GRADIENT_MIX           // Support for gradient mixing with M166 and LCD
   //#define MIXING_PRESETS         // Assign 8 default V-tool presets for 2 or 3 MIXING_STEPPERS
@@ -387,7 +394,7 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
 // For the other hotends it is their distance from the extruder 0 hotend.
-//#define HOTEND_OFFSET_X { 0.0, 20.00 } // (mm) relative X-offset for each nozzle
+#define HOTEND_OFFSET_X { 0.0, 30.00, 60.00, 90.00 } // (mm) relative X-offset for each nozzle
 //#define HOTEND_OFFSET_Y { 0.0, 5.00 }  // (mm) relative Y-offset for each nozzle
 //#define HOTEND_OFFSET_Z { 0.0, 0.00 }  // (mm) relative Z-offset for each nozzle
 
