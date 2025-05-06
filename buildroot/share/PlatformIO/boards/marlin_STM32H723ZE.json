@@ -21,11 +21,11 @@
         "server": {
           "arguments": [
             "-f",
-            "scripts/interface/stlink.cfg",
+            "../scripts/interface/stlink.cfg",
             "-c",
             "transport select hla_swd",
             "-f",
-            "scripts/target/stm32h7x.cfg",
+            "../scripts/target/stm32h7x.cfg",
             "-c",
             "reset_config none"
           ],
