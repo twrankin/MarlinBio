@@ -2820,8 +2820,10 @@
  * Applies to all types of extruders except where explicitly noted.
  */
 #if HAS_MULTI_EXTRUDER
-  // Z raise distance for tool-change, as needed for some extruders
-  #define TOOLCHANGE_ZRAISE                 2 // (mm)
+  // MarlinBio: The absolute Z position to raise the current Z axis to before changing tools.
+  // The new Z axis will lower down to the previous position.
+  // If this is non-zero, the Z axes must have been homed at least once before a tool change.
+  #define TOOLCHANGE_ZRAISE Z_MAX_POS
   //#define TOOLCHANGE_ZRAISE_BEFORE_RETRACT  // Apply raise before swap retraction (if enabled)
   //#define TOOLCHANGE_NO_RETURN              // Never return to previous position on tool-change
   #if ENABLED(TOOLCHANGE_NO_RETURN)

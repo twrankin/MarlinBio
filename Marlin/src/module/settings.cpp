@@ -248,7 +248,7 @@ typedef struct SettingsDataStruct {
   // Hotend Offset
   //
   #if HAS_HOTEND_OFFSET
-    xyz_pos_t hotend_offset[HOTENDS - 1];               // M218 XYZ
+    xyz_pos_t hotend_offset[EXTRUDERS - 1];               // M218 XYZ
   #endif
 
   //
@@ -957,7 +957,7 @@ void MarlinSettings::postprocess() {
     {
       #if HAS_HOTEND_OFFSET
         // Skip hotend 0 which must be 0
-        for (uint8_t e = 1; e < HOTENDS; ++e)
+        for (uint8_t e = 1; e < EXTRUDERS; ++e)
           EEPROM_WRITE(hotend_offset[e]);
       #endif
     }
@@ -2011,7 +2011,7 @@ void MarlinSettings::postprocess() {
       {
         #if HAS_HOTEND_OFFSET
           // Skip hotend 0 which must be 0
-          for (uint8_t e = 1; e < HOTENDS; ++e)
+          for (uint8_t e = 1; e < EXTRUDERS; ++e)
             EEPROM_READ(hotend_offset[e]);
         #endif
       }
