@@ -165,7 +165,7 @@ AxisBits Stepper::last_direction_bits, // = 0
 
 bool Stepper::abort_current_block;
 
-#if DISABLED(MIXING_EXTRUDER) && HAS_MULTI_EXTRUDER
+#if HAS_MULTI_EXTRUDER
   uint8_t Stepper::last_moved_extruder = 0xFF;
 #endif
 
@@ -176,12 +176,13 @@ bool Stepper::abort_current_block;
   bool Stepper::locked_Y_motor = false, Stepper::locked_Y2_motor = false;
 #endif
 
+// MarlinBio: Initialize with only Z1 enabled.
 #if ANY(Z_MULTI_ENDSTOPS, Z_STEPPER_AUTO_ALIGN)
-  bool Stepper::locked_Z_motor = false, Stepper::locked_Z2_motor = false
+  bool Stepper::locked_Z_motor = false, Stepper::locked_Z2_motor = true
     #if NUM_Z_STEPPERS >= 3
-      , Stepper::locked_Z3_motor = false
+      , Stepper::locked_Z3_motor = true
       #if NUM_Z_STEPPERS >= 4
-        , Stepper::locked_Z4_motor = false
+        , Stepper::locked_Z4_motor = true
       #endif
     #endif
   ;
@@ -306,7 +307,10 @@ xyze_int8_t Stepper::count_direction{0};
 #define MINDIR(A) (count_direction[_AXIS(A)] < 0)
 #define MAXDIR(A) (count_direction[_AXIS(A)] > 0)
 
-#define STEPTEST(A,M,I) TERN0(USE_##A##I##_##M, !(TEST(endstops.state(), A##I##_##M) && M## DIR(A)) && !locked_ ##A##I##_motor)
+// MarlinBio: The below macros handle multiple steppers and endstops.
+// They've been modified to allow independent Z axes based on locks
+// set by other features.
+#define STEPTEST(A,M,I) TERN0(USE_##A##I##_##M, !(TEST(endstops.state(), A##I##_##M) && M## DIR(A)))
 #define _STEP_WRITE(A,I,V) A##I##_STEP_WRITE(V)
 
 #define DUAL_ENDSTOP_APPLY_STEP(A,V)             \
@@ -321,8 +325,8 @@ xyze_int8_t Stepper::count_direction{0};
     }                                            \
   }                                              \
   else {                                         \
-    _STEP_WRITE(A, ,V);                          \
-    _STEP_WRITE(A,2,V);                          \
+    if (!locked_##A## _motor) _STEP_WRITE(A, ,V); \
+    if (!locked_##A##2_motor) _STEP_WRITE(A,2,V); \
   }
 
 #define DUAL_SEPARATE_APPLY_STEP(A,V)             \
@@ -349,9 +353,9 @@ xyze_int8_t Stepper::count_direction{0};
     }                                            \
   }                                              \
   else {                                         \
-    _STEP_WRITE(A, ,V);                          \
-    _STEP_WRITE(A,2,V);                          \
-    _STEP_WRITE(A,3,V);                          \
+    if (!locked_##A## _motor) _STEP_WRITE(A, ,V); \
+    if (!locked_##A##2_motor) _STEP_WRITE(A,2,V); \
+    if (!locked_##A##3_motor) _STEP_WRITE(A,3,V); \
   }
 
 #define TRIPLE_SEPARATE_APPLY_STEP(A,V)           \
@@ -382,10 +386,10 @@ xyze_int8_t Stepper::count_direction{0};
     }                                            \
   }                                              \
   else {                                         \
-    _STEP_WRITE(A, ,V);                          \
-    _STEP_WRITE(A,2,V);                          \
-    _STEP_WRITE(A,3,V);                          \
-    _STEP_WRITE(A,4,V);                          \
+    if (!locked_##A## _motor) _STEP_WRITE(A, ,V); \
+    if (!locked_##A##2_motor) _STEP_WRITE(A,2,V); \
+    if (!locked_##A##3_motor) _STEP_WRITE(A,3,V); \
+    if (!locked_##A##4_motor) _STEP_WRITE(A,4,V); \
   }
 
 #define QUAD_SEPARATE_APPLY_STEP(A,V)             \

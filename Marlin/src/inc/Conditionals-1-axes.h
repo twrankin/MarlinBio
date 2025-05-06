@@ -172,16 +172,17 @@
   #define E_MANUAL EXTRUDERS
 #endif
 
-// Number of hotends...
-#if ANY(SINGLENOZZLE, MIXING_EXTRUDER)                // Only one for singlenozzle or mixing extruder
-  #define HOTENDS 1
-#elif HAS_SWITCHING_EXTRUDER && !HAS_SWITCHING_NOZZLE // One for each pair of abstract "extruders"
-  #define HOTENDS E_STEPPERS
-#elif TEMP_SENSOR_0
-  #define HOTENDS EXTRUDERS                           // One per extruder if at least one heater exists
-#else
-  #define HOTENDS 0                                   // A machine with no hotends at all can still extrude
-#endif
+// MarlinBio: We don't use hotends.
+#define HOTENDS 0
+// #if ANY(SINGLENOZZLE, MIXING_EXTRUDER)                // Only one for singlenozzle or mixing extruder
+//   #define HOTENDS 1
+// #elif HAS_SWITCHING_EXTRUDER && !HAS_SWITCHING_NOZZLE // One for each pair of abstract "extruders"
+//   #define HOTENDS E_STEPPERS
+// #elif TEMP_SENSOR_0
+//   #define HOTENDS EXTRUDERS                           // One per extruder if at least one heater exists
+// #else
+//   #define HOTENDS 0                                   // A machine with no hotends at all can still extrude
+// #endif
 
 // At least one hotend...
 #if HOTENDS
@@ -199,9 +200,9 @@
   #undef THERMAL_PROTECTION_HOTENDS
 #endif
 
-// More than one hotend...
-#if HOTENDS > 1
-  #define HAS_MULTI_HOTEND 1
+// MarlinBio: Marlin's concept of extruders/hotends/nozzles is fuzzy.
+// We'll keep the naming here to minimize changes.
+#if defined(HOTEND_OFFSET_X) || defined(HOTEND_OFFSET_Y) || defined(HOTEND_OFFSET_Z)
   #define HAS_HOTEND_OFFSET 1
   #ifndef HOTEND_OFFSET_X
     #define HOTEND_OFFSET_X { 0 } // X offsets for each extruder
@@ -212,10 +213,6 @@
   #ifndef HOTEND_OFFSET_Z
     #define HOTEND_OFFSET_Z { 0 } // Z offsets for each extruder
   #endif
-#else
-  #undef HOTEND_OFFSET_X
-  #undef HOTEND_OFFSET_Y
-  #undef HOTEND_OFFSET_Z
 #endif
 
 /**

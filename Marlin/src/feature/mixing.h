@@ -97,8 +97,11 @@ class Mixer {
 
   FORCE_INLINE static uint8_t get_current_vtool() { return selected_vtool; }
 
+  static void update_locks();
+
   FORCE_INLINE static void T(const uint_fast8_t c) {
     selected_vtool = c;
+    update_locks();
     TERN_(GRADIENT_VTOOL, refresh_gradient());
     TERN_(HAS_DUAL_MIXING, update_mix_from_vtool());
   }

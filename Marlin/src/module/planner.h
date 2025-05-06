@@ -381,7 +381,7 @@ typedef struct PlannerSettings {
 
 #if ENABLED(IMPROVE_HOMING_RELIABILITY)
   struct motion_state_t {
-    TERN(DELTA, xyz_ulong_t, xy_ulong_t) acceleration;
+    xyz_ulong_t acceleration;
     #if ENABLED(CLASSIC_JERK)
       TERN(DELTA, xyz_float_t, xy_float_t) jerk_state;
     #endif

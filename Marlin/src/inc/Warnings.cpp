@@ -736,13 +736,13 @@
   #endif
 #endif
 
-#if ENABLED(QUICK_HOME)
-  #if X_SPI_SENSORLESS || Y_SPI_SENSORLESS
-    #warning "If SPI_ENDSTOPS are unreliable with QUICK_HOME try adjusting SENSORLESS_BACKOFF_MM, Travel Acceleration (M204 T), Homing Feedrate (M210 XY), or disable QUICK_HOME."
-  #elif X_SENSORLESS || Y_SENSORLESS
-    #warning "If SENSORLESS_HOMING is unreliable with QUICK_HOME try adjusting SENSORLESS_BACKOFF_MM, Travel Acceleration (M204 T), Homing Feedrate (M210 XY), or disable QUICK_HOME."
-  #endif
-#endif
+// #if ENABLED(QUICK_HOME)
+//   #if X_SPI_SENSORLESS || Y_SPI_SENSORLESS
+//     #warning "If SPI_ENDSTOPS are unreliable with QUICK_HOME try adjusting SENSORLESS_BACKOFF_MM, Travel Acceleration (M204 T), Homing Feedrate (M210 XY), or disable QUICK_HOME."
+//   #elif X_SENSORLESS || Y_SENSORLESS
+//     #warning "If SENSORLESS_HOMING is unreliable with QUICK_HOME try adjusting SENSORLESS_BACKOFF_MM, Travel Acceleration (M204 T), Homing Feedrate (M210 XY), or disable QUICK_HOME."
+//   #endif
+// #endif
 
 #if HIGHER_CURRENT_HOME_WARNING
   #warning "High homing currents can lead to damage if a sensor fails or is set up incorrectly."
