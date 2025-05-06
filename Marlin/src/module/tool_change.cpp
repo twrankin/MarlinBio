@@ -52,7 +52,7 @@
   #include "../lcd/marlinui.h"
 #endif
 
-#if ENABLED(DUAL_X_CARRIAGE)
+#if ANY(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER, DUAL_X_CARRIAGE)
   #include "stepper.h"
 #endif
 
@@ -1112,19 +1112,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
   if (TERN0(MAGNETIC_SWITCHING_TOOLHEAD, new_tool == active_extruder))
     return;
 
-  #if ENABLED(MIXING_EXTRUDER)
-
-    UNUSED(no_move);
-
-    if (new_tool >= MIXING_VIRTUAL_TOOLS)
-      return invalid_extruder_error(new_tool);
-
-    #if MIXING_VIRTUAL_TOOLS > 1
-      // T0-Tnnn: Switch virtual tool by changing the index to the mix
-      mixer.T(new_tool);
-    #endif
-
-  #elif HAS_PRUSA_MMU3
+  #if HAS_PRUSA_MMU3
 
     UNUSED(no_move);
 
@@ -1141,14 +1129,14 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
     // Nothing to do
     UNUSED(new_tool); UNUSED(no_move);
 
-  #elif EXTRUDERS < 2
+  #elif TERN(MIXING_EXTRUDER, MIXING_VIRTUAL_TOOLS < 2, EXTRUDERS < 2)
 
     UNUSED(no_move);
 
     if (new_tool) invalid_extruder_error(new_tool);
     return;
 
-  #elif HAS_MULTI_EXTRUDER
+  #elif ANY(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER)
 
     planner.synchronize();
 
@@ -1157,12 +1145,22 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
          return invalid_extruder_error(new_tool);
     #endif
 
-    if (new_tool >= EXTRUDERS)
+    if (TERN(MIXING_EXTRUDER, new_tool >= MIXING_VIRTUAL_TOOLS, new_tool >= EXTRUDERS))
       return invalid_extruder_error(new_tool);
 
     if (!no_move && homing_needed()) {
-      no_move = true;
-      DEBUG_ECHOLNPGM("No move (not homed)");
+      // MarlinBio: Changing a tool with a Z raise or an extruder offset defined without homing first is an error.
+      #if (TOOLCHANGE_ZRAISE > 0)
+        if (!axis_was_homed(Z_AXIS)) {
+          kill(F("A Z axis raise is specified but the Z axes were not homed"));
+        }
+      #else
+        no_move = true;
+        DEBUG_ECHOLNPGM("No move (not homed)");
+      #endif
+      #if HAS_HOTEND_OFFSET
+        kill(F("A hotend offset is specified but the axes were not homed"));
+      #endif
     }
 
     TERN_(HAS_MARLINUI_MENU, if (!no_move) ui.update());
@@ -1173,7 +1171,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
       constexpr bool idex_full_control = false;
     #endif
 
-    const uint8_t old_tool = active_extruder;
+    const uint8_t old_tool = TERN(MIXING_EXTRUDER, mixer.get_current_vtool(), active_extruder);
     const bool can_move_away = !no_move && !idex_full_control;
 
     #if ENABLED(AUTO_BED_LEVELING_UBL)
@@ -1227,25 +1225,27 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
       REMEMBER(fr, feedrate_mm_s, XY_PROBE_FEEDRATE_MM_S);
 
-      #if HAS_SOFTWARE_ENDSTOPS
-        #if HAS_HOTEND_OFFSET
-          #define _EXT_ARGS , old_tool, new_tool
-        #else
-          #define _EXT_ARGS
-        #endif
-        update_software_endstops(X_AXIS _EXT_ARGS);
-        #if DISABLED(DUAL_X_CARRIAGE)
-          update_software_endstops(Y_AXIS _EXT_ARGS);
-          update_software_endstops(Z_AXIS _EXT_ARGS);
-        #endif
-      #endif
+      // MarlinBio: This was used to shift the endstops to facilitate the position staying the same,
+      // despite the nozzle moving when HOTEND_OFFSET is specified, so that a position like x = -30 would be valid(??)
+      // Disabling this because that doesn't make sense.
+      // #if HAS_SOFTWARE_ENDSTOPS
+      //   #if HAS_HOTEND_OFFSET
+      //     #define _EXT_ARGS , old_tool, new_tool
+      //   #else
+      //     #define _EXT_ARGS
+      //   #endif
+      //   update_software_endstops(X_AXIS _EXT_ARGS);
+      //   #if DISABLED(DUAL_X_CARRIAGE)
+      //     update_software_endstops(Y_AXIS _EXT_ARGS);
+      //     update_software_endstops(Z_AXIS _EXT_ARGS);
+      //   #endif
+      // #endif
 
       #if NONE(TOOLCHANGE_ZRAISE_BEFORE_RETRACT, HAS_SWITCHING_NOZZLE)
         if (can_move_away && TERN1(TOOLCHANGE_PARK, toolchange_settings.enable_park)) {
-          // Do a small lift to avoid the workpiece in the move back (below)
-          current_position.z += toolchange_settings.z_raise;
-          TERN_(HAS_SOFTWARE_ENDSTOPS, NOMORE(current_position.z, soft_endstop.max.z));
-          fast_line_to_current(Z_AXIS);
+          // MarlinBio: Move the current Z axis out of the way, the new axis will be moved down later.
+          TERN_(HAS_SOFTWARE_ENDSTOPS, NOMORE(toolchange_settings.z_raise, soft_endstop.max.z));
+          do_blocking_move_to_z(toolchange_settings.z_raise, planner.settings.max_feedrate_mm_s[Z_AXIS] * 0.5f);
         }
       #endif
 
@@ -1312,7 +1312,15 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
         }
       #endif
 
-      IF_DISABLED(DUAL_X_CARRIAGE, active_extruder = new_tool); // Set the new active extruder
+      #if ENABLED(MIXING_EXTRUDER)
+      // T0-Tnnn: Switch virtual tool by changing the index to the mix
+      mixer.T(new_tool);
+      #else
+        IF_DISABLED(DUAL_X_CARRIAGE, active_extruder = new_tool); // Set the new active extruder
+
+        // MarlinBio: Update the Z locks so that only the Z axis for the active extruder is unlocked.
+        stepper.set_all_z_lock(true, active_extruder);
+      #endif
 
       TERN_(TOOL_SENSOR, tool_sensor_disabled = false);
 
@@ -1320,10 +1328,10 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
       // The newly-selected extruder XYZ is actually at...
       DEBUG_ECHOLNPGM("Offset Tool XYZ by { ", diff.x, ", ", diff.y, ", ", diff.z, " }");
-      current_position += diff;
-
-      // Tell the planner the new "current position"
-      sync_plan_position();
+      // MarlinBio: This was originally current_position for some reason, causing several issues.
+      // For example, an x offset of 20mm for tool 1 relative to tool 0 would move the x axis backward 20mm.
+      // It would also leave x's reported position unchanged, even though the axis moved.
+      destination += diff;
 
       #if ENABLED(DELTA)
         //LOOP_NUM_AXES(i) update_software_endstops(i); // or modify the constrain function
@@ -1377,7 +1385,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
               // If using MECHANICAL_SWITCHING extruder/nozzle, set HOTEND_OFFSET in Z axis after running EVENT_GCODE_TOOLCHANGE below.
               #if NONE(MECHANICAL_SWITCHING_EXTRUDER, MECHANICAL_SWITCHING_NOZZLE)
-                do_blocking_move_to_z(destination.z, planner.settings.max_feedrate_mm_s[Z_AXIS]);
+                do_blocking_move_to_z(destination.z, planner.settings.max_feedrate_mm_s[Z_AXIS] * 0.5f);
                 SECONDARY_AXIS_CODE(
                   do_blocking_move_to_i(destination.i, planner.settings.max_feedrate_mm_s[I_AXIS]),
                   do_blocking_move_to_j(destination.j, planner.settings.max_feedrate_mm_s[J_AXIS]),
@@ -1520,7 +1528,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
     SERIAL_ECHOLNPGM(STR_ACTIVE_EXTRUDER, active_extruder);
 
-  #endif // HAS_MULTI_EXTRUDER
+  #endif // HAS_MULTI_EXTRUDER, MIXING_EXTRUDER
 }
 
 #if ENABLED(TOOLCHANGE_MIGRATION_FEATURE)

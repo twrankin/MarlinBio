@@ -175,12 +175,12 @@
   motion_state_t begin_slow_homing() {
     motion_state_t motion_state{0};
     motion_state.acceleration.set(planner.settings.max_acceleration_mm_per_s2[X_AXIS],
-                                 planner.settings.max_acceleration_mm_per_s2[Y_AXIS]
-                                 OPTARG(DELTA, planner.settings.max_acceleration_mm_per_s2[Z_AXIS])
+                                 planner.settings.max_acceleration_mm_per_s2[Y_AXIS],
+                                 planner.settings.max_acceleration_mm_per_s2[Z_AXIS]
                                );
     planner.settings.max_acceleration_mm_per_s2[X_AXIS] = 100;
     planner.settings.max_acceleration_mm_per_s2[Y_AXIS] = 100;
-    TERN_(DELTA, planner.settings.max_acceleration_mm_per_s2[Z_AXIS] = 100);
+    planner.settings.max_acceleration_mm_per_s2[Z_AXIS] = 100;
     #if ENABLED(CLASSIC_JERK)
       motion_state.jerk_state = planner.max_jerk;
       planner.max_jerk.set(0, 0 OPTARG(DELTA, 0));
@@ -192,7 +192,7 @@
   void end_slow_homing(const motion_state_t &motion_state) {
     planner.settings.max_acceleration_mm_per_s2[X_AXIS] = motion_state.acceleration.x;
     planner.settings.max_acceleration_mm_per_s2[Y_AXIS] = motion_state.acceleration.y;
-    TERN_(DELTA, planner.settings.max_acceleration_mm_per_s2[Z_AXIS] = motion_state.acceleration.z);
+    planner.settings.max_acceleration_mm_per_s2[Z_AXIS] = motion_state.acceleration.z;
     TERN_(CLASSIC_JERK, planner.max_jerk = motion_state.jerk_state);
     planner.refresh_acceleration_rates();
   }
@@ -470,7 +470,6 @@ void GcodeSuite::G28() {
         #if DISABLED(HOME_Z_FIRST)
           if (doZ) {
             #if ANY(Z_MULTI_ENDSTOPS, Z_STEPPER_AUTO_ALIGN)
-              stepper.set_all_z_lock(false);
               stepper.set_separate_multi_axis(false);
             #endif
 
