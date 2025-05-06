@@ -124,15 +124,15 @@ xyze_pos_t destination; // {0}
 
 // Extruder offsets
 #if HAS_HOTEND_OFFSET
-  xyz_pos_t hotend_offset[HOTENDS]; // Initialized by settings.load
+  xyz_pos_t hotend_offset[EXTRUDERS]; // Initialized by settings.load
   void reset_hotend_offsets() {
-    constexpr float tmp[XYZ][HOTENDS] = { HOTEND_OFFSET_X, HOTEND_OFFSET_Y, HOTEND_OFFSET_Z };
+    constexpr float tmp[XYZ][EXTRUDERS] = { HOTEND_OFFSET_X, HOTEND_OFFSET_Y, HOTEND_OFFSET_Z };
     static_assert(
       !tmp[X_AXIS][0] && !tmp[Y_AXIS][0] && !tmp[Z_AXIS][0],
       "Offsets for the first hotend must be 0.0."
     );
     // Transpose from [XYZ][HOTENDS] to [HOTENDS][XYZ]
-    HOTEND_LOOP() LOOP_ABC(a) hotend_offset[e][a] = tmp[a][e];
+    EXTRUDER_LOOP() LOOP_ABC(a) hotend_offset[e][a] = tmp[a][e];
     TERN_(DUAL_X_CARRIAGE, hotend_offset[1].x = _MAX(X2_HOME_POS, X2_MAX_POS));
   }
 #endif
@@ -2613,7 +2613,9 @@ void prepare_line_to_destination() {
         }
       #endif
 
-      #if ENABLED(Z_MULTI_ENDSTOPS)
+      // MarlinBio: This section handles homing offsets of the extra Z axes from the primary Z axis.
+      // It won't work without changes, and there's no need to make them until we have a convincing use case.
+      #if 0 // ENABLED(Z_MULTI_ENDSTOPS)
         if (axis == Z_AXIS) {
 
           #if NUM_Z_STEPPERS == 2
