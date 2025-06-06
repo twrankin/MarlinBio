@@ -173,6 +173,16 @@ uint32_t Planner::max_acceleration_steps_per_s2[DISTINCT_AXES]; // (steps/s^2) D
   AxisBits Planner::last_page_dir; // = 0
 #endif
 
+#if ENABLED(CONSTANT_EXTRUSION)
+  /// MarlinBio: These are initialized in settings.reset.
+  bool  Planner::constant_extrusion_enabled;
+  bool  Planner::pressurized;
+  float Planner::syringe_inner_diameter[EXTRUDERS];
+  float Planner::needle_inner_diameter[EXTRUDERS];
+  float Planner::extrusion_coefficient[EXTRUDERS];
+  float Planner::pressurization_length[EXTRUDERS];
+#endif
+
 #if HAS_EXTRUDERS
   int16_t Planner::flow_percentage[EXTRUDERS] = ARRAY_BY_EXTRUDERS1(100); // Extrusion factor for each extruder
   float Planner::e_factor[EXTRUDERS] = ARRAY_BY_EXTRUDERS1(1.0f); // The flow percentage and volumetric multiplier combine to scale E movement
@@ -1348,6 +1358,34 @@ void Planner::check_axes_activity() {
   #endif
 }
 
+#if ENABLED(CONSTANT_EXTRUSION)
+  bool Planner::pressurize() {
+    /// MarlinBio: Only pressurize when constant extrusion is enabled.
+    if (constant_extrusion_enabled && !pressurized) {
+      current_position.e += pressurization_length[active_extruder];
+      destination.e      += pressurization_length[active_extruder];
+      xyze_pos_t target   = current_position;
+      buffer_line(target, settings.max_feedrate_mm_s[active_extruder]);
+      pressurized = true;
+      return true;
+    }
+    return false;
+  }
+
+  bool Planner::depressurize() {
+    /// MarlinBio: Always depressurize when called.
+    if (pressurized) {
+      pressurized         = false;
+      current_position.e -= pressurization_length[active_extruder];
+      destination.e      -= pressurization_length[active_extruder];
+      xyze_pos_t target   = current_position;
+      buffer_line(target, settings.max_feedrate_mm_s[active_extruder]);
+      return true;
+    }
+    return false;
+  }
+#endif
+
 #if ENABLED(AUTOTEMP)
 
   #if ENABLED(AUTOTEMP_PROPORTIONAL)
@@ -2179,7 +2217,7 @@ bool Planner::_populate_block(
 
   // Enable extruder(s)
   #if HAS_EXTRUDERS
-    if (esteps) {
+    if (esteps || TERN0(CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled))) {
       TERN_(AUTO_POWER_CONTROL, powerManager.power_on());
 
       #if ENABLED(DISABLE_OTHER_EXTRUDERS) // Enable only the selected extruder
@@ -2213,7 +2251,7 @@ bool Planner::_populate_block(
     }
   #endif // HAS_EXTRUDERS
 
-  if (esteps)
+  if (esteps || TERN0(CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled)))
     NOLESS(fr_mm_s, settings.min_feedrate_mm_s);
   else
     NOLESS(fr_mm_s, settings.min_travel_feedrate_mm_s);
@@ -2373,6 +2411,28 @@ bool Planner::_populate_block(
     block->nominal_speed *= speed_factor;
   }
 
+  #if ENABLED(CONSTANT_EXTRUSION)
+    /// MarlinBio: Here is where we calculate the desired extrusion speed.
+    /// We use the conservation of volume equation: Speed * (π * syringe_diam^2 / 4) = feedrate * K * (π * needle_diam^2 / 4)
+    /// I.E. the volume pushed out of the syringe is equal to what comes out of the needle, but with a different speed
+    /// to account for the different cross-sectional area. Since we know all the other variables, we can solve for speed.
+    /// K is the empirically determined correction factor, to account for microfluidics. K can also be used to scale the speed
+    /// to adjust the volume of printed material to obtain a desired line thickness.
+    if (constant_extrusion_enabled && hints.print_move) {
+      const float feedrate_steps_per_s = block->nominal_speed * settings.axis_steps_per_mm[E_AXIS_N(extruder)];
+      /// MarlinBio: K * needle_diam^2 / syringe_diam^2.
+      const float scale = extrusion_coefficient[extruder] * (needle_inner_diameter[extruder] * needle_inner_diameter[extruder]) / (syringe_inner_diameter[extruder] * syringe_inner_diameter[extruder]);
+      /// MarlinBio: After solving: Speed = feedrate * K * needle_diam^2 / syringe_diam^2.
+      const float speed_steps_per_s = feedrate_steps_per_s * scale;
+      /// MarlinBio: According to the datasheet for the TMC2209 (https://www.analog.com/media/en/technical-documentation/data-sheets/TMC2209_datasheet_rev1.09.pdf),
+      /// VACTUAL = Speed / 0.715. Through testing, there is an unexplained factor of 2, so VACTUAL = Speed / 0.715 / 2.
+      /// Calculating this here instead of in a more driver-specific place to reduce computation in the ISR later.
+      block->constant_extrusion_speed = static_cast<int32_t>(speed_steps_per_s / 0.715f / 2.0f);
+    } else {
+      block->constant_extrusion_speed = 0;
+    }
+  #endif
+
   // Compute and limit the acceleration rate for the trapezoid generator.
   const float steps_per_mm = block->step_event_count * inverse_millimeters;
   block->steps_per_mm = steps_per_mm;
@@ -2399,7 +2459,7 @@ bool Planner::_populate_block(
     }while(0)
 
     // Start with print or travel acceleration
-    accel = CEIL((esteps ? settings.acceleration : settings.travel_acceleration) * steps_per_mm);
+    accel = CEIL((esteps || TERN0(CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled)) ? settings.acceleration : settings.travel_acceleration) * steps_per_mm);
 
     #if ENABLED(LIN_ADVANCE)
       // Linear advance is currently not ready for HAS_I_AXIS
@@ -2882,7 +2942,7 @@ bool Planner::buffer_segment(const abce_pos_t &abce
 
   // The target position of the tool in absolute steps
   // Calculate target position in absolute steps
-  const abce_long_t target = {
+  abce_long_t target = {
      LOGICAL_AXIS_LIST(
       int32_t(LROUND(abce.e * settings.axis_steps_per_mm[E_AXIS_N(extruder)])),
       int32_t(LROUND(abce.a * settings.axis_steps_per_mm[A_AXIS])),
@@ -2967,6 +3027,15 @@ bool Planner::buffer_segment(const abce_pos_t &abce
       SERIAL_EOL();
     #endif
   //*/
+
+  #if ENABLED(CONSTANT_EXTRUSION)
+    /// MarlinBio: Pressurize before G1/2/3, depressurize for all other moves.
+    if (hints.print_move) {
+      if (pressurize()) target.e += pressurization_length[extruder] * settings.axis_steps_per_mm[E_AXIS_N(extruder)];
+    } else {
+      if (depressurize()) target.e -= pressurization_length[extruder] * settings.axis_steps_per_mm[E_AXIS_N(extruder)];
+    }
+  #endif
 
   // Queue the movement. Return 'false' if the move was not queued.
   if (!_buffer_steps(target

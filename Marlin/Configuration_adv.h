@@ -1228,7 +1228,7 @@
 
 // @section motion
 
-// MarlinBio: This initializes all axes to relative mode.
+/// MarlinBio: This initializes all axes to relative mode.
 #define AXIS_RELATIVE_MODES { true, true, true, true }
 
 // Add a Duplicate option for well-separated conjoined nozzles
@@ -2800,6 +2800,9 @@
  *
  * Note that M207 / M208 / M209 settings are saved to EEPROM.
  */
+/// MarlinBio: This is Marlin's original pressurization feature.
+/// It didn't work for our needs, so we implemented our own as a part of CONSTANT_EXTRUSION.
+/// Leaving this in to minimize changes, but it should not be enabled.
 //#define FWRETRACT
 #if ENABLED(FWRETRACT)
   #define FWRETRACT_AUTORETRACT             // Override slicer retractions
@@ -2827,9 +2830,9 @@
  * Applies to all types of extruders except where explicitly noted.
  */
 #if HAS_MULTI_EXTRUDER
-  // MarlinBio: The absolute Z position to raise the current Z axis to before changing tools.
-  // The new Z axis will lower down to the previous position.
-  // If this is non-zero, the Z axes must have been homed at least once before a tool change.
+  /// MarlinBio: The absolute Z position to raise the current Z axis to before changing tools.
+  /// The new Z axis will lower down to the previous position.
+  /// If this is non-zero, the Z axes must have been homed at least once before a tool change.
   #define TOOLCHANGE_ZRAISE Z_MAX_POS
   //#define TOOLCHANGE_ZRAISE_BEFORE_RETRACT  // Apply raise before swap retraction (if enabled)
   //#define TOOLCHANGE_NO_RETURN              // Never return to previous position on tool-change
@@ -3184,7 +3187,7 @@
 
   #if AXIS_IS_TMC_CONFIG(E0)
     #define E0_CURRENT      500
-    #define E0_MICROSTEPS     0
+    #define E0_MICROSTEPS     256
     #define E0_RSENSE         0.11
     #define E0_CHAIN_POS     -1
     //#define E0_INTERPOLATE true

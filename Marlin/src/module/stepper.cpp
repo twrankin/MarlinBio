@@ -176,7 +176,7 @@ bool Stepper::abort_current_block;
   bool Stepper::locked_Y_motor = false, Stepper::locked_Y2_motor = false;
 #endif
 
-// MarlinBio: Initialize with only Z1 enabled.
+/// MarlinBio: Initialize with only Z1 enabled.
 #if ANY(Z_MULTI_ENDSTOPS, Z_STEPPER_AUTO_ALIGN)
   bool Stepper::locked_Z_motor = false, Stepper::locked_Z2_motor = true
     #if NUM_Z_STEPPERS >= 3
@@ -292,6 +292,10 @@ uint32_t Stepper::advance_divisor = 0,
   page_step_state_t Stepper::page_step_state;
 #endif
 
+#if ENABLED(CONSTANT_EXTRUSION)
+  uint32_t Stepper::constant_extrusion_speed = 0;
+#endif
+
 hal_timer_t Stepper::ticks_nominal = 0;
 #if DISABLED(S_CURVE_ACCELERATION)
   uint32_t Stepper::acc_step_rate; // needed for deceleration start point
@@ -304,9 +308,9 @@ xyze_int8_t Stepper::count_direction{0};
 #define MINDIR(A) (count_direction[_AXIS(A)] < 0)
 #define MAXDIR(A) (count_direction[_AXIS(A)] > 0)
 
-// MarlinBio: The below macros handle multiple steppers and endstops.
-// They've been modified to allow independent Z axes based on locks
-// set by other features.
+/// MarlinBio: The below macros handle multiple steppers and endstops.
+/// They've been modified to allow independent Z axes based on locks
+/// set by other features.
 #define STEPTEST(A,M,I) TERN0(USE_##A##I##_##M, !(TEST(endstops.state(), A##I##_##M) && M## DIR(A)))
 #define _STEP_WRITE(A,I,V) A##I##_STEP_WRITE(V)
 
@@ -1657,6 +1661,13 @@ void Stepper::isr() {
     // Compute the tick count for the next ISR
     next_isr_ticks += interval;
 
+    /// MarlinBio: Disable constant extrusion if no more blocks are present.
+    /// Do this here after block_phase_isr, but before min_ticks is calculated.
+    if (current_block == nullptr && constant_extrusion_speed != 0) {
+      constant_extrusion_speed = 0;
+      set_constant_extrusion_speed(stepper_extruder, 0);
+    }
+
     /**
      * The following section must be done with global interrupts disabled.
      * We want nothing to interrupt it, as that could mess the calculations
@@ -2863,6 +2874,24 @@ hal_timer_t Stepper::block_phase_isr() {
           }
         #endif
       #endif
+
+      #if ENABLED(CONSTANT_EXTRUSION)
+        /// MarlinBio: Constant extrusion is enabled by writing to the VACTUAL register of the TMC220x driver over UART.
+        /// This will spin the motor at the specified velocity until told to stop.
+        /// WARNING: This might cause timing issues, as UART communication inside an ISR is not ideal.
+        /// It should only occur at the beginning and end of a block of printing, so it should be fine.
+        /// If issues arise, the first thing we can try is to up TMC_BAUD_RATE, as it is set quite low currently.
+        #if HAS_MULTI_EXTRUDER
+          if (constant_extrusion_speed != 0 && last_moved_extruder != stepper_extruder) {
+            constant_extrusion_speed = 0;
+            set_constant_extrusion_speed(last_moved_extruder, 0);
+          }
+        #endif
+        if (constant_extrusion_speed != current_block->constant_extrusion_speed) {
+          constant_extrusion_speed = current_block->constant_extrusion_speed;
+          set_constant_extrusion_speed(stepper_extruder, constant_extrusion_speed);
+        }
+      #endif
     }
   } // !current_block
 
@@ -3556,6 +3585,42 @@ void Stepper::report_positions() {
   AVR_ATOMIC_SECTION_END();
   report_a_position(pos);
 }
+
+#if ENABLED(CONSTANT_EXTRUSION)
+  void Stepper::set_constant_extrusion_speed(const uint8_t extruder, const uint32_t velocity) {
+
+    /// MarlinBio: VACTUAL writes the velocity to the TMC220x's VACTUAL register over UART.
+    /// This will cause the driver to internally generate STEP pulses at the specified rate.
+    /// https://www.analog.com/media/en/technical-documentation/data-sheets/TMC2209_datasheet_rev1.09.pdf
+    switch(extruder) {
+      #if AXIS_HAS_UART(E0)
+      case 0: stepperE0.VACTUAL(velocity); break;
+      #endif
+      #if AXIS_HAS_UART(E1)
+      case 1: stepperE1.VACTUAL(velocity); break;
+      #endif
+      #if AXIS_HAS_UART(E2)
+      case 2: stepperE2.VACTUAL(velocity); break;
+      #endif
+      #if AXIS_HAS_UART(E3)
+      case 3: stepperE3.VACTUAL(velocity); break;
+      #endif
+      #if AXIS_HAS_UART(E4)
+      case 4: stepperE4.VACTUAL(velocity); break;
+      #endif
+      #if AXIS_HAS_UART(E5)
+      case 5: stepperE5.VACTUAL(velocity); break;
+      #endif
+      #if AXIS_HAS_UART(E6)
+      case 6: stepperE6.VACTUAL(velocity); break;
+      #endif
+      #if AXIS_HAS_UART(E7)
+      case 7: stepperE7.VACTUAL(velocity); break;
+      #endif
+      default: kill(FPSTR("Invalid extruder")); break;
+    }
+  }
+#endif
 
 #if ENABLED(FT_MOTION)
 

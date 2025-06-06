@@ -117,8 +117,8 @@
   #define Z2_CS_PIN                         PG11
 #endif
 
-// MarlinBio: The following pin changes are needed because only motors 1-6 have homing capabilities,
-// and we need homing for the Z axes but not the E axes.
+/// MarlinBio: The following pin changes are needed because only motors 1-6 have homing capabilities,
+/// and we need homing for the Z axes but not the E axes.
 #define Z3_STEP_PIN                         PB5   // MOTOR 5
 #define Z3_DIR_PIN                          PB4
 #define Z3_ENABLE_PIN                       PB6
@@ -204,8 +204,8 @@
 //
 // Misc. Functions
 //
-// MarlinBio: The SWCLK pin is used for the board's heartbeat LED.
-// Disable this when building for debug, so SWD works.
+/// MarlinBio: The SWCLK pin is used for the board's heartbeat LED.
+/// Disable this when building for debug, so SWD works.
 #if !defined(__PLATFORMIO_BUILD_DEBUG__)
   #define LED_PIN                             PA14
 #endif

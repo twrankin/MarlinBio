@@ -3322,6 +3322,23 @@ void MarlinSettings::reset() {
 
   TERN_(HAS_JUNCTION_DEVIATION, planner.junction_deviation_mm = float(JUNCTION_DEVIATION_MM));
 
+  #if ENABLED(CONSTANT_EXTRUSION)
+    gcode.constant_extrusion_enabled   = ENABLED(CONSTANT_EXTRUSION_DEFAULT_ON);
+    planner.constant_extrusion_enabled = gcode.constant_extrusion_enabled;
+    planner.pressurized                = false;
+    
+    constexpr float syringe_inner_diameter[EXTRUDERS] = SYRINGE_INNER_DIAMETER;
+    constexpr float needle_inner_diameter[EXTRUDERS]  = NEEDLE_INNER_DIAMETER;
+    constexpr float extrusion_coefficient[EXTRUDERS]  = EXTRUSION_COEFFICIENT;
+    constexpr float pressurization_length[EXTRUDERS]  = PRESSURIZATION_LENGTH;
+    EXTRUDER_LOOP() {
+      planner.syringe_inner_diameter[e] = syringe_inner_diameter[e];
+      planner.needle_inner_diameter[e]  = needle_inner_diameter[e];
+      planner.extrusion_coefficient[e]  = extrusion_coefficient[e];
+      planner.pressurization_length[e]  = pressurization_length[e];
+    }
+  #endif
+
   //
   // Home Offset
   //
@@ -4002,6 +4019,11 @@ void MarlinSettings::reset() {
     // Homing Feedrate
     //
     TERN_(EDITABLE_HOMING_FEEDRATE, gcode.M210_report(forReplay));
+
+    ///
+    /// MarlinBio: Constant extrusion
+    ///
+    TERN_(CONSTANT_EXTRUSION, gcode.M789_report(forReplay));
 
     //
     // Probe Offset

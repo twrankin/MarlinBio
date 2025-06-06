@@ -99,7 +99,7 @@ void GcodeSuite::G0_G1(TERN_(HAS_FAST_MOVES, const bool fast_move/*=false*/)) {
   #if ANY(IS_SCARA, POLAR)
     fast_move ? prepare_fast_move_to_destination() : prepare_line_to_destination();
   #else
-    prepare_line_to_destination();
+    prepare_line_to_destination(parser.codenum != 0);
   #endif
 
   #ifdef G0_FEEDRATE

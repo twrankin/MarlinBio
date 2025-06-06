@@ -288,6 +288,9 @@
  * M708 - Write to MMU register
  * M709 - MMU power & reset
  *
+ *** MarlinBio: Continuous extrusion ***
+ * M789 - Enable/disable and set/print parameters for continuous extrusion mode.
+ * 
  * M808 - Set or Goto a Repeat Marker (Requires GCODE_REPEAT_MARKERS)
  * M810-M819 - Define/execute a G-code macro (Requires GCODE_MACROS)
  * M820 - Report all defined M810-M819 G-code macros (Requires GCODE_MACROS)
@@ -413,6 +416,10 @@ public:
       CBI(axis_relative, E_MODE_REL);
       SBI(axis_relative, E_MODE_ABS);
     }
+  #endif
+
+  #if ENABLED(CONSTANT_EXTRUSION)
+    static bool constant_extrusion_enabled;
   #endif
 
   #if ENABLED(CNC_WORKSPACE_PLANES)
@@ -1203,6 +1210,11 @@ private:
     static void M708();
     static void M709();
     static void MMU3_report(const bool forReplay=true);
+  #endif
+
+  #if ENABLED(CONSTANT_EXTRUSION)
+    static void M789();
+    static void M789_report(const bool forReplay=true);
   #endif
 
   #if ENABLED(GCODE_REPEAT_MARKERS)

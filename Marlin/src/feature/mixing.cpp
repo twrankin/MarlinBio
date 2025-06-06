@@ -85,11 +85,11 @@ void Mixer::normalize(const uint8_t tool_index) {
   TERN_(GRADIENT_MIX, refresh_gradient());
 }
 
-// MarlinBio: Adjust the Z locks so the extruder systems move in tandem.
-// Only non-zero entries for the current tool in 'color' are active and will extrude,
-// so only those Z axes are unlocked and will move.
-// This limitation would be problematic in the case of, for example, 4 Z axes
-// all phsyically connected by one mixing extruder but with only 1/2/3 active.
+/// MarlinBio: Adjust the Z locks so the extruder systems move in tandem.
+/// Only non-zero entries for the current tool in 'color' are active and will extrude,
+/// so only those Z axes are unlocked and will move.
+/// This limitation would be problematic in the case of, for example, 4 Z axes
+/// all phsyically connected by one mixing extruder but with only 1/2/3 active.
 void Mixer::update_locks() {
   #if ENABLED(Z_MULTI_ENDSTOPS)
     stepper.set_z1_lock(!color[selected_vtool][0]);
