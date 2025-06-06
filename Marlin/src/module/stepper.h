@@ -520,6 +520,10 @@ class Stepper {
     // Current stepper motor directions (+1 or -1)
     static xyze_int8_t count_direction;
 
+    #if ENABLED(CONSTANT_EXTRUSION)
+      static uint32_t constant_extrusion_speed;
+    #endif
+
   public:
     // Initialize stepper hardware
     static void init();
@@ -636,6 +640,10 @@ class Stepper {
 
     // Triggered position of an axis in steps
     static int32_t triggered_position(const AxisEnum axis);
+
+    #if ENABLED(CONSTANT_EXTRUSION)
+      static void set_constant_extrusion_speed(const uint8_t extruder, const uint32_t velocity);
+    #endif
 
     #if HAS_MOTOR_CURRENT_SPI || HAS_MOTOR_CURRENT_PWM
       static void set_digipot_value_spi(const int16_t address, const int16_t value);

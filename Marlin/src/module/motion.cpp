@@ -1720,7 +1720,7 @@ float get_move_distance(const xyze_pos_t &diff OPTARG(HAS_ROTATIONAL_AXES, bool 
    *
    * Return true if 'current_position' was set to 'destination'
    */
-  inline bool line_to_destination_cartesian() {
+  inline bool line_to_destination_cartesian(const bool print_move=false) {
     const float scaled_fr_mm_s = MMS_SCALED(feedrate_mm_s);
     #if HAS_MESH
       if (planner.leveling_active && planner.leveling_active_at_z(destination.z)) {
@@ -1751,7 +1751,11 @@ float get_move_distance(const xyze_pos_t &diff OPTARG(HAS_ROTATIONAL_AXES, bool 
       }
     #endif // HAS_MESH
 
-    planner.buffer_line(destination, scaled_fr_mm_s);
+    /// MarlinBio: The planner needs to know if this is a print move to enable
+    /// constant extrusion. The only print moves currently are G1, G2, and G3.
+    PlannerHints hints;
+    hints.print_move = print_move;
+    planner.buffer_line(destination, scaled_fr_mm_s, active_extruder, hints);
     return false; // caller will update current_position
   }
 
@@ -1894,7 +1898,7 @@ float get_move_distance(const xyze_pos_t &diff OPTARG(HAS_ROTATIONAL_AXES, bool 
  *
  * Before exit, current_position is set to destination.
  */
-void prepare_line_to_destination() {
+void prepare_line_to_destination(const bool print_move/*=false*/) {
   apply_motion_limits(destination);
 
   #if ANY(PREVENT_COLD_EXTRUSION, PREVENT_LENGTHY_EXTRUDE)
@@ -1943,7 +1947,7 @@ void prepare_line_to_destination() {
     #elif IS_KINEMATIC
       line_to_destination_kinematic()
     #else
-      line_to_destination_cartesian()
+      line_to_destination_cartesian(print_move)
     #endif
   ) return;
 
@@ -2613,8 +2617,8 @@ void prepare_line_to_destination() {
         }
       #endif
 
-      // MarlinBio: This section handles homing offsets of the extra Z axes from the primary Z axis.
-      // It won't work without changes, and there's no need to make them until we have a convincing use case.
+      /// MarlinBio: This section handles homing offsets of the extra Z axes from the primary Z axis.
+      /// It won't work without changes, and there's no need to make them until we have a convincing use case.
       #if 0 // ENABLED(Z_MULTI_ENDSTOPS)
         if (axis == Z_AXIS) {
 

@@ -312,6 +312,10 @@ typedef struct PlannerBlock {
     block_laser_t laser;
   #endif
 
+  #if ENABLED(CONSTANT_EXTRUSION)
+    uint32_t constant_extrusion_speed;
+  #endif
+
   void reset() { memset((char*)this, 0, sizeof(*this)); }
 
 } block_t;
@@ -435,6 +439,13 @@ struct PlannerHints {
                                       // False if no movement of the tool center point relative to the work piece occurs
                                       // (i.e. the tool rotates around the tool centerpoint)
   #endif
+
+  #if ENABLED(CONSTANT_EXTRUSION)
+    /// MarlinBio: Continuous extrusion needs to know if this is a print move
+    /// so that we know when to start and stop the extrusion.
+    bool print_move = false;
+  #endif
+
   PlannerHints(const_float_t mm=0.0f) : millimeters(mm) {}
 };
 
@@ -468,6 +479,15 @@ class Planner {
     #if ENABLED(DIRECT_STEPPING)
       static uint32_t last_page_step_rate;          // Last page step rate given
       static AxisBits last_page_dir;                // Last page direction given, where 1 represents forward or positive motion
+    #endif
+
+    #if ENABLED(CONSTANT_EXTRUSION)
+      static bool  constant_extrusion_enabled;
+      static bool  pressurized;
+      static float syringe_inner_diameter[EXTRUDERS];
+      static float needle_inner_diameter[EXTRUDERS];
+      static float extrusion_coefficient[EXTRUDERS];
+      static float pressurization_length[EXTRUDERS];
     #endif
 
     #if HAS_EXTRUDERS
@@ -672,6 +692,11 @@ class Planner {
 
     // Manage fans, paste pressure, etc.
     static void check_axes_activity();
+
+    #if ENABLED(CONSTANT_EXTRUSION)
+      static bool pressurize();
+      static bool depressurize();
+    #endif
 
     // Apply fan speeds
     #if HAS_FAN

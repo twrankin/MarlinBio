@@ -344,7 +344,7 @@ void line_to_current_position(const_feedRate_t fr_mm_s=feedrate_mm_s);
   void unscaled_e_move(const_float_t length, const_feedRate_t fr_mm_s);
 #endif
 
-void prepare_line_to_destination();
+void prepare_line_to_destination(const bool print_move=false);
 
 void _internal_move_to_destination(const_feedRate_t fr_mm_s=0.0f OPTARG(IS_KINEMATIC, const bool is_fast=false));
 
