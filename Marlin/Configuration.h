@@ -37,7 +37,8 @@
  */
 #define CONFIGURATION_H_VERSION 02010300
 
-//#error "This is an altered version of Marlin for research purposes. \
+// TWR: TODO: Change back
+//#error "MarlinBio: This is an altered version of Marlin for research purposes. \
 Many traditional features have been broken by the alterations, \
 as the work to support functionality we don't currently need would be substantial. \
 If issues are encountered while attempting to enable or change a setting, \
@@ -234,6 +235,25 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
 // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
 #define EXTRUDERS 4
 
+/// MarlinBio: Parameters for constant extrusion based on a syringe extruder system.
+/// Each parameter is an array of values for each extruder.
+/// Constant extrusion can be enabled by default here, and enabled/disabled live by the M789 command.
+//#define CONSTANT_EXTRUSION_DEFAULT_ON
+
+/// MarlinBio: The inner diameter of the syringe in mm.
+#define SYRINGE_INNER_DIAMETER { 4.78, 4.78, 4.78, 4.78 }
+
+/// MarlinBio: The inner diameter of the needle in mm.
+#define NEEDLE_INNER_DIAMETER { 0.838, 0.838, 0.838, 0.838 }
+
+/// MarlinBio: The coefficient to scale the extrusion rate.
+#define EXTRUSION_COEFFICIENT { 2.0, 2.0, 2.0, 2.0 }
+
+/// MarlinBio: The distance to pressurize/depressurize the syringe before/after constant extrusion in mm.
+#define PRESSURIZATION_LENGTH { 0.5, 0.5, 0.5, 0.5 }
+
+/// MarlinBio: It took a small amount of digging to discover that this isn't currently used.
+/// It is unrelated to, and does not affect, constant extrusion.
 // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
 #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
 
@@ -372,16 +392,16 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  *   - This implementation supports up to two mixing extruders.
  *   - Enable DIRECT_MIXING_IN_G1 for M165 and mixing in G1 (from Pia Taubert's reference implementation).
  */
-// MarlinBio: MIXING_EXTRUDER has limited functionality for now, as the changes required are a bit complex.
-// Virtual tools must be limited such that virtual tool 0 corresponds to nozzle 0, and so on.
-// So do not use M163/M164 to set a mix to tool 0 that contains nozzles other than 0, etc..
-// Also, all extruders combined by a mixing extruder must be included in the mix.
-// So do not have a 3 extruder combined system and only use 2 of them in the mix, etc..
-// We can update this in the future as more complexity is needed.
-// Make sure to update the hotend (nozzle) offsets below.
+/// MarlinBio: MIXING_EXTRUDER has limited functionality for now, as the changes required are a bit complex.
+/// Virtual tools must be limited such that virtual tool 0 corresponds to nozzle 0, and so on.
+/// So do not use M163/M164 to set a mix to tool 0 that contains nozzles other than 0, etc..
+/// Also, all extruders combined by a mixing extruder must be included in the mix.
+/// So do not have a 3 extruder combined system and only use 2 of them in the mix, etc..
+/// We can update this in the future as more complexity is needed.
+/// Make sure to update the hotend (nozzle) offsets below.
 //#define MIXING_EXTRUDER
 #if ENABLED(MIXING_EXTRUDER)
-  #define MIXING_STEPPERS 4        // MarlinBio: Total number of extruders.
+  #define MIXING_STEPPERS 4        /// MarlinBio: Total number of extruders.
   #define MIXING_VIRTUAL_TOOLS EXTRUDERS
   //#define DIRECT_MIXING_IN_G1    // Allow ABCDHI mix factors in G1 movement commands
   //#define GRADIENT_MIX           // Support for gradient mixing with M166 and LCD
@@ -940,8 +960,8 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  *
  * *** IT IS HIGHLY RECOMMENDED TO LEAVE THIS OPTION ENABLED! ***
  */
-// MarlinBio: We don't use temperature. If we need to support heating or cooling syringes
-// in the future, it will require significant changes.
+/// MarlinBio: We don't use temperature. If we need to support heating or cooling syringes
+/// in the future, it will require significant changes.
 //#define PREVENT_COLD_EXTRUSION
 #define EXTRUDE_MINTEMP 170
 
@@ -949,7 +969,7 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  * Prevent a single extrusion longer than EXTRUDE_MAXLENGTH.
  * Note: For Bowden Extruders make this large enough to allow load/unload.
  */
-// MarlinBio: Lengthy extrusions are fine.
+/// MarlinBio: Lengthy extrusions are fine.
 //#define PREVENT_LENGTHY_EXTRUDE
 #define EXTRUDE_MAXLENGTH 200
 
@@ -970,8 +990,8 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  * details can be tuned in Configuration_adv.h
  */
 
-// MarlinBio: We don't use temperature. If we need to support heating or cooling syringes
-// in the future, it will require significant changes.
+/// MarlinBio: We don't use temperature. If we need to support heating or cooling syringes
+/// in the future, it will require significant changes.
 //#define THERMAL_PROTECTION_HOTENDS // Enable thermal protection for all extruders
 //#define THERMAL_PROTECTION_BED     // Enable thermal protection for the heated bed
 //#define THERMAL_PROTECTION_CHAMBER // Enable thermal protection for the heated chamber
@@ -1323,7 +1343,7 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  * Override with M92 (when enabled below)
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 200, 200, 200, 200 }
+ #define DEFAULT_AXIS_STEPS_PER_UNIT   { 200, 200, 200, 51200 }
 
 /**
  * Enable support for M92. Disable to save at least ~530 bytes of flash.

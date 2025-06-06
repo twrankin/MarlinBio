@@ -172,7 +172,7 @@
   #define E_MANUAL EXTRUDERS
 #endif
 
-// MarlinBio: We don't use hotends.
+/// MarlinBio: We don't use hotends.
 #define HOTENDS 0
 // #if ANY(SINGLENOZZLE, MIXING_EXTRUDER)                // Only one for singlenozzle or mixing extruder
 //   #define HOTENDS 1
@@ -200,8 +200,8 @@
   #undef THERMAL_PROTECTION_HOTENDS
 #endif
 
-// MarlinBio: Marlin's concept of extruders/hotends/nozzles is fuzzy.
-// We'll keep the naming here to minimize changes.
+/// MarlinBio: Marlin's concept of extruders/hotends/nozzles is fuzzy.
+/// We'll keep the naming here to minimize changes.
 #if defined(HOTEND_OFFSET_X) || defined(HOTEND_OFFSET_Y) || defined(HOTEND_OFFSET_Z)
   #define HAS_HOTEND_OFFSET 1
   #ifndef HOTEND_OFFSET_X

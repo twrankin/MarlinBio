@@ -86,6 +86,11 @@ millis_t GcodeSuite::previous_move_ms = 0,
 // Relative motion mode for each logical axis
 relative_t GcodeSuite::axis_relative; // Init in constructor
 
+#if ENABLED(CONSTANT_EXTRUSION)
+  /// MarlinBio: This is initialized in settings.reset.
+  bool GcodeSuite::constant_extrusion_enabled;
+#endif
+
 #if ANY(HAS_AUTO_REPORTING, HOST_KEEPALIVE_FEATURE)
   bool GcodeSuite::autoreport_paused; // = false
 #endif
@@ -196,6 +201,11 @@ void GcodeSuite::get_destination_from_command() {
     }
     else
       destination.e = current_position.e;
+  #endif
+
+  #if ENABLED(CONSTANT_EXTRUSION)
+    /// MarlinBio: This will ensure that something like G1 X20 E10 will not change the reported E position.
+    if (parser.command_letter == 'G' && parser.codenum != 0 && gcode.constant_extrusion_enabled) destination.e = current_position.e;
   #endif
 
   #if ENABLED(POWER_LOSS_RECOVERY) && !PIN_EXISTS(POWER_LOSS)
@@ -1013,6 +1023,10 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
 
       #if ENABLED(CONTROLLER_FAN_EDITABLE)
         case 710: M710(); break;                                  // M710: Set Controller Fan settings
+      #endif
+
+      #if ENABLED(CONSTANT_EXTRUSION)
+        case 789: M789(); break;                                  /// MarlinBio: M789: Enable/disable and set/print parameters for constant extrusion mode.
       #endif
 
       #if ENABLED(GCODE_MACROS)

@@ -3630,3 +3630,19 @@
 #if ALL(SPI_FLASH, HAS_MEDIA, MARLIN_DEV_MODE)
   #define SPI_FLASH_BACKUP 1
 #endif
+
+#if EXTRUDERS && HAS_TMC_UART
+  #define CONSTANT_EXTRUSION 1
+  #ifndef SYRINGE_INNER_DIAMETER
+    #define SYRINGE_INNER_DIAMETER { 0 }
+  #endif
+  #ifndef NEEDLE_INNER_DIAMETER
+    #define NEEDLE_INNER_DIAMETER { 0 }
+  #endif
+  #ifndef EXTRUSION_COEFFICIENT
+    #define EXTRUSION_COEFFICIENT { 0 }
+  #endif
+  #ifndef PRESSURIZATION_LENGTH
+    #define PRESSURIZATION_LENGTH { 0 }
+  #endif
+#endif
