@@ -1128,15 +1128,18 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
     // Nothing to do
     UNUSED(new_tool); UNUSED(no_move);
+  
+  #else
 
-  #elif TERN(MIXING_EXTRUDER, MIXING_VIRTUAL_TOOLS < 2, EXTRUDERS < 2)
+  /// MarlinBio: "if constexpr" will not compile the block that won't be run.
+  if constexpr (TOOL_NUM < 2) {
 
     UNUSED(no_move);
 
     if (new_tool) invalid_extruder_error(new_tool);
     return;
 
-  #elif ANY(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER)
+  } else {
 
     planner.synchronize();
 
@@ -1145,10 +1148,10 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
          return invalid_extruder_error(new_tool);
     #endif
 
-    if (TERN(MIXING_EXTRUDER, new_tool >= MIXING_VIRTUAL_TOOLS, new_tool >= EXTRUDERS))
+    if (new_tool >= TOOL_NUM)
       return invalid_extruder_error(new_tool);
 
-    const uint8_t old_tool = TERN(MIXING_EXTRUDER, mixer.get_current_vtool(), active_extruder);
+    const uint8_t old_tool = active_extruder;
 
     if (!no_move && homing_needed()) {
       /// MarlinBio: Changing a tool with a Z raise or an extruder offset defined without homing first is an error.
@@ -1221,7 +1224,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
         }
       #endif
 
-      #if ENABLED(CONSTANT_EXTRUSION)
+      #if HAS_CONSTANT_EXTRUSION
         planner.depressurize();
       #endif
 
@@ -1316,15 +1319,10 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
         }
       #endif
 
-      #if ENABLED(MIXING_EXTRUDER)
-      // T0-Tnnn: Switch virtual tool by changing the index to the mix
-      mixer.T(new_tool);
-      #else
-        IF_DISABLED(DUAL_X_CARRIAGE, active_extruder = new_tool); // Set the new active extruder
+      IF_DISABLED(DUAL_X_CARRIAGE, active_extruder = new_tool); // Set the new active extruder
 
-        /// MarlinBio: Update the Z locks so that only the Z axis for the active extruder is unlocked.
-        stepper.set_all_z_lock(true, active_extruder);
-      #endif
+      /// MarlinBio: Update the Z locks so that only the Z axis for the active extruder is unlocked.
+      TERN(MIXING_EXTRUDER, mixer.T(active_extruder), stepper.set_all_z_lock(true, active_extruder));
 
       TERN_(TOOL_SENSOR, tool_sensor_disabled = false);
 
@@ -1532,7 +1530,8 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
     SERIAL_ECHOLNPGM(STR_ACTIVE_EXTRUDER, active_extruder);
 
-  #endif // HAS_MULTI_EXTRUDER, MIXING_EXTRUDER
+  }
+  #endif
 }
 
 #if ENABLED(TOOLCHANGE_MIGRATION_FEATURE)

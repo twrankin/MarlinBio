@@ -31,10 +31,6 @@
   #include "../../module/motion.h"
 #endif
 
-#if ENABLED(MIXING_EXTRUDER)
-  #include "../../feature/mixing.h"
-#endif
-
 #if HAS_PRUSA_MMU3
   #include "../../feature/mmu3/mmu3.h"
 #elif HAS_PRUSA_MMU2
@@ -88,7 +84,7 @@ void GcodeSuite::T(const int8_t tool_index) {
   tool_change(tool_index
     #if HAS_MULTI_EXTRUDER
       , parser.boolval('S')
-        || TERN(PARKING_EXTRUDER, false, tool_index == TERN(MIXING_EXTRUDER, mixer.get_current_vtool(), active_extruder)) // For PARKING_EXTRUDER motion is decided in tool_change()
+        || TERN(PARKING_EXTRUDER, false, tool_index == active_extruder) // For PARKING_EXTRUDER motion is decided in tool_change()
     #endif
   );
 }

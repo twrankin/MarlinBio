@@ -37,7 +37,6 @@
  */
 #define CONFIGURATION_H_VERSION 02010300
 
-// TWR: TODO: Change back
 //#error "MarlinBio: This is an altered version of Marlin for research purposes. \
 Many traditional features have been broken by the alterations, \
 as the work to support functionality we don't currently need would be substantial. \
@@ -238,7 +237,7 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
 /// MarlinBio: Parameters for constant extrusion based on a syringe extruder system.
 /// Each parameter is an array of values for each extruder.
 /// Constant extrusion can be enabled by default here, and enabled/disabled live by the M789 command.
-//#define CONSTANT_EXTRUSION_DEFAULT_ON
+#define CONSTANT_EXTRUSION_DEFAULT_ON
 
 /// MarlinBio: The inner diameter of the syringe in mm.
 #define SYRINGE_INNER_DIAMETER { 4.78, 4.78, 4.78, 4.78 }
@@ -385,36 +384,36 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
 #endif
 
 /**
- * "Mixing Extruder"
- *   - Adds G-codes M163 and M164 to set and "commit" the current mix factors.
- *   - Extends the stepping routines to move multiple steppers in proportion to the mix.
- *   - Optional support for Repetier Firmware's 'M164 S<index>' supporting virtual tools.
- *   - This implementation supports up to two mixing extruders.
- *   - Enable DIRECT_MIXING_IN_G1 for M165 and mixing in G1 (from Pia Taubert's reference implementation).
+ * MarlinBio:
+ * This enables the use of mixing materials together using a mixing module or printhead to extrude
+ * out of one nozzle. Linking extruders into one tool will cause them to both move when extruder
+ * movement is specified for that tool, scaled by the ratios specified here. Extruders in a mix
+ * are assumed to be physically connected; as such, their Z axes will be moved in unison at all times.
+ * The original MarlinFirmware implementation of mixing extruders was not sufficient for our needs
+ * and has been completely reworked. The M164 and M165 commands are not supported. Gradient
+ * functionality will be added in the future, let us know if this is needed sooner.
+ * Make sure to update the hotend offsets below.
  */
-/// MarlinBio: MIXING_EXTRUDER has limited functionality for now, as the changes required are a bit complex.
-/// Virtual tools must be limited such that virtual tool 0 corresponds to nozzle 0, and so on.
-/// So do not use M163/M164 to set a mix to tool 0 that contains nozzles other than 0, etc..
-/// Also, all extruders combined by a mixing extruder must be included in the mix.
-/// So do not have a 3 extruder combined system and only use 2 of them in the mix, etc..
-/// We can update this in the future as more complexity is needed.
-/// Make sure to update the hotend (nozzle) offsets below.
 //#define MIXING_EXTRUDER
 #if ENABLED(MIXING_EXTRUDER)
-  #define MIXING_STEPPERS 4        /// MarlinBio: Total number of extruders.
-  #define MIXING_VIRTUAL_TOOLS EXTRUDERS
-  //#define DIRECT_MIXING_IN_G1    // Allow ABCDHI mix factors in G1 movement commands
-  //#define GRADIENT_MIX           // Support for gradient mixing with M166 and LCD
-  //#define MIXING_PRESETS         // Assign 8 default V-tool presets for 2 or 3 MIXING_STEPPERS
-  #if ENABLED(GRADIENT_MIX)
-    //#define GRADIENT_VTOOL       // Add M166 T to use a V-tool index as a Gradient alias
-  #endif
+  /// MarlinBio: The configuration of mixing extruders is specified as an array of arrays,
+  /// where the inner arrays link extruders together. Linked extruders must be sequential,
+  /// { { 0, 2 } } is not a valid combination, but { { 0, 1, 2 } } is.
+  /// Unlisted extruders will operate as normal.
+  #define MIXING_CONFIGURATION { { 1, 2 } }
+  /// MarlinBio: The mixing ratio for each linked extruder is specified in the same format
+  /// as the configuration. The ratio for an extruder simply scales the distance or speed
+  /// of that extruder when moving. For example, if extruders 0 and 1 are linked with ratios
+  /// of 1 and 0.5, an extrusion of 10mm for tool 0 would move extruder 0 by 10mm and extruder
+  /// 1 by 5mm. Ratios can be changed live using the M163 G-code command.
+  /// I.E. "M163 S0 P0.75" would set extruder 0's ratio to 0.75.
+  #define MIX_RATIOS { { 1.0, 0.5 } }
 #endif
 
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
 // For the other hotends it is their distance from the extruder 0 hotend.
-#define HOTEND_OFFSET_X { 0.0, 30.00, 60.00, 90.00 } // (mm) relative X-offset for each nozzle
+#define HOTEND_OFFSET_X { 0.0, 30.0, 60.0, 90.0 } // (mm) relative X-offset for each nozzle
 //#define HOTEND_OFFSET_Y { 0.0, 5.00 }  // (mm) relative Y-offset for each nozzle
 //#define HOTEND_OFFSET_Z { 0.0, 0.00 }  // (mm) relative Z-offset for each nozzle
 

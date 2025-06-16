@@ -443,6 +443,10 @@ class Stepper {
     // Delta error variables for the Bresenham line tracer
     static xyze_long_t delta_error;
     static xyze_long_t advance_dividend;
+    #if ENABLED(MIXING_EXTRUDER)
+      static long delta_error_e[EXTRUDERS];
+      static long advance_dividend_e[EXTRUDERS];
+    #endif
     static uint32_t advance_divisor,
                     step_events_completed,  // The number of step events executed in the current block
                     accelerate_before,      // The count at which to start cruising
@@ -520,8 +524,8 @@ class Stepper {
     // Current stepper motor directions (+1 or -1)
     static xyze_int8_t count_direction;
 
-    #if ENABLED(CONSTANT_EXTRUSION)
-      static uint32_t constant_extrusion_speed;
+    #if HAS_CONSTANT_EXTRUSION
+      static uint32_t constant_extrusion_speed[EXTRUDERS];
     #endif
 
   public:
@@ -641,7 +645,7 @@ class Stepper {
     // Triggered position of an axis in steps
     static int32_t triggered_position(const AxisEnum axis);
 
-    #if ENABLED(CONSTANT_EXTRUSION)
+    #if HAS_CONSTANT_EXTRUSION
       static void set_constant_extrusion_speed(const uint8_t extruder, const uint32_t velocity);
     #endif
 
@@ -779,8 +783,6 @@ class Stepper {
 
     #if NONLINEAR_EXTRUSION_Q24
       static void calc_nonlinear_e(const uint32_t step_rate);
-    #else
-      static void calc_nonlinear_e(const uint32_t) {}
     #endif
 
     #if ENABLED(S_CURVE_ACCELERATION)
