@@ -119,12 +119,12 @@
     #endif
     #if ENABLED(Z_MULTI_ENDSTOPS)
       #if NUM_Z_STEPPERS >= 3
-        SERIAL_ECHOPGM(" S2 Z", LINEAR_UNIT(endstops.z3_endstop_adj));
+        SERIAL_ECHOLNPGM(" S2 Z", LINEAR_UNIT(endstops.z3_endstop_adj));
         report_echo_start(forReplay);
-        SERIAL_ECHOPGM("  M666 S3 Z", LINEAR_UNIT(endstops.z3_endstop_adj));
+        SERIAL_ECHOLNPGM("  M666 S3 Z", LINEAR_UNIT(endstops.z3_endstop_adj));
         #if NUM_Z_STEPPERS >= 4
           report_echo_start(forReplay);
-          SERIAL_ECHOPGM("  M666 S4 Z", LINEAR_UNIT(endstops.z4_endstop_adj));
+          SERIAL_ECHOLNPGM("  M666 S4 Z", LINEAR_UNIT(endstops.z4_endstop_adj));
         #endif
       #else
         SERIAL_ECHOLNPGM_P(SP_Z_STR, LINEAR_UNIT(endstops.z2_endstop_adj));

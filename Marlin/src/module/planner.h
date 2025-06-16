@@ -229,16 +229,15 @@ typedef struct PlannerBlock {
     abce_ulong_t steps;                     // Step count along each axis
     abce_long_t position;                   // New position to force when this sync block is executed
   };
+  #if ENABLED(MIXING_EXTRUDER)
+    ulong steps_e[EXTRUDERS];
+  #endif
   uint32_t step_event_count;                // The number of step events required to complete this block
 
   #if HAS_MULTI_EXTRUDER
     uint8_t extruder;                       // The extruder to move (if E move)
   #else
     static constexpr uint8_t extruder = 0;
-  #endif
-
-  #if ENABLED(MIXING_EXTRUDER)
-    mixer_comp_t b_color[MIXING_STEPPERS];  // Normalized color for the mixing steppers
   #endif
 
   // Settings for the trapezoid generator
@@ -312,8 +311,8 @@ typedef struct PlannerBlock {
     block_laser_t laser;
   #endif
 
-  #if ENABLED(CONSTANT_EXTRUSION)
-    uint32_t constant_extrusion_speed;
+  #if HAS_CONSTANT_EXTRUSION
+    uint32_t constant_extrusion_speed[EXTRUDERS];
   #endif
 
   void reset() { memset((char*)this, 0, sizeof(*this)); }
@@ -440,10 +439,15 @@ struct PlannerHints {
                                       // (i.e. the tool rotates around the tool centerpoint)
   #endif
 
-  #if ENABLED(CONSTANT_EXTRUSION)
+  #if HAS_CONSTANT_EXTRUSION
     /// MarlinBio: Continuous extrusion needs to know if this is a print move
     /// so that we know when to start and stop the extrusion.
     bool print_move = false;
+    #if ENABLED(MIXING_EXTRUDER)
+      /// MarlinBio: Continuous extrusion needs to know if this is a
+      /// pressurize/depressurize move, so we don't scale movement.
+      bool pressure_move = false;
+    #endif
   #endif
 
   PlannerHints(const_float_t mm=0.0f) : millimeters(mm) {}
@@ -481,7 +485,7 @@ class Planner {
       static AxisBits last_page_dir;                // Last page direction given, where 1 represents forward or positive motion
     #endif
 
-    #if ENABLED(CONSTANT_EXTRUSION)
+    #if HAS_CONSTANT_EXTRUSION
       static bool  constant_extrusion_enabled;
       static bool  pressurized;
       static float syringe_inner_diameter[EXTRUDERS];
@@ -693,7 +697,7 @@ class Planner {
     // Manage fans, paste pressure, etc.
     static void check_axes_activity();
 
-    #if ENABLED(CONSTANT_EXTRUSION)
+    #if HAS_CONSTANT_EXTRUSION
       static bool pressurize();
       static bool depressurize();
     #endif

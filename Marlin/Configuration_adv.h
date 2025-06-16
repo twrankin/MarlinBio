@@ -2801,7 +2801,7 @@
  * Note that M207 / M208 / M209 settings are saved to EEPROM.
  */
 /// MarlinBio: This is Marlin's original pressurization feature.
-/// It didn't work for our needs, so we implemented our own as a part of CONSTANT_EXTRUSION.
+/// It didn't work for our needs, so we implemented our own as a part of constant extrusion.
 /// Leaving this in to minimize changes, but it should not be enabled.
 //#define FWRETRACT
 #if ENABLED(FWRETRACT)
@@ -3967,7 +3967,7 @@
 /**
  * Extra options for the M114 "Current Position" report
  */
-//#define M114_DETAIL         // Use 'M114 D' for details to check planner calculations
+#define M114_DETAIL         // Use 'M114 D' for details to check planner calculations
 //#define M114_REALTIME       // Real current position based on forward kinematics
 //#define M114_LEGACY         // M114 used to synchronize on every call. Enable if needed.
 

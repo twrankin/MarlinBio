@@ -21,11 +21,11 @@
 #include "../../gcode.h"
 #include "../../../module/stepper.h"
 
-#if ENABLED(CONSTANT_EXTRUSION)
+#if HAS_CONSTANT_EXTRUSION
 
 /**
  * MarlinBio:
- * M789: Set constant extrusion parameters
+ * M789: Set constant extrusion parameters.
  * 
  * This command sets the parameters for constant extrusion.
  * If no parameters are provided, it reports the current settings.
@@ -40,7 +40,7 @@
  *
  * Examples:
  *   M789                             ; Report current parameters
- *   M789 E0 S12.06 N0.603 K1.8 P0.33 ; Set parameters for extruder 0
+ *   M789 E0 S12.06 N0.603 K1.8 P0.33 ; Set parameters for the first extruder
  *   M789 D                           ; Disable constant extrusion
  */
 void GcodeSuite::M789() {
@@ -65,21 +65,21 @@ void GcodeSuite::M789() {
 }
 
 void GcodeSuite::M789_report(const bool forReplay/*=true*/) {
-  auto say_M789 = [](const bool forReplay) {
+  auto header = [](const bool forReplay) {
     report_echo_start(forReplay);
     if (!forReplay) SERIAL_ECHOPGM("  ");
   };
 
   report_heading(forReplay, FPSTR("M789 - Constant extrusion parameters"));
 
-  say_M789(forReplay);
+  header(forReplay);
   SERIAL_ECHO("Constant extrusion ");
   if (planner.constant_extrusion_enabled)
     SERIAL_ECHOLN("enabled");
   else
     SERIAL_ECHOLN("disabled");
 
-  say_M789(forReplay);
+  header(forReplay);
   SERIAL_ECHO("  Syringe Inner Diameter: [");
   EXTRUDER_LOOP() {
     SERIAL_ECHO(planner.syringe_inner_diameter[e]);
@@ -87,7 +87,7 @@ void GcodeSuite::M789_report(const bool forReplay/*=true*/) {
   }
   SERIAL_ECHOLN("]");
 
-  say_M789(forReplay);
+  header(forReplay);
   SERIAL_ECHO("  Needle Inner Diameter:  [");
   EXTRUDER_LOOP() {
     SERIAL_ECHO(planner.needle_inner_diameter[e]);
@@ -95,7 +95,7 @@ void GcodeSuite::M789_report(const bool forReplay/*=true*/) {
   }
   SERIAL_ECHOLN("]");
 
-  say_M789(forReplay);
+  header(forReplay);
   SERIAL_ECHO("  Extrusion Coefficient:  [");
   EXTRUDER_LOOP() {
     SERIAL_ECHO(planner.extrusion_coefficient[e]);
@@ -103,7 +103,7 @@ void GcodeSuite::M789_report(const bool forReplay/*=true*/) {
   }
   SERIAL_ECHOLN("]");
 
-  say_M789(forReplay);
+  header(forReplay);
   SERIAL_ECHO("  Pressurization Length:  [");
   EXTRUDER_LOOP() {
     SERIAL_ECHO(planner.pressurization_length[e]);
@@ -112,4 +112,4 @@ void GcodeSuite::M789_report(const bool forReplay/*=true*/) {
   SERIAL_ECHOLN("]");
 }
 
-#endif // CONSTANT_EXTRUSION
+#endif // HAS_CONSTANT_EXTRUSION

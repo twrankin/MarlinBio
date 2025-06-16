@@ -124,9 +124,9 @@ xyze_pos_t destination; // {0}
 
 // Extruder offsets
 #if HAS_HOTEND_OFFSET
-  xyz_pos_t hotend_offset[EXTRUDERS]; // Initialized by settings.load
+  xyz_pos_t hotend_offset[TOOL_NUM]; // Initialized by settings.load
   void reset_hotend_offsets() {
-    constexpr float tmp[XYZ][EXTRUDERS] = { HOTEND_OFFSET_X, HOTEND_OFFSET_Y, HOTEND_OFFSET_Z };
+    constexpr float tmp[XYZ][TOOL_NUM] = { HOTEND_OFFSET_X, HOTEND_OFFSET_Y, HOTEND_OFFSET_Z };
     static_assert(
       !tmp[X_AXIS][0] && !tmp[Y_AXIS][0] && !tmp[Z_AXIS][0],
       "Offsets for the first hotend must be 0.0."
@@ -1751,10 +1751,12 @@ float get_move_distance(const xyze_pos_t &diff OPTARG(HAS_ROTATIONAL_AXES, bool 
       }
     #endif // HAS_MESH
 
-    /// MarlinBio: The planner needs to know if this is a print move to enable
-    /// constant extrusion. The only print moves currently are G1, G2, and G3.
     PlannerHints hints;
-    hints.print_move = print_move;
+    #if HAS_CONSTANT_EXTRUSION
+      /// MarlinBio: The planner needs to know if this is a print move to enable
+      /// constant extrusion. The only print moves currently are G1, G2, and G3.
+      hints.print_move = print_move;
+    #endif
     planner.buffer_line(destination, scaled_fr_mm_s, active_extruder, hints);
     return false; // caller will update current_position
   }

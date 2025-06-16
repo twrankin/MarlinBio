@@ -1,9 +1,6 @@
 /**
- * Marlin 3D Printer Firmware
- * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
- *
- * Based on Sprinter and grbl.
- * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
+ * MarlinBio 3D Printer Firmware
+ * Copyright (c) 2025 MarlinBio [https://github.com/twrankin/MarlinBio]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,74 +25,92 @@
 #include "../../../feature/mixing.h"
 
 /**
- * M163: Set a single mix factor for a mixing extruder
- *       This is called "weight" by some systems.
- *       Must be followed by M164 to normalize and commit them.
+ * MarlinBio:
+ * M163: Set mixing extruder ratios.
+ * 
+ * This command sets the ratios for mixing extruders.
+ * If no parameters are provided, it reports the current settings.
+ * 
+ *  S : Extruder index
+ *  P : Syringe inner diameter (mm)
  *
- *   S[index]   The channel index to set
- *   P[float]   The mix value
+ * Examples:
+ *   M163.         ; Report current parameters
+ *   M163 S2 P0.66 ; Set the ratio for the third extruder to 0.66.
  */
 void GcodeSuite::M163() {
-  const int mix_index = parser.intval('S');
-  if (mix_index < MIXING_STEPPERS)
-    mixer.set_collector(mix_index, parser.floatval('P'));
-}
-
-/**
- * M164: Normalize and commit the mix.
- *
- *   S[index]   The virtual tool to store
- *              If 'S' is omitted update the active virtual tool.
- */
-void GcodeSuite::M164() {
-  #if MIXING_VIRTUAL_TOOLS > 1
-    const int tool_index = parser.intval('S', -1);
-  #else
-    constexpr int tool_index = 0;
-  #endif
-  if (tool_index >= 0) {
-    if (tool_index < MIXING_VIRTUAL_TOOLS)
-      mixer.normalize(tool_index);
+  if (!parser.seen_any()) {
+    /// MarlinBio: Report the current parameters and return.
+    M163_report();
+    return;
   }
-  else
-    mixer.normalize();
-}
 
-#if ENABLED(DIRECT_MIXING_IN_G1)
+  if (!parser.seenval('S')) {
+    SERIAL_ECHOLN("The extruder index, S, is required");
+    return;
+  }
+  const uint8_t extruder = parser.intval('S');
+  if (extruder >= EXTRUDERS) {
+    SERIAL_ECHOLN("Invalid extruder index");
+    return;
+  }
 
-  /**
-   * M165: Set multiple mix factors for a mixing extruder.
-   *       Omitted factors will be set to 0.
-   *       The mix is normalized and stored in the current virtual tool.
-   *
-   *   A[factor] Mix factor for extruder stepper 1
-   *   B[factor] Mix factor for extruder stepper 2
-   *   C[factor] Mix factor for extruder stepper 3
-   *   D[factor] Mix factor for extruder stepper 4
-   *   H[factor] Mix factor for extruder stepper 5
-   *   I[factor] Mix factor for extruder stepper 6
-   */
-  void GcodeSuite::M165() {
-    // Get mixing parameters from the G-Code
-    // The total "must" be 1.0 (but it will be normalized)
-    // If no mix factors are given, the old mix is preserved
-    const char mixing_codes[] = { LIST_N(MIXING_STEPPERS, 'A', 'B', 'C', 'D', 'H', 'I') };
-    uint8_t mix_bits = 0;
-    MIXER_STEPPER_LOOP(i) {
-      if (parser.seenval(mixing_codes[i])) {
-        SBI(mix_bits, i);
-        mixer.set_collector(i, parser.value_float());
+  if (!parser.seenval('P')) {
+    SERIAL_ECHOLN("The mix ratio, P, is required");
+    return;
+  }
+  const float mix_ratio = parser.value_float();
+
+  bool found = false;
+  for (uint8_t i = 0;  i < mixer.mix_config.size(); i++) {
+    /// MarlinBio: Don't allow setting ratios for individual extruders.
+    if (mixer.mix_config[i].size() > 1) {
+      for (uint8_t j = 0; j < mixer.mix_config[i].size(); j++) {
+        if (mixer.mix_config[i][j] == extruder) {
+          found = true;
+          mixer.mix_ratios[i][j] = mix_ratio;
+        }
       }
     }
-    // If any mixing factors were included, clear the rest
-    // If none were included, preserve the last mix
-    if (mix_bits) {
-      MIXER_STEPPER_LOOP(i)
-        if (!TEST(mix_bits, i)) mixer.set_collector(i, 0.0f);
-      mixer.normalize();
-    }
   }
 
-#endif // DIRECT_MIXING_IN_G1
+  if (!found) {
+    SERIAL_ECHOLN("Invalid extruder index");
+    return;
+  }
+}
+
+void GcodeSuite::M163_report(const bool forReplay/*=true*/) {
+  auto header = [](const bool forReplay) {
+    report_echo_start(forReplay);
+    if (!forReplay) SERIAL_ECHOPGM("  ");
+  };
+
+  report_heading(forReplay, FPSTR("M163 - Mixing extruder parameters"));
+
+  header(forReplay);
+  SERIAL_ECHO("  Mixing configuration: [");
+  for (uint8_t i = 0;  i < mixer.mix_config.size(); i++) {
+    SERIAL_ECHO("[");
+    for (uint8_t j = 0; j < mixer.mix_config[i].size(); j++) {
+      SERIAL_ECHO(mixer.mix_config[i][j]);
+      if (j < mixer.mix_config[i].size() - 1) SERIAL_ECHOPGM(", ");
+    }
+    SERIAL_ECHO("]");
+  }
+  SERIAL_ECHOLN("]");
+
+  header(forReplay);
+  SERIAL_ECHO("  Mix ratios:           [");
+  for (uint8_t i = 0;  i < mixer.mix_ratios.size(); i++) {
+    SERIAL_ECHO("[");
+    for (uint8_t j = 0; j < mixer.mix_ratios[i].size(); j++) {
+      SERIAL_ECHO(mixer.mix_ratios[i][j]);
+      if (j < mixer.mix_ratios[i].size() - 1) SERIAL_ECHOPGM(", ");
+    }
+    SERIAL_ECHO("]");
+  }
+  SERIAL_ECHOLN("]");
+}
 
 #endif // MIXING_EXTRUDER

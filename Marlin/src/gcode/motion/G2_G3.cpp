@@ -235,7 +235,7 @@ void plan_arc(
 
   // Add hints to help optimize the move
   PlannerHints hints;
-  hints.print_move = true;
+  TERN_(HAS_CONSTANT_EXTRUSION, hints.print_move = true);
   #if ENABLED(FEEDRATE_SCALING)
     hints.inv_duration = (scaled_fr_mm_s / flat_mm) * segments;
   #endif

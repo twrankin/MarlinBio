@@ -805,14 +805,40 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
 #endif // SWITCHING_EXTRUDER
 
 /**
- * Mixing Extruder requirements
+ * MarlinBio: Mixing Extruder requirements
  */
 #if ENABLED(MIXING_EXTRUDER)
-  #if MIXING_STEPPERS <= EXTRUDERS
-    #error "The number of extruders (nozzles) must be less than the number of mixing steppers."
-  #elif MIXING_STEPPERS < 2
-    #error "You must set MIXING_STEPPERS >= 2 for a mixing extruder."
-  #elif ENABLED(FILAMENT_WIDTH_SENSOR)
+  #include <vector>
+  static constexpr bool verify_mixing() {
+    const std::vector<std::vector<uint8_t>> mix_config = MIXING_CONFIGURATION;
+    const std::vector<std::vector<float>>   mix_ratios = MIX_RATIOS;
+    int last_extruder = -1;
+    int curr_extruder = -1;
+
+    /// MarlinBio: MIXING_CONFIGURATION and MIX_RATIOS should have the same layout.
+    if (mix_config.empty() || mix_ratios.size() != mix_config.size()) return false;
+    for (int i = 0; i < mix_config.size(); i++) {
+      if (mix_config[i].size() < 2 || mix_ratios[i].size() != mix_config[i].size()) return false;
+      /// MarlinBio: The pairs should be in order.
+      if (mix_config[i][0] <= last_extruder) return false;
+
+      curr_extruder = mix_config[i][0];
+      for (int j = 1; j < mix_config[i].size(); j++) {
+        /// MarlinBio: Linked extruders must be sequential.
+        if (mix_config[i][j] != ++curr_extruder) return false;
+        if (mix_ratios[i][j] < 0) return false;
+      }
+      last_extruder = curr_extruder;
+    }
+
+    if (curr_extruder >= EXTRUDERS) return false;
+
+    return true;
+  }
+  static_assert(verify_mixing(), "The mixing extruder configuration is not valid.");
+
+  /// MarlinBio: Leaving these here, these shouldn't be used anyway.
+  #if ENABLED(FILAMENT_WIDTH_SENSOR)
     #error "MIXING_EXTRUDER is incompatible with FILAMENT_WIDTH_SENSOR. Comment out this line to use it anyway."
   #elif HAS_SWITCHING_EXTRUDER
     #error "MIXING_EXTRUDER is incompatible with (MECHANICAL_)SWITCHING_EXTRUDER."
@@ -823,6 +849,21 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
   #elif HAS_FILAMENT_RUNOUT_DISTANCE
     #error "MIXING_EXTRUDER is incompatible with FILAMENT_RUNOUT_DISTANCE_MM."
   #endif
+#endif
+
+#if HAS_HOTEND_OFFSET
+  static constexpr bool verify_offsets() {
+    const std::vector<std::vector<float>> offset_xyz = {HOTEND_OFFSET_X, HOTEND_OFFSET_Y, HOTEND_OFFSET_Z};
+    /// MarlinBio: Verify the size is equal to tool_num, but only if there is a non-zero entry.
+    for (int i = 0; i < offset_xyz.size(); i++) {
+      for (int j = 0; j < offset_xyz[i].size(); j++) {
+        if (offset_xyz[i][j] != 0 && offset_xyz[i].size() != TOOL_NUM) return false;
+      }
+    }
+
+    return true;
+  }
+  static_assert(verify_offsets(), "Hotend offsets do not have the correct number of elements.");
 #endif
 
 /**
@@ -4304,7 +4345,7 @@ static_assert(_PLUS_TEST(3), "DEFAULT_MAX_ACCELERATION values must be positive."
  * Sanity check for MIXING_EXTRUDER & DISTINCT_E_FACTORS these are not compatible
  */
 #if ALL(MIXING_EXTRUDER, DISTINCT_E_FACTORS)
-  #error "MIXING_EXTRUDER can't be used with DISTINCT_E_FACTORS. But you may use SINGLENOZZLE with DISTINCT_E_FACTORS."
+  #error "MIXING_EXTRUDER can't be used with DISTINCT_E_FACTORS."
 #endif
 
 /**

@@ -173,7 +173,7 @@ uint32_t Planner::max_acceleration_steps_per_s2[DISTINCT_AXES]; // (steps/s^2) D
   AxisBits Planner::last_page_dir; // = 0
 #endif
 
-#if ENABLED(CONSTANT_EXTRUSION)
+#if HAS_CONSTANT_EXTRUSION
   /// MarlinBio: These are initialized in settings.reset.
   bool  Planner::constant_extrusion_enabled;
   bool  Planner::pressurized;
@@ -1358,14 +1358,19 @@ void Planner::check_axes_activity() {
   #endif
 }
 
-#if ENABLED(CONSTANT_EXTRUSION)
+#if HAS_CONSTANT_EXTRUSION
   bool Planner::pressurize() {
     /// MarlinBio: Only pressurize when constant extrusion is enabled.
     if (constant_extrusion_enabled && !pressurized) {
+      PlannerHints hints;
+      #if ENABLED(MIXING_EXTRUDER)
+        hints.pressure_move = true;
+      #endif
+
       current_position.e += pressurization_length[active_extruder];
       destination.e      += pressurization_length[active_extruder];
       xyze_pos_t target   = current_position;
-      buffer_line(target, settings.max_feedrate_mm_s[active_extruder]);
+      buffer_line(target, settings.max_feedrate_mm_s[active_extruder], active_extruder, hints);
       pressurized = true;
       return true;
     }
@@ -1375,11 +1380,16 @@ void Planner::check_axes_activity() {
   bool Planner::depressurize() {
     /// MarlinBio: Always depressurize when called.
     if (pressurized) {
+      PlannerHints hints;
+      #if ENABLED(MIXING_EXTRUDER)
+        hints.pressure_move = true;
+      #endif
+
       pressurized         = false;
       current_position.e -= pressurization_length[active_extruder];
       destination.e      -= pressurization_length[active_extruder];
       xyze_pos_t target   = current_position;
-      buffer_line(target, settings.max_feedrate_mm_s[active_extruder]);
+      buffer_line(target, settings.max_feedrate_mm_s[active_extruder], active_extruder, hints);
       return true;
     }
     return false;
@@ -1969,7 +1979,26 @@ bool Planner::_populate_block(
 
   #if HAS_EXTRUDERS
     dm.e = (dist.e > 0);
-    const float esteps_float = dist.e * e_factor[extruder];
+    float esteps_float = dist.e * e_factor[extruder];
+
+    #if ENABLED(MIXING_EXTRUDER)
+      /// MarlinBio: We need to calculate the eventual max E steps before we calculate total
+      /// steps and speeds for the move, in case a ratio is greater than 1, or all are less than 1.
+      float highest_mix_ratio = 0;
+      const std::vector<float> ratios = mixer.get_ratios(extruder);
+      for (auto ratio : ratios) {
+        NOLESS(highest_mix_ratio, ratio);
+      }
+
+      const uint32_t orig_esteps = ABS(esteps_float);
+      #if HAS_CONSTANT_EXTRUSION
+        /// MarlinBio: Don't scale pressurize/depressurize moves.
+        if (!hints.pressure_move) esteps_float *= highest_mix_ratio;
+      #else
+        esteps_float *= highest_mix_ratio;
+      #endif
+    #endif
+
     const uint32_t esteps = ABS(esteps_float);
   #else
     constexpr uint32_t esteps = 0;
@@ -2135,7 +2164,24 @@ bool Planner::_populate_block(
     TERN_(BACKLASH_COMPENSATION, backlash.add_correction_steps(dist, dm, block));
   }
 
-  TERN_(HAS_EXTRUDERS, block->steps.e = esteps);
+  #if ENABLED(MIXING_EXTRUDER)
+    /// MarlinBio: When mixing, we need individual entries for each E.
+    block->steps.e = 0;
+
+    /// MarlinBio: Set the number of steps for each extruder in the specified tool,
+    /// scaled by their respective ratios. Set all others to 0.
+    memset(block->steps_e, 0, sizeof(block->steps_e));
+    const std::vector<uint8_t> mixed_extruders = mixer.get_steppers(extruder);
+    for (uint8_t i = 0; i < mixed_extruders.size(); i++) {
+      #if HAS_CONSTANT_EXTRUSION
+        block->steps_e[mixed_extruders[i]] = orig_esteps * (hints.pressure_move ? 1 : ratios[i]);
+      #else
+        block->steps_e[mixed_extruders[i]] = orig_esteps * ratios[i];
+      #endif
+    }
+  #elif HAS_EXTRUDERS
+    block->steps.e = esteps;
+  #endif
 
   block->step_event_count = (
     #if NUM_AXES
@@ -2151,8 +2197,6 @@ bool Planner::_populate_block(
 
   // Bail if this is a zero-length block
   if (block->step_event_count < MIN_STEPS_PER_SEGMENT) return false;
-
-  TERN_(MIXING_EXTRUDER, mixer.populate_block(block->b_color));
 
   #if HAS_FAN
     FANS_LOOP(i) block->fan_speed[i] = thermalManager.fan_speed[i];
@@ -2217,7 +2261,7 @@ bool Planner::_populate_block(
 
   // Enable extruder(s)
   #if HAS_EXTRUDERS
-    if (esteps || TERN0(CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled))) {
+    if (esteps || TERN0(HAS_CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled))) {
       TERN_(AUTO_POWER_CONTROL, powerManager.power_on());
 
       #if ENABLED(DISABLE_OTHER_EXTRUDERS) // Enable only the selected extruder
@@ -2251,7 +2295,7 @@ bool Planner::_populate_block(
     }
   #endif // HAS_EXTRUDERS
 
-  if (esteps || TERN0(CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled)))
+  if (esteps || TERN0(HAS_CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled)))
     NOLESS(fr_mm_s, settings.min_feedrate_mm_s);
   else
     NOLESS(fr_mm_s, settings.min_travel_feedrate_mm_s);
@@ -2411,7 +2455,8 @@ bool Planner::_populate_block(
     block->nominal_speed *= speed_factor;
   }
 
-  #if ENABLED(CONSTANT_EXTRUSION)
+  #if HAS_CONSTANT_EXTRUSION
+    EXTRUDER_LOOP() block->constant_extrusion_speed[e] = 0;
     /// MarlinBio: Here is where we calculate the desired extrusion speed.
     /// We use the conservation of volume equation: Speed * (π * syringe_diam^2 / 4) = feedrate * K * (π * needle_diam^2 / 4)
     /// I.E. the volume pushed out of the syringe is equal to what comes out of the needle, but with a different speed
@@ -2419,17 +2464,18 @@ bool Planner::_populate_block(
     /// K is the empirically determined correction factor, to account for microfluidics. K can also be used to scale the speed
     /// to adjust the volume of printed material to obtain a desired line thickness.
     if (constant_extrusion_enabled && hints.print_move) {
-      const float feedrate_steps_per_s = block->nominal_speed * settings.axis_steps_per_mm[E_AXIS_N(extruder)];
-      /// MarlinBio: K * needle_diam^2 / syringe_diam^2.
-      const float scale = extrusion_coefficient[extruder] * (needle_inner_diameter[extruder] * needle_inner_diameter[extruder]) / (syringe_inner_diameter[extruder] * syringe_inner_diameter[extruder]);
-      /// MarlinBio: After solving: Speed = feedrate * K * needle_diam^2 / syringe_diam^2.
-      const float speed_steps_per_s = feedrate_steps_per_s * scale;
-      /// MarlinBio: According to the datasheet for the TMC2209 (https://www.analog.com/media/en/technical-documentation/data-sheets/TMC2209_datasheet_rev1.09.pdf),
-      /// VACTUAL = Speed / 0.715. Through testing, there is an unexplained factor of 2, so VACTUAL = Speed / 0.715 / 2.
-      /// Calculating this here instead of in a more driver-specific place to reduce computation in the ISR later.
-      block->constant_extrusion_speed = static_cast<int32_t>(speed_steps_per_s / 0.715f / 2.0f);
-    } else {
-      block->constant_extrusion_speed = 0;
+      const std::vector<uint8_t> extruders = TERN(MIXING_EXTRUDER, mixed_extruders, {extruder});
+      for (int i = 0; i < extruders.size(); i++) {
+        const float feedrate_steps_per_s = block->nominal_speed * settings.axis_steps_per_mm[E_AXIS_N(extruders[i])];
+        /// MarlinBio: K * needle_diam^2 / syringe_diam^2.
+        const float scale = TERN_(MIXING_EXTRUDER, ratios[i] *) extrusion_coefficient[extruders[i]] * (needle_inner_diameter[extruders[i]] * needle_inner_diameter[extruders[i]]) / (syringe_inner_diameter[extruders[i]] * syringe_inner_diameter[extruders[i]]);
+        /// MarlinBio: After solving: Speed = feedrate * K * needle_diam^2 / syringe_diam^2.
+        const float speed_steps_per_s = feedrate_steps_per_s * scale;
+        /// MarlinBio: According to the datasheet for the TMC2209 (https://www.analog.com/media/en/technical-documentation/data-sheets/TMC2209_datasheet_rev1.09.pdf),
+        /// VACTUAL = Speed / 0.715. Through testing, there is an unexplained factor of 2, so VACTUAL = Speed / 0.715 / 2.
+        /// Calculating this here instead of in a more driver-specific place to reduce computation in the ISR later.
+        block->constant_extrusion_speed[extruders[i]] = static_cast<int32_t>(speed_steps_per_s / 0.715f / 2.0f);
+      }
     }
   #endif
 
@@ -2459,7 +2505,7 @@ bool Planner::_populate_block(
     }while(0)
 
     // Start with print or travel acceleration
-    accel = CEIL((esteps || TERN0(CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled)) ? settings.acceleration : settings.travel_acceleration) * steps_per_mm);
+    accel = CEIL((esteps || TERN0(HAS_CONSTANT_EXTRUSION, (hints.print_move && constant_extrusion_enabled)) ? settings.acceleration : settings.travel_acceleration) * steps_per_mm);
 
     #if ENABLED(LIN_ADVANCE)
       // Linear advance is currently not ready for HAS_I_AXIS
@@ -3028,7 +3074,7 @@ bool Planner::buffer_segment(const abce_pos_t &abce
     #endif
   //*/
 
-  #if ENABLED(CONSTANT_EXTRUSION)
+  #if HAS_CONSTANT_EXTRUSION
     /// MarlinBio: Pressurize before G1/2/3, depressurize for all other moves.
     if (hints.print_move) {
       if (pressurize()) target.e += pressurization_length[extruder] * settings.axis_steps_per_mm[E_AXIS_N(extruder)];

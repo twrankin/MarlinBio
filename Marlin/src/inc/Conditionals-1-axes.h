@@ -141,17 +141,6 @@
     #define E_STEPPERS    1
   #endif
 
-#elif ENABLED(MIXING_EXTRUDER)      // Multiple feeds are mixed proportionally
-
-  #define E_STEPPERS      MIXING_STEPPERS
-  #define E_MANUAL        1
-  #if MIXING_STEPPERS == 2
-    #define HAS_DUAL_MIXING 1
-  #endif
-  #ifndef MIXING_VIRTUAL_TOOLS
-    #define MIXING_VIRTUAL_TOOLS 1
-  #endif
-
 #elif ENABLED(SWITCHING_TOOLHEAD)   // Toolchanger
 
   #define E_STEPPERS      EXTRUDERS
@@ -172,17 +161,25 @@
   #define E_MANUAL EXTRUDERS
 #endif
 
+#if ENABLED(MIXING_EXTRUDER)
+  #include <vector>
+  static constexpr uint8_t count_tools() {
+    uint8_t tool_num = EXTRUDERS;
+    const std::vector<std::vector<uint8_t>> mix_config = MIXING_CONFIGURATION;
+    /// MarlinBio: Linked extruders are one tool, so decrement tool_num by the size of the pairs - 1.
+    for (int i = 0; i < mix_config.size(); i++) {
+      tool_num -= mix_config[i].size() - 1;
+    }
+    return tool_num;
+  }
+
+  constexpr uint8_t TOOL_NUM = count_tools();
+#else
+  #define TOOL_NUM EXTRUDERS
+#endif
+
 /// MarlinBio: We don't use hotends.
-#define HOTENDS 0
-// #if ANY(SINGLENOZZLE, MIXING_EXTRUDER)                // Only one for singlenozzle or mixing extruder
-//   #define HOTENDS 1
-// #elif HAS_SWITCHING_EXTRUDER && !HAS_SWITCHING_NOZZLE // One for each pair of abstract "extruders"
-//   #define HOTENDS E_STEPPERS
-// #elif TEMP_SENSOR_0
-//   #define HOTENDS EXTRUDERS                           // One per extruder if at least one heater exists
-// #else
-//   #define HOTENDS 0                                   // A machine with no hotends at all can still extrude
-// #endif
+#define HOTENDS 0                                   // A machine with no hotends at all can still extrude
 
 // At least one hotend...
 #if HOTENDS

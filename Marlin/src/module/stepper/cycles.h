@@ -88,7 +88,7 @@
 // If linear advance is disabled, the loop also handles them
 constexpr uint32_t isr_mixing_stepper_cycles = (0UL
   #if DISABLED(LIN_ADVANCE) && ENABLED(MIXING_EXTRUDER)
-    + (MIXING_STEPPERS) * isr_stepper_cycles
+    + (EXTRUDERS) * isr_stepper_cycles
   #endif
 );
 

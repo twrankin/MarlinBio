@@ -1072,17 +1072,7 @@ void reset_stepper_drivers();    // Called by settings.load / settings.reset
 // Extruder steppers enable / disable macros
 //
 
-#if ENABLED(MIXING_EXTRUDER)
-
-  /**
-   * Mixing steppers keep all their enable (and direction) states synchronized
-   */
-  #define _CALL_ENA_E(N)  ENABLE_STEPPER_E##N () ;
-  #define _CALL_DIS_E(N) DISABLE_STEPPER_E##N () ;
-  #define  ENABLE_AXIS_E0() { RREPEAT(MIXING_STEPPERS, _CALL_ENA_E) }
-  #define DISABLE_AXIS_E0() { RREPEAT(MIXING_STEPPERS, _CALL_DIS_E) }
-
-#elif ENABLED(E_DUAL_STEPPER_DRIVERS)
+#if ENABLED(E_DUAL_STEPPER_DRIVERS)
 
   #define  ENABLE_AXIS_E0() do{  ENABLE_STEPPER_E0();  ENABLE_STEPPER_E1(); }while(0)
   #define DISABLE_AXIS_E0() do{ DISABLE_STEPPER_E0(); DISABLE_STEPPER_E1(); }while(0)
