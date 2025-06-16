@@ -216,8 +216,12 @@ uint32_t Stepper::acceleration_time, Stepper::deceleration_time;
 #endif
 
 xyze_long_t Stepper::delta_error{0};
-
 xyze_long_t Stepper::advance_dividend{0};
+#if ENABLED(MIXING_EXTRUDER)
+  long Stepper::delta_error_e[EXTRUDERS];
+  long Stepper::advance_dividend_e[EXTRUDERS];
+#endif
+
 uint32_t Stepper::advance_divisor = 0,
          Stepper::step_events_completed = 0, // The number of step events executed in the current block
          Stepper::accelerate_before,         // The count at which to start cruising
@@ -292,8 +296,8 @@ uint32_t Stepper::advance_divisor = 0,
   page_step_state_t Stepper::page_step_state;
 #endif
 
-#if ENABLED(CONSTANT_EXTRUSION)
-  uint32_t Stepper::constant_extrusion_speed = 0;
+#if HAS_CONSTANT_EXTRUSION
+  uint32_t Stepper::constant_extrusion_speed[EXTRUDERS] = {0};
 #endif
 
 hal_timer_t Stepper::ticks_nominal = 0;
@@ -512,7 +516,7 @@ xyze_int8_t Stepper::count_direction{0};
 //#define E7_APPLY_DIR(FWD) do{ (FWD) ? FWD_E_DIR(7) : REV_E_DIR(7); }while(0)
 
 #if ENABLED(MIXING_EXTRUDER)
-  #define E_APPLY_DIR(FWD,Q) do{ if (FWD) { MIXER_STEPPER_LOOP(j) FWD_E_DIR(j); } else { MIXER_STEPPER_LOOP(j) REV_E_DIR(j); } }while(0)
+  #define E_APPLY_DIR(FWD,Q) do{ if (FWD) { MIXER_STEPPER_LOOP(j, stepper_extruder) FWD_E_DIR(j); } else { MIXER_STEPPER_LOOP(j, stepper_extruder) REV_E_DIR(j); } }while(0)
 #else
   #define E_APPLY_DIR(FWD,Q) do{ if (FWD) { FWD_E_DIR(stepper_extruder); } else { REV_E_DIR(stepper_extruder); } }while(0)
   #define E_APPLY_STEP(STATE,Q) E_STEP_WRITE(stepper_extruder, STATE)
@@ -1663,10 +1667,16 @@ void Stepper::isr() {
 
     /// MarlinBio: Disable constant extrusion if no more blocks are present.
     /// Do this here after block_phase_isr, but before min_ticks is calculated.
-    if (current_block == nullptr && constant_extrusion_speed != 0) {
-      constant_extrusion_speed = 0;
-      set_constant_extrusion_speed(stepper_extruder, 0);
-    }
+    #if HAS_CONSTANT_EXTRUSION
+      if (current_block == nullptr) {
+        EXTRUDER_LOOP() {
+          if (constant_extrusion_speed[e] != 0) {
+            constant_extrusion_speed[e] = 0;
+            set_constant_extrusion_speed(e, 0);
+          }
+        }
+      }
+    #endif
 
     /**
      * The following section must be done with global interrupts disabled.
@@ -1801,7 +1811,7 @@ void Stepper::pulse_phase_isr() {
   const bool is_page = current_block->is_page();
 
   do {
-    AxisFlags step_needed{0};
+    AxisBits step_needed{0};
 
     #define _APPLY_STEP(AXIS, STATE, ALWAYS) AXIS ##_APPLY_STEP(STATE, ALWAYS)
     #define _STEP_STATE(AXIS) STEP_STATE_## AXIS
@@ -1810,11 +1820,21 @@ void Stepper::pulse_phase_isr() {
     #define PULSE_PREP(AXIS) do{ \
       int32_t de = delta_error[_AXIS(AXIS)] + advance_dividend[_AXIS(AXIS)]; \
       if (de >= 0) { \
-        step_needed.set(_AXIS(AXIS)); \
+        step_needed.bset(_AXIS(AXIS)); \
         de -= advance_divisor_cached; \
       } \
       delta_error[_AXIS(AXIS)] = de; \
     }while(0)
+    #if ENABLED(MIXING_EXTRUDER)
+      #define PULSE_PREP_E(EXTRUDER) do{ \
+        int32_t de = delta_error_e[EXTRUDER] + advance_dividend_e[EXTRUDER]; \
+        if (de >= 0) { \
+          step_needed.bset(E##EXTRUDER##_AXIS); \
+          de -= advance_divisor_cached; \
+        } \
+        delta_error_e[EXTRUDER] = de; \
+      }while(0);
+    #endif
 
     // With input shaping, direction changes can happen with almost only
     // AWAIT_LOW_PULSE() and  DIR_WAIT_BEFORE() between steps. To work around
@@ -1864,18 +1884,33 @@ void Stepper::pulse_phase_isr() {
 
     // Start an active pulse if needed
     #define PULSE_START(AXIS) do{ \
-      if (step_needed.test(_AXIS(AXIS))) { \
+      if (step_needed[_AXIS(AXIS)]) { \
         count_position[_AXIS(AXIS)] += count_direction[_AXIS(AXIS)]; \
         _APPLY_STEP(AXIS, _STEP_STATE(AXIS), 0); \
       } \
     }while(0)
+    #if ENABLED(MIXING_EXTRUDER)
+      #define PULSE_START_E(EXTRUDER) do{ \
+        if (step_needed[E##EXTRUDER##_AXIS]) { \
+          stepped = true; \
+          E_STEP_WRITE(EXTRUDER, STEP_STATE_E); \
+        } \
+      }while(0);
+    #endif
 
     // Stop an active pulse if needed
     #define PULSE_STOP(AXIS) do { \
-      if (step_needed.test(_AXIS(AXIS))) { \
+      if (step_needed[_AXIS(AXIS)]) { \
         _APPLY_STEP(AXIS, !_STEP_STATE(AXIS), 0); \
       } \
     }while(0)
+    #if ENABLED(MIXING_EXTRUDER)
+      #define PULSE_STOP_E(EXTRUDER) do{ \
+        if (step_needed[E##EXTRUDER##_AXIS]) { \
+          E_STEP_WRITE(EXTRUDER, !STEP_STATE_E); \
+        } \
+      }while(0);
+    #endif
 
     #if ENABLED(DIRECT_STEPPING)
       // Direct stepping is currently not ready for HAS_I_AXIS
@@ -2015,7 +2050,9 @@ void Stepper::pulse_phase_isr() {
         PULSE_PREP(W);
       #endif
 
-      #if ANY(HAS_E0_STEP, MIXING_EXTRUDER)
+      #if ENABLED(MIXING_EXTRUDER)
+        REPEAT(EXTRUDERS, PULSE_PREP_E)
+      #elif HAS_E0_STEP
         PULSE_PREP(E);
       #endif
 
@@ -2092,9 +2129,10 @@ void Stepper::pulse_phase_isr() {
     #endif
 
     #if ENABLED(MIXING_EXTRUDER)
-      if (step_needed.e) {
+      bool stepped = false;
+      REPEAT(EXTRUDERS, PULSE_START_E)
+      if (stepped) {
         count_position.e += count_direction.e;
-        E_STEP_WRITE(mixer.get_next_stepper(), STEP_STATE_E);
       }
     #elif HAS_E0_STEP
       PULSE_START(E);
@@ -2138,7 +2176,7 @@ void Stepper::pulse_phase_isr() {
     #endif
 
     #if ENABLED(MIXING_EXTRUDER)
-      if (step_needed.e) E_STEP_WRITE(mixer.get_stepper(), !STEP_STATE_E);
+      REPEAT(EXTRUDERS, PULSE_STOP_E)
     #elif HAS_E0_STEP
       PULSE_STOP(E);
     #endif
@@ -2474,7 +2512,7 @@ hal_timer_t Stepper::block_phase_isr() {
         acceleration_time += interval;
         deceleration_time = 0; // Reset since we're doing acceleration first.
 
-        calc_nonlinear_e(acc_step_rate << oversampling_factor);
+        TERN_(NONLINEAR_EXTRUSION_Q24, calc_nonlinear_e(acc_step_rate << oversampling_factor));
 
         #if HAS_ROUGH_LIN_ADVANCE
           if (la_active) {
@@ -2538,7 +2576,7 @@ hal_timer_t Stepper::block_phase_isr() {
         interval = calc_multistep_timer_interval(step_rate << oversampling_factor);
         deceleration_time += interval;
 
-        calc_nonlinear_e(step_rate << oversampling_factor);
+        TERN_(NONLINEAR_EXTRUSION_Q24, calc_nonlinear_e(step_rate << oversampling_factor));
 
         #if HAS_ROUGH_LIN_ADVANCE
           if (la_active) {
@@ -2591,7 +2629,7 @@ hal_timer_t Stepper::block_phase_isr() {
           TERN_(SMOOTH_LIN_ADVANCE, curr_step_rate = current_block->nominal_rate;)
           deceleration_time = ticks_nominal / 2;
 
-          calc_nonlinear_e(current_block->nominal_rate << oversampling_factor);
+          TERN_(NONLINEAR_EXTRUSION_Q24, calc_nonlinear_e(current_block->nominal_rate << oversampling_factor));
 
           #if HAS_ROUGH_LIN_ADVANCE
             if (la_active)
@@ -2729,10 +2767,12 @@ hal_timer_t Stepper::block_phase_isr() {
 
       // Initialize Bresenham delta errors to 1/2
       delta_error = -int32_t(step_event_count);
+      TERN_(MIXING_EXTRUDER, EXTRUDER_LOOP() delta_error_e[e] = -int32_t(step_event_count));
       TERN_(HAS_ROUGH_LIN_ADVANCE, la_delta_error = delta_error);
 
       // Calculate Bresenham dividends and divisors
       advance_dividend = (current_block->steps << 1).asLong();
+      TERN_(MIXING_EXTRUDER, EXTRUDER_LOOP() advance_dividend_e[e] = int32_t(current_block->steps_e[e] << 1));
       advance_divisor = step_event_count << 1;
 
       #if ENABLED(INPUT_SHAPING_X)
@@ -2774,8 +2814,6 @@ hal_timer_t Stepper::block_phase_isr() {
       accelerate_before = current_block->accelerate_before << oversampling_factor;
       decelerate_start = current_block->decelerate_start << oversampling_factor;
 
-      TERN_(MIXING_EXTRUDER, mixer.stepper_setup(current_block->b_color));
-
       E_TERN_(stepper_extruder = current_block->extruder);
 
       // Initialize the trapezoid generator from the current block.
@@ -2793,7 +2831,7 @@ hal_timer_t Stepper::block_phase_isr() {
 
       if ( ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
         || current_block->direction_bits != last_direction_bits
-        || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
+        || stepper_extruder != last_moved_extruder
       ) {
         E_TERN_(last_moved_extruder = stepper_extruder);
         set_directions(current_block->direction_bits);
@@ -2862,7 +2900,7 @@ hal_timer_t Stepper::block_phase_isr() {
       // Initialize ac/deceleration time as if half the time passed.
       acceleration_time = deceleration_time = interval / 2;
 
-      calc_nonlinear_e(current_block->initial_rate << oversampling_factor);
+      TERN_(NONLINEAR_EXTRUSION_Q24, calc_nonlinear_e(current_block->initial_rate << oversampling_factor));
 
       #if ENABLED(LIN_ADVANCE)
         #if ENABLED(SMOOTH_LIN_ADVANCE)
@@ -2875,21 +2913,17 @@ hal_timer_t Stepper::block_phase_isr() {
         #endif
       #endif
 
-      #if ENABLED(CONSTANT_EXTRUSION)
+      #if HAS_CONSTANT_EXTRUSION
         /// MarlinBio: Constant extrusion is enabled by writing to the VACTUAL register of the TMC220x driver over UART.
         /// This will spin the motor at the specified velocity until told to stop.
         /// WARNING: This might cause timing issues, as UART communication inside an ISR is not ideal.
         /// It should only occur at the beginning and end of a block of printing, so it should be fine.
         /// If issues arise, the first thing we can try is to up TMC_BAUD_RATE, as it is set quite low currently.
-        #if HAS_MULTI_EXTRUDER
-          if (constant_extrusion_speed != 0 && last_moved_extruder != stepper_extruder) {
-            constant_extrusion_speed = 0;
-            set_constant_extrusion_speed(last_moved_extruder, 0);
+        EXTRUDER_LOOP() {
+          if (constant_extrusion_speed[e] != current_block->constant_extrusion_speed[e]) {
+            constant_extrusion_speed[e] = current_block->constant_extrusion_speed[e];
+            set_constant_extrusion_speed(e, constant_extrusion_speed[e]);
           }
-        #endif
-        if (constant_extrusion_speed != current_block->constant_extrusion_speed) {
-          constant_extrusion_speed = current_block->constant_extrusion_speed;
-          set_constant_extrusion_speed(stepper_extruder, constant_extrusion_speed);
         }
       #endif
     }
@@ -3586,7 +3620,7 @@ void Stepper::report_positions() {
   report_a_position(pos);
 }
 
-#if ENABLED(CONSTANT_EXTRUSION)
+#if HAS_CONSTANT_EXTRUSION
   void Stepper::set_constant_extrusion_speed(const uint8_t extruder, const uint32_t velocity) {
 
     /// MarlinBio: VACTUAL writes the velocity to the TMC220x's VACTUAL register over UART.

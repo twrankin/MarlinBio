@@ -3322,7 +3322,7 @@ void MarlinSettings::reset() {
 
   TERN_(HAS_JUNCTION_DEVIATION, planner.junction_deviation_mm = float(JUNCTION_DEVIATION_MM));
 
-  #if ENABLED(CONSTANT_EXTRUSION)
+  #if HAS_CONSTANT_EXTRUSION
     gcode.constant_extrusion_enabled   = ENABLED(CONSTANT_EXTRUSION_DEFAULT_ON);
     planner.constant_extrusion_enabled = gcode.constant_extrusion_enabled;
     planner.pressurized                = false;
@@ -3336,6 +3336,35 @@ void MarlinSettings::reset() {
       planner.needle_inner_diameter[e]  = needle_inner_diameter[e];
       planner.extrusion_coefficient[e]  = extrusion_coefficient[e];
       planner.pressurization_length[e]  = pressurization_length[e];
+    }
+  #endif
+
+  #if ENABLED(MIXING_EXTRUDER)
+    const std::vector<std::vector<uint8_t>> temp_config = MIXING_CONFIGURATION;
+    const std::vector<std::vector<float>>   temp_ratios = MIX_RATIOS;
+    mixer.mix_config     = {};
+    mixer.mix_ratios     = {};
+    int8_t curr_extruder = 0;
+
+    /// MarlinBio: The config only includes the linked pairs,
+    /// we need to add the individual extruders to make our lives easier later.
+    /// The ratios are verified to have the same layout as the config in
+    /// SanityCheck.h, so we can push in tandem.
+    for (uint8_t i = 0; i < temp_config.size(); i++) {
+      while (curr_extruder < temp_config[i].front()) {
+        /// MarlinBio: Add the individual extruders before the next pair.
+        mixer.mix_config.push_back(std::vector<uint8_t>(1, curr_extruder++));
+        mixer.mix_ratios.push_back(std::vector<float>(1, 1));
+      }
+      /// MarlinBio: Add the user specified pairs.
+      mixer.mix_config.push_back(temp_config[i]);
+      mixer.mix_ratios.push_back(temp_ratios[i]);
+      curr_extruder =  temp_config[i].back() + 1;
+    }
+    /// MarlinBio: Add the rest of the individual extruders.
+    while (curr_extruder < EXTRUDERS) {
+      mixer.mix_config.push_back(std::vector<uint8_t>(1, curr_extruder++));
+      mixer.mix_ratios.push_back(std::vector<float>(1, 1));
     }
   #endif
 
@@ -3875,6 +3904,11 @@ void MarlinSettings::reset() {
     //
     TERN_(EDITABLE_STEPS_PER_UNIT, gcode.M92_report(forReplay));
 
+    ///
+    /// MarlinBio: Mixing extruders
+    ///
+    TERN_(MIXING_EXTRUDER, gcode.M163_report(forReplay));
+
     //
     // M203 Maximum feedrates (units/s)
     //
@@ -4038,7 +4072,7 @@ void MarlinSettings::reset() {
     ///
     /// MarlinBio: Constant extrusion
     ///
-    TERN_(CONSTANT_EXTRUSION, gcode.M789_report(forReplay));
+    TERN_(HAS_CONSTANT_EXTRUSION, gcode.M789_report(forReplay));
 
     //
     // Probe Offset

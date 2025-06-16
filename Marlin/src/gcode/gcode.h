@@ -177,8 +177,6 @@
  * M154 - Auto-report position with interval of S<seconds>. (Requires AUTO_REPORT_POSITION)
  * M155 - Auto-report temperatures with interval of S<seconds>. (Requires AUTO_REPORT_TEMPERATURES)
  * M163 - Set a single proportion for a mixing extruder. (Requires MIXING_EXTRUDER)
- * M164 - Commit the mix and save to a virtual tool (current, or as specified by 'S'). (Requires MIXING_EXTRUDER)
- * M165 - Set the mix for the mixing extruder (and current virtual tool) with parameters ABCDHI. (Requires MIXING_EXTRUDER and DIRECT_MIXING_IN_G1)
  * M166 - Set the Gradient Mix for the mixing extruder. (Requires GRADIENT_MIX)
  * M190 - Set bed target temperature and wait. R<temp> Set target temperature and wait. S<temp> Set, but only wait when heating. (Requires TEMP_SENSOR_BED)
  * M192 - Wait for probe to reach target temperature. (Requires TEMP_SENSOR_PROBE)
@@ -418,7 +416,7 @@ public:
     }
   #endif
 
-  #if ENABLED(CONSTANT_EXTRUSION)
+  #if HAS_CONSTANT_EXTRUSION
     static bool constant_extrusion_enabled;
   #endif
 
@@ -875,10 +873,7 @@ private:
 
   #if ENABLED(MIXING_EXTRUDER)
     static void M163();
-    static void M164();
-    #if ENABLED(DIRECT_MIXING_IN_G1)
-      static void M165();
-    #endif
+    static void M163_report(const bool forReplay=true);
     #if ENABLED(GRADIENT_MIX)
       static void M166();
     #endif
@@ -1212,7 +1207,7 @@ private:
     static void MMU3_report(const bool forReplay=true);
   #endif
 
-  #if ENABLED(CONSTANT_EXTRUSION)
+  #if HAS_CONSTANT_EXTRUSION
     static void M789();
     static void M789_report(const bool forReplay=true);
   #endif

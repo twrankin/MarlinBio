@@ -82,7 +82,7 @@ millis_t GcodeSuite::previous_move_ms = 0,
 // Relative motion mode for each logical axis
 relative_t GcodeSuite::axis_relative; // Init in constructor
 
-#if ENABLED(CONSTANT_EXTRUSION)
+#if HAS_CONSTANT_EXTRUSION
   /// MarlinBio: This is initialized in settings.reset.
   bool GcodeSuite::constant_extrusion_enabled;
 #endif
@@ -199,7 +199,7 @@ void GcodeSuite::get_destination_from_command() {
       destination.e = current_position.e;
   #endif
 
-  #if ENABLED(CONSTANT_EXTRUSION)
+  #if HAS_CONSTANT_EXTRUSION
     /// MarlinBio: This will ensure that something like G1 X20 E10 will not change the reported E position.
     if (parser.command_letter == 'G' && parser.codenum != 0 && gcode.constant_extrusion_enabled) destination.e = current_position.e;
   #endif
@@ -220,11 +220,6 @@ void GcodeSuite::get_destination_from_command() {
   #if ALL(PRINTCOUNTER, HAS_EXTRUDERS)
     if (!DEBUGGING(DRYRUN) && !skip_move)
       print_job_timer.incFilamentUsed(destination.e - current_position.e);
-  #endif
-
-  // Get ABCDHI mixing factors
-  #if ALL(MIXING_EXTRUDER, DIRECT_MIXING_IN_G1)
-    M165();
   #endif
 
   #if ENABLED(LASER_FEATURE)
@@ -717,10 +712,6 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
 
       #if ENABLED(MIXING_EXTRUDER)
         case 163: M163(); break;                                  // M163: Set a component weight for mixing extruder
-        case 164: M164(); break;                                  // M164: Save current mix as a virtual extruder
-        #if ENABLED(DIRECT_MIXING_IN_G1)
-          case 165: M165(); break;                                // M165: Set multiple mix weights
-        #endif
         #if ENABLED(GRADIENT_MIX)
           case 166: M166(); break;                                // M166: Set Gradient Mix
         #endif
@@ -1021,7 +1012,7 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
         case 710: M710(); break;                                  // M710: Set Controller Fan settings
       #endif
 
-      #if ENABLED(CONSTANT_EXTRUSION)
+      #if HAS_CONSTANT_EXTRUSION
         case 789: M789(); break;                                  /// MarlinBio: M789: Enable/disable and set/print parameters for constant extrusion mode.
       #endif
 
