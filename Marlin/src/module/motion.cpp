@@ -131,7 +131,7 @@ xyze_pos_t destination; // {0}
       !tmp[X_AXIS][0] && !tmp[Y_AXIS][0] && !tmp[Z_AXIS][0],
       "Offsets for the first hotend must be 0.0."
     );
-    // Transpose from [XYZ][HOTENDS] to [HOTENDS][XYZ]
+    // Transpose from [XYZ][TOOL_NUM] to [TOOL_NUM][XYZ]
     EXTRUDER_LOOP() LOOP_ABC(a) hotend_offset[e][a] = tmp[a][e];
     TERN_(DUAL_X_CARRIAGE, hotend_offset[1].x = _MAX(X2_HOME_POS, X2_MAX_POS));
   }

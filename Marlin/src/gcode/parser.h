@@ -410,8 +410,7 @@ public:
 
     static constexpr float to_temp_units(int16_t c) { return (float)c; }
 
-    static celsius_t value_celsius()      { return value_int(); }
-    static celsius_t value_celsius_diff() { return value_int(); }
+    static celsius_float_t value_celsius() { return value_float(); }
 
   #endif // !TEMPERATURE_UNITS_SUPPORT
 
@@ -431,7 +430,7 @@ public:
   static float     linearval(const char c, const float dval=0)    { return seenval(c) ? value_linear_units() : dval; }
   static float     axisunitsval(const char c, const AxisEnum a, const float dval=0)
                                                                          { return seenval(c) ? value_axis_units(a)  : dval; }
-  static celsius_t celsiusval(const char c, const celsius_t dval=0)    { return seenval(c) ? value_celsius() : dval; }
+  static celsius_float_t celsiusval(const char c, const celsius_float_t dval=0) { return seenval(c) ? value_celsius() : dval; }
   static feedRate_t feedrateval(const char c, const feedRate_t dval=0) { return seenval(c) ? value_feedrate() : dval; }
 
   #if ENABLED(MARLIN_DEV_MODE)

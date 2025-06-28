@@ -968,8 +968,6 @@ void minkill(const bool steppers_off/*=false*/) {
  * After a stop the machine may be resumed with M999
  */
 void stop() {
-  thermalManager.disable_all_heaters(); // 'unpause' taken care of in here
-
   print_job_timer.stop();
 
   #if ANY(PROBING_FANS_OFF, ADVANCED_PAUSE_FANS_PAUSE)

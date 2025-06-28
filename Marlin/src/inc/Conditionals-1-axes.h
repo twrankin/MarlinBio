@@ -178,8 +178,10 @@
   #define TOOL_NUM EXTRUDERS
 #endif
 
-/// MarlinBio: We don't use hotends.
-#define HOTENDS 0                                   // A machine with no hotends at all can still extrude
+/// MarlinBio: 4 syringe modules plus the bed.
+/// It would be better to calculate this, but Marlin's
+/// horrible and fragile macro system won't allow it.
+#define HOTENDS 5
 
 // At least one hotend...
 #if HOTENDS
@@ -197,9 +199,18 @@
   #undef THERMAL_PROTECTION_HOTENDS
 #endif
 
+// More than one hotend...
+#if HOTENDS > 1
+  #define HAS_MULTI_HOTEND 1
+#else
+  #undef HOTEND_OFFSET_X
+  #undef HOTEND_OFFSET_Y
+  #undef HOTEND_OFFSET_Z
+#endif
+
 /// MarlinBio: Marlin's concept of extruders/hotends/nozzles is fuzzy.
 /// We'll keep the naming here to minimize changes.
-#if defined(HOTEND_OFFSET_X) || defined(HOTEND_OFFSET_Y) || defined(HOTEND_OFFSET_Z)
+#if HAS_MULTI_EXTRUDER
   #define HAS_HOTEND_OFFSET 1
   #ifndef HOTEND_OFFSET_X
     #define HOTEND_OFFSET_X { 0 } // X offsets for each extruder

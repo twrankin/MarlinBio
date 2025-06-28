@@ -165,10 +165,6 @@ inline float home_bump_mm(const AxisEnum axis) {
 #if HAS_HOTEND_OFFSET
   extern xyz_pos_t hotend_offset[TOOL_NUM];
   void reset_hotend_offsets();
-#elif HOTENDS
-  constexpr xyz_pos_t hotend_offset[HOTENDS] = { { TERN_(HAS_X_AXIS, 0) } };
-#else
-  constexpr xyz_pos_t hotend_offset[1] = { { TERN_(HAS_X_AXIS, 0) } };
 #endif
 
 #if HAS_SOFTWARE_ENDSTOPS

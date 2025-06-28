@@ -588,10 +588,10 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
 
       #if HAS_HOTEND
         case 104: M104(); break;                                  // M104: Set hot end temperature
-        case 109: M109(); break;                                  // M109: Wait for hotend temperature to reach target
+        //case 109: M109(); break;                                  // M109: Wait for hotend temperature to reach target
       #endif
 
-      case 105: M105(); no_ok = true; break;                      // M105: Report Temperatures (and say "ok")
+      case 105: M105(); break;                                    // M105: Report Temperatures
 
       #if HAS_FAN
         case 106: M106(); break;                                  // M106: Fan On

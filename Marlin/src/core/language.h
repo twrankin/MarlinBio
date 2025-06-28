@@ -251,6 +251,7 @@
 #define STR_DETECTED_TEMP_B                 " (temp: "
 #define STR_DETECTED_TEMP_E                 ")"
 #define STR_REDUNDANCY                      "Heater switched off. Temperature difference between temp sensors is too high !"
+#define STR_T_COOLING_FAILED                "Cooling failed"
 #define STR_T_HEATING_FAILED                "Heating failed"
 #define STR_T_THERMAL_RUNAWAY               "Thermal Runaway"
 #define STR_T_THERMAL_MALFUNCTION           "Thermal Malfunction"

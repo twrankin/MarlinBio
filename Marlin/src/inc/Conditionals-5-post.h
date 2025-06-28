@@ -2611,23 +2611,95 @@
   #endif
 #endif
 
-//
-// Heater Outputs
-//
 #if PIN_EXISTS(HEATER_0)
-  #define HAS_HEATER_0 1
+  #if defined(COOLER_0_TARGET) && defined(HEATER_0_TARGET)
+    #error "COOLER_0_TARGET and HEATER_0_TARGET cannot both be defined."
+  #elif defined(COOLER_0_TARGET)
+    #define HEATER_0_TARGET 0
+    #define HAS_COOLER_0    1
+    #define HAS_HEATER_0    0
+  #elif defined(HEATER_0_TARGET)
+    #define COOLER_0_TARGET 0
+    #define HAS_HEATER_0    1
+    #define HAS_COOLER_0    0
+  #else
+    #define COOLER_0_TARGET 0
+    #define HEATER_0_TARGET 0
+    #define HAS_COOLER_0    0
+    #define HAS_HEATER_0    0
+  #endif
 #endif
 #if PIN_EXISTS(HEATER_1)
-  #define HAS_HEATER_1 1
+  #if defined(COOLER_1_TARGET) && defined(HEATER_1_TARGET)
+    #error "COOLER_1_TARGET and HEATER_1_TARGET cannot both be defined."
+  #elif defined(COOLER_1_TARGET)
+    #define HEATER_1_TARGET 0
+    #define HAS_COOLER_1    1
+    #define HAS_HEATER_1    0
+  #elif defined(HEATER_1_TARGET)
+    #define COOLER_1_TARGET 0
+    #define HAS_HEATER_1    1
+    #define HAS_COOLER_1    0
+  #else
+    #define COOLER_1_TARGET 0
+    #define HEATER_1_TARGET 0
+    #define HAS_COOLER_1    0
+    #define HAS_HEATER_1    0
+  #endif
 #endif
 #if PIN_EXISTS(HEATER_2)
-  #define HAS_HEATER_2 1
+  #if defined(COOLER_2_TARGET) && defined(HEATER_2_TARGET)
+    #error "COOLER_2_TARGET and HEATER_2_TARGET cannot both be defined."
+  #elif defined(COOLER_2_TARGET)
+    #define HEATER_2_TARGET 0
+    #define HAS_COOLER_2    1
+    #define HAS_HEATER_2    0
+  #elif defined(HEATER_2_TARGET)
+    #define COOLER_2_TARGET 0
+    #define HAS_HEATER_2    1
+    #define HAS_COOLER_2    0
+  #else
+    #define COOLER_2_TARGET 0
+    #define HEATER_2_TARGET 0
+    #define HAS_COOLER_2    0
+    #define HAS_HEATER_2    0
+  #endif
 #endif
 #if PIN_EXISTS(HEATER_3)
-  #define HAS_HEATER_3 1
+  #if defined(COOLER_3_TARGET) && defined(HEATER_3_TARGET)
+    #error "COOLER_3_TARGET and HEATER_3_TARGET cannot both be defined."
+  #elif defined(COOLER_3_TARGET)
+    #define HEATER_3_TARGET 0
+    #define HAS_COOLER_3    1
+    #define HAS_HEATER_3    0
+  #elif defined(HEATER_3_TARGET)
+    #define COOLER_3_TARGET 0
+    #define HAS_HEATER_3    1
+    #define HAS_COOLER_3    0
+  #else
+    #define COOLER_3_TARGET 0
+    #define HEATER_3_TARGET 0
+    #define HAS_COOLER_3    0
+    #define HAS_HEATER_3    0
+  #endif
 #endif
 #if PIN_EXISTS(HEATER_4)
-  #define HAS_HEATER_4 1
+  #if defined(COOLER_4_TARGET) && defined(HEATER_4_TARGET)
+    #error "COOLER_4_TARGET and HEATER_4_TARGET cannot both be defined."
+  #elif defined(COOLER_4_TARGET)
+    #define HEATER_4_TARGET 0
+    #define HAS_COOLER_4    1
+    #define HAS_HEATER_4    0
+  #elif defined(HEATER_4_TARGET)
+    #define COOLER_4_TARGET 0
+    #define HAS_HEATER_4    1
+    #define HAS_COOLER_4    0
+  #else
+    #define COOLER_4_TARGET 0
+    #define HEATER_4_TARGET 0
+    #define HAS_COOLER_4    0
+    #define HAS_HEATER_4    0
+  #endif
 #endif
 #if PIN_EXISTS(HEATER_5)
   #define HAS_HEATER_5 1
