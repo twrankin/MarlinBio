@@ -73,7 +73,7 @@ void GcodeSuite::M789_report(const bool forReplay/*=true*/) {
   report_heading(forReplay, FPSTR("M789 - Constant extrusion parameters"));
 
   header(forReplay);
-  SERIAL_ECHO("Constant extrusion ");
+  SERIAL_ECHO("  Constant extrusion ");
   if (planner.constant_extrusion_enabled)
     SERIAL_ECHOLN("enabled");
   else

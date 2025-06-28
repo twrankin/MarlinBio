@@ -769,10 +769,12 @@ private:
   #if HAS_HOTEND
     static void M104_M109(const bool isM109);
     FORCE_INLINE static void M104() { M104_M109(false); }
-    FORCE_INLINE static void M109() { M104_M109(true); }
+    /// MarlinBio: Getting M109 working would take some effort.
+    /// No need to support this unless we get a compelling use case.
+    //FORCE_INLINE static void M109() { M104_M109(true); }
   #endif
 
-  static void M105();
+  static void M105(const bool forReplay=true);
 
   #if HAS_FAN
     static void M106();

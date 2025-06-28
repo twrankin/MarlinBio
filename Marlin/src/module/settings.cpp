@@ -3885,6 +3885,11 @@ void MarlinSettings::reset() {
     gcode.say_units(); // " (in/mm)"
 
     //
+    // MarlinBio: Temperature modules
+    //
+    TERN_(HAS_HOTEND, gcode.M105(forReplay));
+
+    //
     // M149 Temperature units
     //
     #if ENABLED(TEMPERATURE_UNITS_SUPPORT)

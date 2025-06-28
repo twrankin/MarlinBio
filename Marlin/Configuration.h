@@ -37,7 +37,7 @@
  */
 #define CONFIGURATION_H_VERSION 02010300
 
-//#error "MarlinBio: This is an altered version of Marlin for research purposes. \
+#error "MarlinBio: This is an altered version of Marlin for research purposes. \
 Many traditional features have been broken by the alterations, \
 as the work to support functionality we don't currently need would be substantial. \
 If issues are encountered while attempting to enable or change a setting, \
@@ -234,9 +234,11 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
 // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
 #define EXTRUDERS 4
 
-/// MarlinBio: Parameters for constant extrusion based on a syringe extruder system.
-/// Each parameter is an array of values for each extruder.
-/// Constant extrusion can be enabled by default here, and enabled/disabled live by the M789 command.
+/*
+ * MarlinBio: Parameters for constant extrusion based on a syringe extruder system.
+ * Each parameter is an array of values for each extruder.
+ * Constant extrusion can be enabled by default here, and enabled/disabled live by the M789 command.
+ */
 #define CONSTANT_EXTRUSION_DEFAULT_ON
 
 /// MarlinBio: The inner diameter of the syringe in mm.
@@ -251,8 +253,7 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
 /// MarlinBio: The distance to pressurize/depressurize the syringe before/after constant extrusion in mm.
 #define PRESSURIZATION_LENGTH { 0.5, 0.5, 0.5, 0.5 }
 
-/// MarlinBio: It took a small amount of digging to discover that this isn't currently used.
-/// It is unrelated to, and does not affect, constant extrusion.
+/// MarlinBio: This isn't currently used. It is unrelated to, and does not affect, constant extrusion.
 // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
 #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
 
@@ -383,7 +384,7 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
   #endif
 #endif
 
-/**
+/*
  * MarlinBio:
  * This enables the use of mixing materials together using a mixing module or printhead to extrude
  * out of one nozzle. Linking extruders into one tool will cause them to both move when extruder
@@ -605,11 +606,11 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
-#define TEMP_SENSOR_0 0
-#define TEMP_SENSOR_1 0
-#define TEMP_SENSOR_2 0
-#define TEMP_SENSOR_3 0
-#define TEMP_SENSOR_4 0
+#define TEMP_SENSOR_0 61
+#define TEMP_SENSOR_1 61
+#define TEMP_SENSOR_2 61
+#define TEMP_SENSOR_3 61
+#define TEMP_SENSOR_4 61
 #define TEMP_SENSOR_5 0
 #define TEMP_SENSOR_6 0
 #define TEMP_SENSOR_7 0
@@ -677,42 +678,56 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
   #define TEMP_SENSOR_REDUNDANT_MAX_DIFF  10  // (°C) Temperature difference that will trigger a print abort.
 #endif
 
-// Below this temperature the heater will be switched off
-// because it probably indicates a broken thermistor wire.
-#define HEATER_0_MINTEMP   5
-#define HEATER_1_MINTEMP   5
-#define HEATER_2_MINTEMP   5
-#define HEATER_3_MINTEMP   5
-#define HEATER_4_MINTEMP   5
-#define HEATER_5_MINTEMP   5
-#define HEATER_6_MINTEMP   5
-#define HEATER_7_MINTEMP   5
-#define BED_MINTEMP        5
-#define CHAMBER_MINTEMP    5
-
-// Above this temperature the heater will be switched off.
-// This can protect components from overheating, but NOT from shorts and failures.
-// (Use MINTEMP for thermistor short/failure protection.)
-#define HEATER_0_MAXTEMP 275
-#define HEATER_1_MAXTEMP 275
-#define HEATER_2_MAXTEMP 275
-#define HEATER_3_MAXTEMP 275
-#define HEATER_4_MAXTEMP 275
-#define HEATER_5_MAXTEMP 275
-#define HEATER_6_MAXTEMP 275
-#define HEATER_7_MAXTEMP 275
-#define BED_MAXTEMP      150
-#define CHAMBER_MAXTEMP  60
-
-/**
- * Thermal Overshoot
- * During heatup (and printing) the temperature can often "overshoot" the target by many degrees
- * (especially before PID tuning). Setting the target temperature too close to MAXTEMP guarantees
- * a MAXTEMP shutdown! Use these values to forbid temperatures being set too close to MAXTEMP.
+/*
+* MarlinBio:
+* The target temperatures for the syringe/bed modules.
+* Only COOLER_X_TARGET or HEATER_X_TARGET can be enabled for each module.
+* Disable both if not using the temperature module. Cooler/heater 4 is the bed.
+* If you want temperature control enabled, but want to temporarily turn it off,
+* set the temperature to something like 100°C for cooling or 0°C for heating.
+* The M104 command can also be used to set the targets, but not change between heating/cooling.
+* The M109 command is not supported.
+* WARNING: The peltier must be connected in the correct direction for heating or cooling.
+* WARNING: Always rewire with the power completely disconnected.
  */
-#define HOTEND_OVERSHOOT 15   // (°C) Forbid temperatures over MAXTEMP - OVERSHOOT
-#define BED_OVERSHOOT    10   // (°C) Forbid temperatures over MAXTEMP - OVERSHOOT
-#define COOLER_OVERSHOOT  2   // (°C) Forbid temperatures closer than OVERSHOOT
+//#define COOLER_0_TARGET 0
+//#define HEATER_0_TARGET 50
+
+//#define COOLER_1_TARGET 0
+//#define HEATER_1_TARGET 50
+
+//#define COOLER_2_TARGET 0
+//#define HEATER_2_TARGET 50
+
+//#define COOLER_3_TARGET 0
+//#define HEATER_3_TARGET 50
+
+/// MarlinBio: This is the bed.
+//#define COOLER_4_TARGET 0
+//#define HEATER_4_TARGET 50
+
+/// MarlinBio: A fatal error will be issued below this temperature.
+#define HEATER_0_MINTEMP -15
+#define HEATER_1_MINTEMP -15
+#define HEATER_2_MINTEMP -15
+#define HEATER_3_MINTEMP -15
+#define HEATER_4_MINTEMP -15
+
+/// MarlinBio: A fatal error will be issued above this temperature.
+#define HEATER_0_MAXTEMP 75
+#define HEATER_1_MAXTEMP 75
+#define HEATER_2_MAXTEMP 75
+#define HEATER_3_MAXTEMP 75
+#define HEATER_4_MAXTEMP 75
+
+/*
+ * MarlinBio:
+ * Thermal Overshoot.
+ * During operation, the temperature can often "overshoot" the target by many degrees.
+ * Setting the target temperature too close to MAXTEMP/MINTEMP guarantees a shutdown!
+ * Use this value to forbid temperatures being set over/under MAXTEMP/MINTEMP -/+ OVERSHOOT.
+ */
+#define HOTEND_OVERSHOOT 15
 
 //===========================================================================
 //============================= PID Settings ================================
@@ -727,7 +742,8 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  * PIDTEMP : PID temperature control (~4.1K)
  * MPCTEMP : Predictive Model temperature control. (~1.8K without auto-tune)
  */
-#define PIDTEMP           // See the PID Tuning Guide at https://reprap.org/wiki/PID_Tuning
+/// MarlinBio: Peltier's don't like PWM, so we run them continuously until they reach the target.
+//#define PIDTEMP           // See the PID Tuning Guide at https://reprap.org/wiki/PID_Tuning
 //#define MPCTEMP         // See https://marlinfw.org/docs/features/model_predictive_control.html
 
 #define PID_MAX  255      // Limit hotend current while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
@@ -959,8 +975,8 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  *
  * *** IT IS HIGHLY RECOMMENDED TO LEAVE THIS OPTION ENABLED! ***
  */
-/// MarlinBio: We don't use temperature. If we need to support heating or cooling syringes
-/// in the future, it will require significant changes.
+/// MarlinBio: We don't wait for the temperature. If we need to support this
+/// in the future, changes will be needed.
 //#define PREVENT_COLD_EXTRUSION
 #define EXTRUDE_MINTEMP 170
 
@@ -988,10 +1004,7 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  * If you get "Thermal Runaway" or "Heating failed" errors the
  * details can be tuned in Configuration_adv.h
  */
-
-/// MarlinBio: We don't use temperature. If we need to support heating or cooling syringes
-/// in the future, it will require significant changes.
-//#define THERMAL_PROTECTION_HOTENDS // Enable thermal protection for all extruders
+#define THERMAL_PROTECTION_HOTENDS // Enable thermal protection for all extruders
 //#define THERMAL_PROTECTION_BED     // Enable thermal protection for the heated bed
 //#define THERMAL_PROTECTION_CHAMBER // Enable thermal protection for the heated chamber
 //#define THERMAL_PROTECTION_COOLER  // Enable thermal protection for the laser cooling

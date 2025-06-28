@@ -432,12 +432,49 @@ typedef struct TempInfo {
   } redundant_info_t;
 #endif
 
-// A PWM heater with temperature sensor
+/// MarlinBio: This is info for a Peltier dual heater/cooler now.
+/// Leaving the naming to minimize changes.
+/// We also consolidated some of the temperature monitoring here.
 typedef struct HeaterInfo : public TempInfo {
-  celsius_t target;
-  uint8_t soft_pwm_amount;
-  bool is_below_target(const celsius_t offs=0) const { return (target - celsius > offs); } // celsius < target - offs
-  bool is_above_target(const celsius_t offs=0) const { return (celsius - target > offs); } // celsius > target + offs
+  enum deviceType {
+    heater,
+    cooler
+  };
+
+  bool            enabled;
+  deviceType      type;
+  celsius_float_t target;
+  uint8_t         soft_pwm_amount;
+
+  bool is_off_target(const celsius_float_t offs=0) const {
+    if (type == heater) return (celsius < target - offs);
+    if (type == cooler) return (celsius > target + offs);
+    return false;
+  }
+
+  #if WATCH_HOTENDS
+    bool            temps_ready;
+    millis_t        next_ms;
+    celsius_float_t watch_target;
+
+    inline bool watch_elapsed(const millis_t &ms) { return next_ms && ELAPSED(ms, next_ms); }
+    inline bool watch_elapsed() { return watch_elapsed(millis()); }
+
+    inline bool watch_check() { return type == cooler ? celsius <= watch_target : celsius >= watch_target; }
+
+    inline void restart_watch() {
+      if (enabled && temps_ready) {
+        const celsius_float_t newtarget = type == cooler ? celsius - WATCH_TEMP_INCREASE : celsius + WATCH_TEMP_INCREASE;
+        if (type == cooler ? newtarget > target + THERMAL_PROTECTION_HYSTERESIS - WATCH_TEMP_INCREASE : newtarget < target - THERMAL_PROTECTION_HYSTERESIS + WATCH_TEMP_INCREASE) {
+          watch_target = newtarget;
+          next_ms = millis() + SEC_TO_MS(WATCH_TEMP_PERIOD);
+          return;
+        }
+      }
+      next_ms = 0;
+    }
+  #endif
+
   #if ENABLED(PELTIER_BED)
     bool peltier_dir_heating; // = false
   #endif
@@ -494,42 +531,6 @@ struct PIDHeaterInfo : public HeaterInfo {
 #endif
 #if HAS_TEMP_SOC
   typedef temp_info_t soc_info_t;
-#endif
-
-// Heater watch handling
-template <int INCREASE, int HYSTERESIS, millis_t PERIOD>
-struct HeaterWatch {
-  celsius_t target;
-  millis_t next_ms;
-  inline bool elapsed(const millis_t &ms) { return next_ms && ELAPSED(ms, next_ms); }
-  inline bool elapsed() { return elapsed(millis()); }
-
-  inline bool check(const celsius_t curr) { return curr >= target; }
-
-  inline void restart(const celsius_t curr, const celsius_t tgt) {
-    if (tgt) {
-      const celsius_t newtarget = curr + INCREASE;
-      if (newtarget < tgt - HYSTERESIS - 1) {
-        target = newtarget;
-        next_ms = millis() + SEC_TO_MS(PERIOD);
-        return;
-      }
-    }
-    next_ms = 0;
-  }
-};
-
-#if WATCH_HOTENDS
-  typedef struct HeaterWatch<WATCH_TEMP_INCREASE, TEMP_HYSTERESIS, WATCH_TEMP_PERIOD> hotend_watch_t;
-#endif
-#if WATCH_BED
-  typedef struct HeaterWatch<WATCH_BED_TEMP_INCREASE, TEMP_BED_HYSTERESIS, WATCH_BED_TEMP_PERIOD> bed_watch_t;
-#endif
-#if WATCH_CHAMBER
-  typedef struct HeaterWatch<WATCH_CHAMBER_TEMP_INCREASE, TEMP_CHAMBER_HYSTERESIS, WATCH_CHAMBER_TEMP_PERIOD> chamber_watch_t;
-#endif
-#if WATCH_COOLER
-  typedef struct HeaterWatch<WATCH_COOLER_TEMP_INCREASE, TEMP_COOLER_HYSTERESIS, WATCH_COOLER_TEMP_PERIOD> cooler_watch_t;
 #endif
 
 // Just raw temperature sensor ranges
@@ -606,8 +607,6 @@ class Temperature {
 
     #if HAS_HOTEND
       static hotend_info_t temp_hotend[HOTENDS];
-      static constexpr celsius_t hotend_maxtemp[HOTENDS] = ARRAY_BY_HOTENDS(HEATER_0_MAXTEMP, HEATER_1_MAXTEMP, HEATER_2_MAXTEMP, HEATER_3_MAXTEMP, HEATER_4_MAXTEMP, HEATER_5_MAXTEMP, HEATER_6_MAXTEMP, HEATER_7_MAXTEMP);
-      static constexpr celsius_t hotend_max_target(const uint8_t e) { return hotend_maxtemp[e] - (HOTEND_OVERSHOOT); }
     #endif
 
     #if HAS_HEATED_BED
@@ -730,14 +729,11 @@ class Temperature {
     #endif
 
     #if HAS_FAN_LOGIC
+      static millis_t fan_update_ms;
       static constexpr millis_t fan_update_interval_ms = TERN(HAS_PWMFANCHECK, 5000, TERN(HAS_FANCHECK, 1000, 2500));
     #endif
 
   private:
-
-    #if ENABLED(WATCH_HOTENDS)
-      static hotend_watch_t watch_hotend[HOTENDS];
-    #endif
 
     #if HAS_HOTEND
       // Sensor ranges, not user-configured
@@ -784,29 +780,36 @@ class Temperature {
       static uint8_t consecutive_low_temperature_error[HOTENDS];
     #endif
 
-    #if HAS_FAN_LOGIC
-      static millis_t fan_update_ms;
+    static millis_t fan_update_ms;
 
-      static void manage_extruder_fans(millis_t ms) {
-        if (ELAPSED(ms, fan_update_ms)) { // only need to check fan state very infrequently
-          const millis_t next_ms = ms + fan_update_interval_ms;
-          #if HAS_PWMFANCHECK
-            #define FAN_CHECK_DURATION 100
-            if (fan_check.is_measuring()) {
-              fan_check.compute_speed(ms + FAN_CHECK_DURATION - fan_update_ms);
-              fan_update_ms = next_ms;
-            }
-            else
-              fan_update_ms = ms + FAN_CHECK_DURATION;
-            fan_check.toggle_measuring();
-          #else
-            TERN_(HAS_FANCHECK, fan_check.compute_speed(next_ms - fan_update_ms));
+    static void manage_extruder_fans(millis_t ms) {
+      #if HAS_FAN_LOGIC
+      if (ELAPSED(ms, fan_update_ms)) { // only need to check fan state very infrequently
+        const millis_t next_ms = ms + fan_update_interval_ms;
+        #if HAS_PWMFANCHECK
+          #define FAN_CHECK_DURATION 100
+          if (fan_check.is_measuring()) {
+            fan_check.compute_speed(ms + FAN_CHECK_DURATION - fan_update_ms);
             fan_update_ms = next_ms;
-          #endif
-          TERN_(HAS_AUTO_FAN, update_autofans()); // Needed as last when HAS_PWMFANCHECK to properly force fan speed
-        }
+          }
+          else
+            fan_update_ms = ms + FAN_CHECK_DURATION;
+          fan_check.toggle_measuring();
+        #else
+          TERN_(HAS_FANCHECK, fan_check.compute_speed(next_ms - fan_update_ms));
+          fan_update_ms = next_ms;
+        #endif
+        TERN_(HAS_AUTO_FAN, update_autofans()); // Needed as last when HAS_PWMFANCHECK to properly force fan speed
       }
-    #endif
+      #endif
+
+      #if HAS_HOTEND
+        HOTEND_LOOP() {
+          /// MarlinBio: If the cooler is running, turn the fans on.
+          set_fan_speed(e, temp_hotend[e].type == hotend_info_t::deviceType::cooler && temp_hotend[e].enabled ? FAN_MAX_PWM : 0);
+        }
+      #endif
+    }
 
     #if ENABLED(PROBING_HEATERS_OFF)
       static bool paused_for_probing;
@@ -992,13 +995,13 @@ class Temperature {
       }
     #endif
 
-    static celsius_t degTargetHotend(const uint8_t E_NAME) {
+    static celsius_float_t degTargetHotend(const uint8_t E_NAME) {
       return TERN0(HAS_HOTEND, temp_hotend[HOTEND_INDEX].target);
     }
 
     #if HAS_HOTEND
 
-      static void setTargetHotend(const celsius_t celsius, const uint8_t E_NAME) {
+      static void setTargetHotend(const celsius_float_t celsius, const uint8_t E_NAME) {
         const uint8_t ee = HOTEND_INDEX;
         #if PREHEAT_TIME_HOTEND_MS > 0
           if (celsius == 0)
@@ -1007,8 +1010,8 @@ class Temperature {
             start_hotend_preheat_time(ee);
         #endif
         TERN_(AUTO_POWER_CONTROL, if (celsius) powerManager.power_on());
-        temp_hotend[ee].target = _MIN(celsius, hotend_max_target(ee));
-        start_watching_hotend(ee);
+        temp_hotend[ee].target = temp_hotend[ee].type == hotend_info_t::deviceType::cooler ? _MAX(celsius, temp_range[ee].mintemp + HOTEND_OVERSHOOT) : _MIN(celsius, temp_range[ee].maxtemp - HOTEND_OVERSHOOT);
+        TERN_(WATCH_HOTENDS, temp_hotend[ee].restart_watch());
       }
 
       static bool isHeatingHotend(const uint8_t E_NAME) {
@@ -1035,14 +1038,6 @@ class Temperature {
 
       static bool still_heating(const uint8_t e) {
         return degTargetHotend(e) > TEMP_HYSTERESIS && !degHotendNear(e, degTargetHotend(e));
-      }
-
-      // Start watching a Hotend to make sure it's really heating up
-      static void start_watching_hotend(const uint8_t E_NAME) {
-        UNUSED(HOTEND_INDEX);
-        #if WATCH_HOTENDS
-          watch_hotend[HOTEND_INDEX].restart(degHotend(HOTEND_INDEX), degTargetHotend(HOTEND_INDEX));
-        #endif
       }
 
       static void manage_hotends(const millis_t &ms);
@@ -1318,9 +1313,7 @@ class Temperature {
     #endif // HEATER_IDLE_HANDLER
 
     #if HAS_TEMP_SENSOR
-      static void print_heater_states(const int8_t target_extruder
-        OPTARG(HAS_TEMP_REDUNDANT, const bool include_r=false)
-      );
+      static void print_heater_states(const bool forReplay=true);
       #if ENABLED(AUTO_REPORT_TEMPERATURES)
         struct AutoReportTemp { static void report(); };
         static AutoReporter<AutoReportTemp> auto_reporter;

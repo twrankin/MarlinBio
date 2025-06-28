@@ -402,7 +402,7 @@
    * heater's temperature appears even slightly higher than expected after restarting, you may have a real
    * thermal malfunction. Check the temperature graph in your host for any unusual bumps.
    */
-  //#define THERMAL_PROTECTION_VARIANCE_MONITOR
+  #define THERMAL_PROTECTION_VARIANCE_MONITOR
   #if ENABLED(THERMAL_PROTECTION_VARIANCE_MONITOR)
     // Variance detection window to override the THERMAL_PROTECTION...PERIOD settings above.
     // Keep in mind that some heaters heat up faster than others.
@@ -483,7 +483,7 @@
  * Enable Autotemp Mode with M104/M109 F<factor> S<mintemp> B<maxtemp>.
  * Disable by sending M104/M109 with no F parameter (or F0 with AUTOTEMP_PROPORTIONAL).
  */
-#define AUTOTEMP
+//#define AUTOTEMP
 #if ENABLED(AUTOTEMP)
   #define AUTOTEMP_OLDWEIGHT    0.98  // Factor used to weight previous readings (0.0 < value < 1.0)
   #define AUTOTEMP_MIN          210
@@ -1865,7 +1865,7 @@
 
   //#define SCROLL_LONG_FILENAMES         // Scroll long filenames in the SD card menu
 
-  //#define SD_ABORT_NO_COOLDOWN          // Leave the heaters on after Stop Print (not recommended!)
+  #define SD_ABORT_NO_COOLDOWN          // Leave the heaters on after Stop Print (not recommended!)
 
   /**
    * Abort SD printing when any endstop is triggered.

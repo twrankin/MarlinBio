@@ -26,18 +26,10 @@
 /**
  * M105: Read hot end and bed temperature
  */
-void GcodeSuite::M105() {
-
-  const int8_t target_extruder = get_target_extruder_from_command();
-  if (target_extruder < 0) return;
-
-  SERIAL_ECHOPGM(STR_OK);
-
+void GcodeSuite::M105(const bool forReplay) {
   #if HAS_TEMP_SENSOR
 
-    thermalManager.print_heater_states(target_extruder OPTARG(HAS_TEMP_REDUNDANT, parser.boolval('R')));
-
-    SERIAL_EOL();
+    thermalManager.print_heater_states(forReplay);
 
   #else
 

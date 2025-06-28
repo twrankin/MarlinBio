@@ -164,20 +164,20 @@
 //
 // Temperature Sensors
 //
-#define TEMP_BED_PIN                        PB1   // TB
 #define TEMP_0_PIN                          PB0   // TH0
 #define TEMP_1_PIN                          PC5   // TH1
 #define TEMP_2_PIN                          PC4   // TH2
 #define TEMP_3_PIN                          PA7   // TH3
+#define TEMP_4_PIN                          PB1   // TB
 
 //
 // Heaters / Fans
 //
-#define HEATER_BED_PIN                      PF5   // Hotbed
 #define HEATER_0_PIN                        PF6   // Heater0
 #define HEATER_1_PIN                        PA0   // Heater1
 #define HEATER_2_PIN                        PF9   // Heater2
 #define HEATER_3_PIN                        PF7   // Heater3
+#define HEATER_4_PIN                        PF5   // Hotbed
 
 #define FAN0_PIN                            PA6   // Fan0
 #define FAN1_PIN                            PA5   // Fan1
