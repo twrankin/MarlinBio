@@ -35,7 +35,7 @@ class Mixer {
 
   static void update_locks(const uint_fast8_t tool);
 
-  public:
+public:
 
   static std::vector<std::vector<uint8_t>> mix_config;
   static std::vector<std::vector<float>>   mix_ratios;

@@ -41,9 +41,9 @@
  *   D : Disable constant extrusion (default: enabled).
  *
  * Examples:
- *   M789                             ; Report current parameters
- *   M789 E0 S12.06 N0.603 K1.8 P0.33 ; Set parameters for the first extruder
- *   M789 D                           ; Disable constant extrusion
+ *   M789                             ; Report current parameters.
+ *   M789 E0 S12.06 N0.603 K1.8 P0.33 ; Set parameters for the first extruder.
+ *   M789 D                           ; Disable constant extrusion.
  */
 void GcodeSuite::M789() {
   if (!parser.seen_any()) {

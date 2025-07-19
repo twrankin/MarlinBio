@@ -269,6 +269,10 @@
   #include "feature/rs485.h"
 #endif
 
+#if HAS_GAP_CORRECTION
+  #include "feature/gap_correction.h"
+#endif
+
 #if !HAS_MEDIA
   CardReader card; // Stub instance with "no media" methods
 #endif
@@ -465,6 +469,10 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
       else
         already_shutdown_steppers = false;
     }
+  #endif
+
+  #if GC_DEBUG
+    gapCorrection.debug_stream(ms);
   #endif
 
   #if ENABLED(PHOTO_GCODE) && PIN_EXISTS(CHDK)
@@ -1691,6 +1699,10 @@ void setup() {
 
   #if ENABLED(FT_MOTION)
     SETUP_RUN(ftMotion.init());
+  #endif
+
+  #if HAS_GAP_CORRECTION
+    gapCorrection.init();
   #endif
 
   marlin_state = MarlinState::MF_RUNNING;

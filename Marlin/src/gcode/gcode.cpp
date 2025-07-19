@@ -476,6 +476,10 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
         case 425: G425(); break;                                  // G425: Perform calibration with calibration cube
       #endif
 
+      #if HAS_GAP_CORRECTION
+        case 789: G789(); break;                                  /// MarlinBio: G789: Initiate gap correction and set/print parameters.
+      #endif
+
       #if ENABLED(DEBUG_GCODE_PARSER)
         case 800: parser.debug(); break;                          // G800: G-Code Parser Test for G
       #endif
@@ -1017,7 +1021,7 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
       #endif
 
       #if HAS_CONSTANT_EXTRUSION
-        case 789: M789(); break;                                  /// MarlinBio: M789: Enable/disable and set/print parameters for constant extrusion mode.
+        case 789: M789(); break;                                  /// MarlinBio: M789: Enable/disable constant extrusion mode and set/print parameters.
       #endif
 
       #if ENABLED(GCODE_MACROS)

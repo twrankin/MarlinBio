@@ -188,6 +188,14 @@
   #include "../feature/mmu3/mmu3_reporting.h"
 #endif
 
+#if ENABLED(MIXING_EXTRUDER)
+  #include "../feature/mixing.h"
+#endif
+
+#if HAS_GAP_CORRECTION
+  #include "../feature/gap_correction.h"
+#endif
+
 #pragma pack(push, 1) // No padding between variables
 
 #define _EN_ITEM(N) , E##N
@@ -3382,6 +3390,14 @@ void MarlinSettings::reset() {
     }
   #endif
 
+  #if HAS_GAP_CORRECTION
+    gapCorrection.touch_threshold_factor = GC_TOUCH_THRESHOLD_FACTOR;
+    gapCorrection.feedrate               = MMM_TO_MMS(GC_FEEDRATE);
+    #if GC_DEBUG
+      gapCorrection.stream_secs = 0;
+    #endif
+  #endif
+
   //
   // Home Offset
   //
@@ -3898,6 +3914,11 @@ void MarlinSettings::reset() {
       SERIAL_ECHOPGM("  G21 ;");
     #endif
     gcode.say_units(); // " (in/mm)"
+
+    ///
+    /// MarlinBio: Gap Correction
+    ///
+    TERN_(HAS_GAP_CORRECTION, gcode.G789_report(forReplay));
 
     //
     // MarlinBio: Temperature modules

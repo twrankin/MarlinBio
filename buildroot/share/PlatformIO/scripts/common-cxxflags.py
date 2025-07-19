@@ -8,6 +8,7 @@ if pioutil.is_pio_build():
     env = pioutil.env
 
     cxxflags = [
+        "-Wno-volatile"
         # "-Wno-incompatible-pointer-types",
         # "-Wno-unused-const-variable",
         # "-Wno-maybe-uninitialized",

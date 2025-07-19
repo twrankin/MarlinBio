@@ -4277,7 +4277,9 @@ static_assert(_PLUS_TEST(3), "DEFAULT_MAX_ACCELERATION values must be positive."
 /**
  * Sanity check WiFi options
  */
-#if ALL(WIFISUPPORT, ESP3D_WIFISUPPORT)
+#if ANY(WIFISUPPORT, ESP3D_WIFISUPPORT) && HAS_GAP_CORRECTION
+  #error "Gap correction cannot be used with WiFi, as they use the same pins."
+#elif ALL(WIFISUPPORT, ESP3D_WIFISUPPORT)
   #error "Enable only one of WIFISUPPORT or ESP3D_WIFISUPPORT."
 #elif ENABLED(ESP3D_WIFISUPPORT) && DISABLED(ARDUINO_ARCH_ESP32)
   #error "ESP3D_WIFISUPPORT requires an ESP32 motherboard."
@@ -4653,6 +4655,33 @@ static_assert(WITHIN(MULTISTEPPING_LIMIT, 1, 128) && IS_POWER_OF_2(MULTISTEPPING
 
 #if ENABLED(CONFIGURABLE_MACHINE_NAME) && DISABLED(GCODE_QUOTED_STRINGS)
   #error "CONFIGURABLE_MACHINE_NAME requires GCODE_QUOTED_STRINGS."
+#endif
+
+#if HAS_GAP_CORRECTION
+constexpr bool verify_channels() {
+  bool taken[_GC_CHANNEL_NUM] = {false};
+  int8_t channels[_GC_CHANNEL_NUM] = {GC_X_PLUS_CHANNEL, GC_X_MINUS_CHANNEL, GC_Y_PLUS_CHANNEL, GC_Y_MINUS_CHANNEL};
+  /// MarlinBio: Sanity check for bad values and duplicates.
+  for (int i = 0; i < _GC_CHANNEL_NUM; i++) {
+    if (channels[i] < 0 || channels[i] >= _GC_CHANNEL_NUM || taken[channels[i]]) return false;
+    taken[channels[i]] = true;
+  }
+
+  /// MarlinBio: Make sure all channels are taken.
+  for (int i = 0; i < _GC_CHANNEL_NUM; i++) {
+    if (!taken[i]) return false;
+  }
+
+  return true;
+}
+
+  static constexpr float frArr[] = DEFAULT_MAX_FEEDRATE;
+  static constexpr float gcf_mm_s = GC_FEEDRATE / 60.0f;
+  static_assert(GC_FEEDRATE > 0 && gcf_mm_s <= frArr[E_AXIS], "GC_FEEDRATE has a bad value");
+  static_assert(GC_MAX_TRAVEL > 0 && GC_MAX_TRAVEL < X_MAX_LENGTH && GC_MAX_TRAVEL < Y_MAX_LENGTH && GC_MAX_TRAVEL < Z_MAX_LENGTH, "GC_MAX_TRAVEL has a bad value.");
+  static_assert(GC_TOUCH_THRESHOLD_FACTOR > 1 && GC_TOUCH_THRESHOLD_FACTOR < UINT16_MAX, "GC_TOUCH_THRESHOLD_FACTOR has a bad value.");
+  static_assert(GC_SENSOR_READS > 0 && GC_SENSOR_READS < UINT8_MAX, "GC_SENSOR_READS has a bad value.");
+  static_assert(verify_channels(), "Some of GC_..._CHANNEL have bad values.");
 #endif
 
 // Misc. Cleanup

@@ -277,6 +277,36 @@
   //#define TC_GCODE_USE_GLOBAL_Z
 #endif // EXTRUDERS > 1
 
+/*
+ * Gap correction.
+ * Gap correction is an advanced feature requiring substantial extra hardware that attempts
+ * to fix connection errors when intersecting lines made of certain materials inside certain baths.
+ * WARNING: if you do not know that you need this feature, you can safely ignore this entire section.
+ */
+#define GAP_CORRECTION
+#if ENABLED(GAP_CORRECTION)
+  // The maximum amount of travel in mm for each axis in one move.
+  #define GC_MAX_TRAVEL 0.2
+
+  // The feedrate of gap correction moves in mm/min. It can be changed using G789 Fxxx.
+  #define GC_FEEDRATE 150
+
+  // During a branch point, the threshold for detecting a line is the initial
+  // capacitance multiplied by this factor. It can be changed using G789 Txxx.
+  #define GC_TOUCH_THRESHOLD_FACTOR 10
+
+  // The number of times to read each sensor channel during an update,
+  // averaging the results.
+  #define GC_SENSOR_READS 5
+
+  // The channel numbers corresponding to each direction.
+  // It's much easier to change these values than to rewire a sensor.
+  #define GC_X_PLUS_CHANNEL  0
+  #define GC_X_MINUS_CHANNEL 1
+  #define GC_Y_PLUS_CHANNEL  2
+  #define GC_Y_MINUS_CHANNEL 3
+#endif
+
 //===========================================================================
 //================================ Temperature ==============================
 //===========================================================================

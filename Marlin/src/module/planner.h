@@ -67,10 +67,6 @@
   #include "../feature/fwretract.h"
 #endif
 
-#if ENABLED(MIXING_EXTRUDER)
-  #include "../feature/mixing.h"
-#endif
-
 #if HAS_CUTTER
   #include "../feature/spindle_laser_types.h"
 #endif
@@ -440,11 +436,11 @@ struct PlannerHints {
   #endif
 
   #if HAS_CONSTANT_EXTRUSION
-    /// MarlinBio: Continuous extrusion needs to know if this is a print move
+    /// MarlinBio: Constant extrusion needs to know if this is a print move
     /// so that we know when to start and stop the extrusion.
     bool print_move = false;
     #if ENABLED(MIXING_EXTRUDER)
-      /// MarlinBio: Continuous extrusion needs to know if this is a
+      /// MarlinBio: Constant extrusion needs to know if this is a
       /// pressurize/depressurize move, so we don't scale movement.
       bool pressure_move = false;
     #endif

@@ -3651,3 +3651,10 @@
     #define PRESSURIZATION_LENGTH { 0 }
   #endif
 #endif
+
+#if ENABLED(GAP_CORRECTION)
+  #define HAS_GAP_CORRECTION 1
+  #define NEED_FDC2214       1
+  #define _GC_CHANNEL_NUM    4
+  #define GC_DEBUG           1
+#endif

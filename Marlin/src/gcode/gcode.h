@@ -71,6 +71,9 @@
  * G90  - Use Absolute Coordinates
  * G91  - Use Relative Coordinates
  * G92  - Set current position to coordinates given
+ * 
+ *** MarlinBio: Gap correction ***
+ * G789 - Gap correction.
  *
  * "M" Codes
  *
@@ -286,8 +289,8 @@
  * M708 - Write to MMU register
  * M709 - MMU power & reset
  *
- *** MarlinBio: Continuous extrusion ***
- * M789 - Enable/disable and set/print parameters for continuous extrusion mode.
+ *** MarlinBio: Constant extrusion ***
+ * M789 - Enable/disable and set/print parameters for constant extrusion mode.
  * 
  * M808 - Set or Goto a Repeat Marker (Requires GCODE_REPEAT_MARKERS)
  * M810-M819 - Define/Execute a G-code macro (Requires GCODE_MACROS)
@@ -644,6 +647,11 @@ private:
 
   #if ENABLED(CALIBRATION_GCODE)
     static void G425();
+  #endif
+
+  #if HAS_GAP_CORRECTION
+    static void G789();
+    static void G789_report(const bool forReplay=true);
   #endif
 
   #if HAS_RESUME_CONTINUE
