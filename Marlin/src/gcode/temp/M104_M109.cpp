@@ -1,6 +1,8 @@
-/**
+/*
  * MarlinBio 3D Printer Firmware
  * Copyright (c) 2025 MarlinBio [https://github.com/twrankin/MarlinBio]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +16,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
  */
 
 #include "../../inc/MarlinConfigPre.h"
@@ -33,13 +34,14 @@
  * disable all modules. A module can only go from disabled to heating or
  * cooling, or from heating or cooling to disabled. 
  *
- *  I : Module index selector.
- *  T : Target temperature (°C).
- *  D : Disable. If no index is specified, disable all.
- *  H : Specify heating.
- *  C : Specify cooling.
+ * Parameters:
+ *   I : Module index selector.
+ *   T : Target temperature (°C).
+ *   D : Disable. If no index is specified, disable all.
+ *   H : Specify heating.
+ *   C : Specify cooling.
  *
- * Examples
+ * Examples:
  *   M104 I1 H T50 ; Set the second temperature module to heat to 50°C.
  *   M104 I1 T60   ; Set the second temperature module to 60°C, still heating.
  *   M104 I0 T4    ; Set the first temperature module to cool to 4°C.

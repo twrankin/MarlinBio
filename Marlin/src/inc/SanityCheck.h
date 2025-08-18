@@ -853,7 +853,7 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
 
 #if HAS_HOTEND_OFFSET
   static constexpr bool verify_offsets() {
-    const std::vector<std::vector<float>> offset_xyz = {HOTEND_OFFSET_X, HOTEND_OFFSET_Y, HOTEND_OFFSET_Z};
+    const std::vector<std::vector<float>> offset_xyz = {NOZZLE_OFFSET_X, NOZZLE_OFFSET_Y, NOZZLE_OFFSET_Z};
     /// MarlinBio: Verify the size is equal to tool_num, but only if there is a non-zero entry.
     for (int i = 0; i < offset_xyz.size(); i++) {
       for (int j = 0; j < offset_xyz[i].size(); j++) {

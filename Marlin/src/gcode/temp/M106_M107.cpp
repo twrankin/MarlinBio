@@ -1,6 +1,8 @@
-/**
+/*
  * MarlinBio 3D Printer Firmware
  * Copyright (c) 2025 MarlinBio [https://github.com/twrankin/MarlinBio]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +16,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
  */
 
 #include "../../inc/MarlinConfig.h"
@@ -35,14 +36,15 @@
  * functionality for that header until reenabled.
  * If no parameters are specified, it reports the current settings.
  *
- *  I<index> : Header index selector.
- *  P<PWM>   : Target PWM (0 - 255).
- *  A<auto>  : Enable auto fan mode (default: enabled).
+ * Parameters:
+ *   I<index> : Header index selector.
+ *   P<PWM>   : Target PWM (0 - 255).
+ *   A<auto>  : Enable auto fan mode (default: enabled).
  *
- * Examples
- *  M106         ; Report current parameters
- *  M106 I1 P255 ; Set the second module to full PWM.
- *  M106 I3 P0   ; Turn the fourth module off.
+ * Examples:
+ *   M106         ; Report current parameters
+ *   M106 I1 P255 ; Set the second module to full PWM.
+ *   M106 I3 P0   ; Turn the fourth module off.
  */
 void GcodeSuite::M106() {
   if (!parser.seen_any()) {

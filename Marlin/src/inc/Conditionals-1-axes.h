@@ -67,7 +67,7 @@
   #undef MECHANICAL_SWITCHING_NOZZLE
   #undef MIXING_EXTRUDER
   #undef HOTEND_IDLE_TIMEOUT
-  #undef HOTEND_OVERSHOOT
+  #undef TEMPERATURE_OVERSHOOT
   #undef DISABLE_E
   #undef PREVENT_LENGTHY_EXTRUDE
   #undef FILAMENT_RUNOUT_SENSOR
@@ -186,8 +186,8 @@
 // At least one hotend...
 #if HOTENDS
   #define HAS_HOTEND 1
-  #ifndef HOTEND_OVERSHOOT
-    #define HOTEND_OVERSHOOT 15
+  #ifndef TEMPERATURE_OVERSHOOT
+    #define TEMPERATURE_OVERSHOOT 15
   #endif
   #ifndef MIN_POWER
     #define MIN_POWER 0
@@ -196,30 +196,28 @@
   #undef MPCTEMP
   #undef PIDTEMP
   #undef PREVENT_COLD_EXTRUSION
-  #undef THERMAL_PROTECTION_HOTENDS
+  #undef MODULE_THERMAL_PROTECTION
 #endif
 
 // More than one hotend...
 #if HOTENDS > 1
   #define HAS_MULTI_HOTEND 1
 #else
-  #undef HOTEND_OFFSET_X
-  #undef HOTEND_OFFSET_Y
-  #undef HOTEND_OFFSET_Z
+  #undef NOZZLE_OFFSET_X
+  #undef NOZZLE_OFFSET_Y
+  #undef NOZZLE_OFFSET_Z
 #endif
 
-/// MarlinBio: Marlin's concept of extruders/hotends/nozzles is fuzzy.
-/// We'll keep the naming here to minimize changes.
 #if HAS_MULTI_EXTRUDER
   #define HAS_HOTEND_OFFSET 1
-  #ifndef HOTEND_OFFSET_X
-    #define HOTEND_OFFSET_X { 0 } // X offsets for each extruder
+  #ifndef NOZZLE_OFFSET_X
+    #define NOZZLE_OFFSET_X { 0 } // X offsets for each extruder
   #endif
-  #ifndef HOTEND_OFFSET_Y
-    #define HOTEND_OFFSET_Y { 0 } // Y offsets for each extruder
+  #ifndef NOZZLE_OFFSET_Y
+    #define NOZZLE_OFFSET_Y { 0 } // Y offsets for each extruder
   #endif
-  #ifndef HOTEND_OFFSET_Z
-    #define HOTEND_OFFSET_Z { 0 } // Z offsets for each extruder
+  #ifndef NOZZLE_OFFSET_Z
+    #define NOZZLE_OFFSET_Z { 0 } // Z offsets for each extruder
   #endif
 #endif
 

@@ -34,8 +34,8 @@
   // Skip change alerts during CI Test
 #elif WATCH_TEMP_PERIOD > 500
   #error "WATCH_TEMP_PERIOD now uses seconds instead of milliseconds."
-#elif DISABLED(THERMAL_PROTECTION_HOTENDS) && (defined(WATCH_TEMP_PERIOD) || defined(THERMAL_PROTECTION_PERIOD))
-  #error "Thermal Runaway Protection for hotends is now enabled with THERMAL_PROTECTION_HOTENDS."
+#elif DISABLED(MODULE_THERMAL_PROTECTION) && (defined(WATCH_TEMP_PERIOD) || defined(THERMAL_PROTECTION_PERIOD))
+  #error "Thermal Runaway Protection for hotends is now enabled with MODULE_THERMAL_PROTECTION."
 #elif DISABLED(THERMAL_PROTECTION_BED) && defined(THERMAL_PROTECTION_BED_PERIOD)
   #error "Thermal Runaway Protection for the bed is now enabled with THERMAL_PROTECTION_BED."
 #elif defined(NO_FAN_SLOWING_IN_PID_TUNING)
@@ -69,7 +69,7 @@
 #elif defined(LANGUAGE_INCLUDE)
   #error "LANGUAGE_INCLUDE has been replaced by LCD_LANGUAGE."
 #elif defined(EXTRUDER_OFFSET_X) || defined(EXTRUDER_OFFSET_Y)
-  #error "EXTRUDER_OFFSET_[XY] is deprecated. Use HOTEND_OFFSET_[XY] instead."
+  #error "EXTRUDER_OFFSET_[XY] is deprecated. Use NOZZLE_OFFSET_[XY] instead."
 #elif defined(PID_PARAMS_PER_EXTRUDER)
   #error "PID_PARAMS_PER_EXTRUDER is deprecated. Use PID_PARAMS_PER_HOTEND instead."
 #elif defined(EXTRUDER_WATTS) || defined(BED_WATTS)
