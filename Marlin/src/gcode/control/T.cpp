@@ -27,66 +27,39 @@
 #include "../gcode.h"
 #include "../../module/tool_change.h"
 
-#if ANY(HAS_MULTI_EXTRUDER, DEBUG_LEVELING_FEATURE)
-  #include "../../module/motion.h"
-#endif
+#include "../../module/motion.h"
 
-#if HAS_PRUSA_MMU3
-  #include "../../feature/mmu3/mmu3.h"
-#elif HAS_PRUSA_MMU2
-  #include "../../feature/mmu/mmu2.h"
-#endif
-
-#define DEBUG_OUT ENABLED(DEBUG_LEVELING_FEATURE)
-#include "../../core/debug_out.h"
-
-/**
- * T0-T<n>: Switch tool, usually switching extruders
+/*
+ * MarlinBio:
+ * T: Switch tool.
+ * 
+ * Switch between tools to indicate which motors Z and E control.
+ * Without mixing, tools correspond 1:1 with extruders. With mixing,
+ * linked extruders are considered one tool. It is not recommended to use
+ * the S1 parameter, as this can disrupt tracking. If no movement after tool
+ * change is desired, change the associated setting instead.
  *
  * Parameters:
- *   F<units/min>  Set the movement feedrate
- *   S1            Don't move the tool in XY after change
- *
- *   For PRUSA_MMU2(S) and EXTENDABLE_EMU_MMU2(S)
- *     T<n>  G-code to extrude at least 38.10 mm at feedrate 19.02 mm/s must follow immediately to load to extruder wheels.
- *     T?    G-code to extrude shouldn't have to follow. Load to extruder wheels is done automatically.
- *     Tx    Same as T?, but nozzle doesn't have to be preheated. Tc requires a preheated nozzle to finish filament load.
- *     Tc   Load to nozzle after filament was prepared by Tc and nozzle is already heated.
+ *   T : The new tool index.
+ *   S : Allow (0) or block (1) movement for the tool change, default 0.
+ * 
+ * Examples:
+ *   T1 ; Switch to the second tool.
  */
 void GcodeSuite::T(const int8_t tool_index) {
 
   #if HAS_MULTI_EXTRUDER
     // For 'T' with no parameter report the current tool.
     if (parser.string_arg && *parser.string_arg == '*') {
-      SERIAL_ECHOLNPGM(STR_ACTIVE_EXTRUDER, active_extruder);
+      SERIAL_ECHOLNPGM(STR_ACTIVE_TOOL, active_extruder);
       return;
     }
   #endif
-
-  DEBUG_SECTION(log_T, "T", DEBUGGING(LEVELING));
-  if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("...(", tool_index, ")");
 
   // Count this command as movement / activity
   reset_stepper_timeout();
 
-  #if HAS_PRUSA_MMU3
-    if (parser.has_string()) {
-      mmu3.tool_change(parser.string_arg[0], uint8_t(tool_index));   // Special commands T?/Tx/Tc
-      return;
-    }
-  #elif HAS_PRUSA_MMU2
-    if (parser.string_arg) {
-      mmu2.tool_change(parser.string_arg);   // Special commands T?/Tx/Tc
-      return;
-    }
-  #endif
-
-  tool_change(tool_index
-    #if HAS_MULTI_EXTRUDER
-      , parser.boolval('S')
-        || TERN(PARKING_EXTRUDER, false, tool_index == active_extruder) // For PARKING_EXTRUDER motion is decided in tool_change()
-    #endif
-  );
+  tool_change(tool_index, parser.boolval('S') || tool_index == active_extruder);
 }
 
 #endif // HAS_TOOLCHANGE

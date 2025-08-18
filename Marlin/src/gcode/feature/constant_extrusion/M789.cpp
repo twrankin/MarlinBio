@@ -1,6 +1,8 @@
-/**
+/*
  * MarlinBio 3D Printer Firmware
  * Copyright (c) 2025 MarlinBio [https://github.com/twrankin/MarlinBio]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +16,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
  */
 
 #include "../../../inc/MarlinConfig.h"
@@ -31,12 +32,13 @@
  * If no parameters are provided, it reports the current settings.
  * If any parameter is provided, it will enable constant extrusion unless 'D' is specified.
  * 
- *  E : Extruder index (default: active_extruder).
- *  S : Syringe inner diameter (mm).
- *  N : Needle inner diameter (mm).
- *  K : Extrusion coefficient.
- *  P : Pressurization length (mm).
- *  D : Disable constant extrusion (default: enabled).
+ * Parameters:
+ *   E : Extruder index (default: active_extruder).
+ *   S : Syringe inner diameter (mm).
+ *   N : Needle inner diameter (mm).
+ *   K : Extrusion coefficient.
+ *   P : Pressurization length (mm).
+ *   D : Disable constant extrusion (default: enabled).
  *
  * Examples:
  *   M789                             ; Report current parameters

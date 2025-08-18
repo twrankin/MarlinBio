@@ -1537,7 +1537,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
     } // !no_move
 
-    SERIAL_ECHOLNPGM(STR_ACTIVE_EXTRUDER, active_extruder);
+    SERIAL_ECHOLNPGM(STR_ACTIVE_TOOL, active_extruder);
 
   }
   #endif

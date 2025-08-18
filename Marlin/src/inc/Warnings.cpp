@@ -95,8 +95,8 @@
 #if DISABLED(USE_WATCHDOG)
   #warning "Safety Alert! Enable USE_WATCHDOG for the final build!"
 #endif
-#if HAS_HOTEND && DISABLED(THERMAL_PROTECTION_HOTENDS)
-  #warning "Safety Alert! Enable THERMAL_PROTECTION_HOTENDS for the final build!"
+#if HAS_HOTEND && DISABLED(MODULE_THERMAL_PROTECTION)
+  #warning "Safety Alert! Enable MODULE_THERMAL_PROTECTION for the final build!"
 #endif
 #if HAS_HEATED_BED && DISABLED(THERMAL_PROTECTION_BED)
   #warning "Safety Alert! Enable THERMAL_PROTECTION_BED for the final build!"

@@ -1043,7 +1043,7 @@ class Temperature {
         TERN_(AUTO_POWER_CONTROL, if (celsius) powerManager.power_on());
 
         if (temp_hotend[ee].enabled()) {
-          temp_hotend[ee].target = temp_hotend[ee].type == hotend_info_t::deviceType::cooler ? _MAX(celsius, temp_range[ee].mintemp + HOTEND_OVERSHOOT) : _MIN(celsius, temp_range[ee].maxtemp - HOTEND_OVERSHOOT);
+          temp_hotend[ee].target = temp_hotend[ee].type == hotend_info_t::deviceType::cooler ? _MAX(celsius, temp_range[ee].mintemp + TEMPERATURE_OVERSHOOT) : _MIN(celsius, temp_range[ee].maxtemp - TEMPERATURE_OVERSHOOT);
         } else {
           temp_hotend[ee].target = DISABLED_TEMP;
         }
@@ -1421,14 +1421,14 @@ class Temperature {
     #define MINTEMP_ERROR(e, d) mintemp_error(heater_id_t(e) OPTARG(ERR_INCLUDE_TEMP, d))
     #define MAXTEMP_ERROR(e, d) maxtemp_error(heater_id_t(e) OPTARG(ERR_INCLUDE_TEMP, d))
 
-    #define HAS_THERMAL_PROTECTION ANY(THERMAL_PROTECTION_HOTENDS, THERMAL_PROTECTION_CHAMBER, THERMAL_PROTECTION_BED, THERMAL_PROTECTION_COOLER)
+    #define HAS_THERMAL_PROTECTION ANY(MODULE_THERMAL_PROTECTION, THERMAL_PROTECTION_CHAMBER, THERMAL_PROTECTION_BED, THERMAL_PROTECTION_COOLER)
 
     #if HAS_THERMAL_PROTECTION
 
       // Indices and size for the tr_state_machine array. One for each protected heater.
       enum RunawayIndex : int8_t {
         _RI = -1
-        #if ENABLED(THERMAL_PROTECTION_HOTENDS)
+        #if ENABLED(MODULE_THERMAL_PROTECTION)
           #define _RUNAWAY_IND_E(N) ,RUNAWAY_IND_E##N
           REPEAT(HOTENDS, _RUNAWAY_IND_E)
           #undef _RUNAWAY_IND_E

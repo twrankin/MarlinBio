@@ -126,7 +126,7 @@ xyze_pos_t destination; // {0}
 #if HAS_HOTEND_OFFSET
   xyz_pos_t hotend_offset[TOOL_NUM]; // Initialized by settings.load
   void reset_hotend_offsets() {
-    constexpr float tmp[XYZ][TOOL_NUM] = { HOTEND_OFFSET_X, HOTEND_OFFSET_Y, HOTEND_OFFSET_Z };
+    constexpr float tmp[XYZ][TOOL_NUM] = { NOZZLE_OFFSET_X, NOZZLE_OFFSET_Y, NOZZLE_OFFSET_Z };
     static_assert(
       !tmp[X_AXIS][0] && !tmp[Y_AXIS][0] && !tmp[Z_AXIS][0],
       "Offsets for the first hotend must be 0.0."

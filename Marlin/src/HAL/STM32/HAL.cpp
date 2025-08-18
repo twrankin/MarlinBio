@@ -174,7 +174,7 @@ volatile uint32_t systick_uptime_millis = 0;
 systickCallback_t systick_user_callback;
 void systick_attach_callback(systickCallback_t cb) { systick_user_callback = cb; }
 void HAL_SYSTICK_Callback() {
-  systick_uptime_millis++;
+  systick_uptime_millis = systick_uptime_millis + 1;
   if (systick_user_callback) systick_user_callback();
 }
 

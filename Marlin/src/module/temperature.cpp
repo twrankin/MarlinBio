@@ -347,9 +347,9 @@ PGMSTR(str_t_cooling_failed, STR_T_COOLING_FAILED);
 
   // Sanity-check max readable temperatures
   #define CHECK_MAXTEMP_(N,M,S) static_assert( \
-    S >= 998 || M <= _MAX(TT_NAME(S)[0].celsius, TT_NAME(S)[COUNT(TT_NAME(S)) - 1].celsius) - (HOTEND_OVERSHOOT), \
-    "HEATER_" STRINGIFY(N) "_MAXTEMP (" STRINGIFY(M) ") is too high for thermistor_" STRINGIFY(S) ".h with HOTEND_OVERSHOOT=" STRINGIFY(HOTEND_OVERSHOOT) ".");
-  #define CHECK_MAXTEMP(N) TERN(TEMP_SENSOR_##N##_IS_THERMISTOR, CHECK_MAXTEMP_, CODE_0)(N, HEATER_##N##_MAXTEMP, TEMP_SENSOR_##N)
+    S >= 998 || M <= _MAX(TT_NAME(S)[0].celsius, TT_NAME(S)[COUNT(TT_NAME(S)) - 1].celsius) - (TEMPERATURE_OVERSHOOT), \
+    "HEATER_" STRINGIFY(N) "_MAXTEMP (" STRINGIFY(M) ") is too high for thermistor_" STRINGIFY(S) ".h with TEMPERATURE_OVERSHOOT=" STRINGIFY(TEMPERATURE_OVERSHOOT) ".");
+  #define CHECK_MAXTEMP(N) TERN(TEMP_SENSOR_##N##_IS_THERMISTOR, CHECK_MAXTEMP_, CODE_0)(N, MODULE_##N##_MAXTEMP, TEMP_SENSOR_##N)
   REPEAT(HOTENDS, CHECK_MAXTEMP)
 
   #if HAS_PREHEAT
@@ -2047,7 +2047,7 @@ void Temperature::mintemp_error(const heater_id_t heater_id OPTARG(ERR_INCLUDE_T
       uint8_t pwm_amount = 0;
 
       if (temp_hotend[e].enabled()) {
-        #if ENABLED(THERMAL_PROTECTION_HOTENDS)
+        #if ENABLED(MODULE_THERMAL_PROTECTION)
           const auto deg = degHotend(e);
           if (deg > temp_range[e].maxtemp) {
             TERN_(SOVOL_SV06_RTS, rts.gotoPageBeep(ID_KillBadTemp_L, ID_KillBadTemp_D));
@@ -3328,20 +3328,20 @@ void Temperature::init() {
   #if HAS_HOTEND
     #define _TEMP_MIN_E(NR) do{ \
       const celsius_t tmin_tmp = TERN(TEMP_SENSOR_##NR##_IS_CUSTOM, 0, int16_t(pgm_read_word(&TEMPTABLE_##NR [TEMP_SENSOR_##NR##_MINTEMP_IND].celsius))), \
-                      tmin = _MAX(HEATER_##NR##_MINTEMP, tmin_tmp); \
+                      tmin = _MAX(MODULE_##NR##_MINTEMP, tmin_tmp); \
       temp_range[NR].mintemp = tmin; \
       while (analog_to_celsius_hotend(temp_range[NR].raw_min, NR) < tmin) \
         temp_range[NR].raw_min += TEMPDIR(NR) * (OVERSAMPLENR); \
     }while(0)
     #define _TEMP_MAX_E(NR) do{ \
       const celsius_t tmax_tmp = TERN(TEMP_SENSOR_##NR##_IS_CUSTOM, 2000, int16_t(pgm_read_word(&TEMPTABLE_##NR [TEMP_SENSOR_##NR##_MAXTEMP_IND].celsius)) - 1), \
-                      tmax = _MIN(HEATER_##NR##_MAXTEMP, tmax_tmp); \
+                      tmax = _MIN(MODULE_##NR##_MAXTEMP, tmax_tmp); \
       temp_range[NR].maxtemp = tmax; \
       while (analog_to_celsius_hotend(temp_range[NR].raw_max, NR) > tmax) \
         temp_range[NR].raw_max -= TEMPDIR(NR) * (OVERSAMPLENR); \
     }while(0)
 
-    #define _MINMAX_TEST(N,M) (!TEMP_SENSOR_##N##_IS_DUMMY && HOTENDS > (N) && TEMP_SENSOR_##N##_IS_THERMISTOR && defined(HEATER_##N##_##M##TEMP))
+    #define _MINMAX_TEST(N,M) (!TEMP_SENSOR_##N##_IS_DUMMY && HOTENDS > (N) && TEMP_SENSOR_##N##_IS_THERMISTOR && defined(MODULE_##N##_##M##TEMP))
 
     #if _MINMAX_TEST(0, MIN)
       _TEMP_MIN_E(0);

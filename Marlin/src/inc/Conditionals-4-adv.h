@@ -290,36 +290,36 @@
 // Remove hotend-dependent settings
 #if HOTENDS < 8
   #undef E7_AUTO_FAN_PIN
-  #undef HEATER_7_MAXTEMP
-  #undef HEATER_7_MINTEMP
+  #undef MODULE_7_MAXTEMP
+  #undef MODULE_7_MINTEMP
   #if HOTENDS < 7
     #undef E6_AUTO_FAN_PIN
-    #undef HEATER_6_MAXTEMP
-    #undef HEATER_6_MINTEMP
+    #undef MODULE_6_MAXTEMP
+    #undef MODULE_6_MINTEMP
     #if HOTENDS < 6
       #undef E5_AUTO_FAN_PIN
-      #undef HEATER_5_MAXTEMP
-      #undef HEATER_5_MINTEMP
+      #undef MODULE_5_MAXTEMP
+      #undef MODULE_5_MINTEMP
       #if HOTENDS < 5
         #undef E4_AUTO_FAN_PIN
-        #undef HEATER_4_MAXTEMP
-        #undef HEATER_4_MINTEMP
+        #undef MODULE_4_MAXTEMP
+        #undef MODULE_4_MINTEMP
         #if HOTENDS < 4
           #undef E3_AUTO_FAN_PIN
-          #undef HEATER_3_MAXTEMP
-          #undef HEATER_3_MINTEMP
+          #undef MODULE_3_MAXTEMP
+          #undef MODULE_3_MINTEMP
           #if HOTENDS < 3
             #undef E2_AUTO_FAN_PIN
-            #undef HEATER_2_MAXTEMP
-            #undef HEATER_2_MINTEMP
+            #undef MODULE_2_MAXTEMP
+            #undef MODULE_2_MINTEMP
             #if HOTENDS < 2
               #undef E1_AUTO_FAN_PIN
-              #undef HEATER_1_MAXTEMP
-              #undef HEATER_1_MINTEMP
+              #undef MODULE_1_MAXTEMP
+              #undef MODULE_1_MINTEMP
               #if HOTENDS < 1
                 #undef E0_AUTO_FAN_PIN
-                #undef HEATER_0_MAXTEMP
-                #undef HEATER_0_MINTEMP
+                #undef MODULE_0_MAXTEMP
+                #undef MODULE_0_MINTEMP
               #endif
             #endif
           #endif
@@ -851,7 +851,7 @@
 #if !ALL(HAS_X_AXIS, HAS_HOTEND)
   #undef AUTOTEMP
 #endif
-#if DISABLED(THERMAL_PROTECTION_HOTENDS)
+#if DISABLED(MODULE_THERMAL_PROTECTION)
   #undef THERMAL_PROTECTION_PERIOD
   #undef THERMAL_PROTECTION_HYSTERESIS
   #undef WATCH_TEMP_PERIOD
