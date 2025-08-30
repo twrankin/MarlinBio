@@ -381,7 +381,7 @@ void startOrResumeJob() {
 
     IF_DISABLED(SD_ABORT_NO_COOLDOWN, thermalManager.disable_all_heaters());
 
-    TERN(HAS_CUTTER, cutter.kill(), thermalManager.zero_fan_speeds()); // Full cutter shutdown including ISR control
+    TERN_(HAS_CUTTER, cutter.kill()); // Full cutter shutdown including ISR control
 
     wait_for_heatup = false;
 

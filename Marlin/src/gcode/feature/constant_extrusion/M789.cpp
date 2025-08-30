@@ -31,12 +31,12 @@
  * If no parameters are provided, it reports the current settings.
  * If any parameter is provided, it will enable constant extrusion unless 'D' is specified.
  * 
- *  E : Extruder index (default: active_extruder)
- *  S : Syringe inner diameter (mm)
- *  N : Needle inner diameter (mm)
- *  K : Extrusion coefficient
- *  P : Pressurization length (mm)
- *  D : Disable constant extrusion (default: enabled)
+ *  E : Extruder index (default: active_extruder).
+ *  S : Syringe inner diameter (mm).
+ *  N : Needle inner diameter (mm).
+ *  K : Extrusion coefficient.
+ *  P : Pressurization length (mm).
+ *  D : Disable constant extrusion (default: enabled).
  *
  * Examples:
  *   M789                             ; Report current parameters

@@ -59,6 +59,9 @@
 
 typedef int_fast8_t heater_id_t;
 
+/// MarlinBio: Some unrealistic temperature in C.
+#define DISABLED_TEMP -1000
+
 /**
  * States for ADC reading in the ISR
  */
@@ -440,37 +443,52 @@ typedef struct TempInfo {
 /// We also consolidated some of the temperature monitoring here.
 typedef struct HeaterInfo : public TempInfo {
   enum deviceType {
+    disabled,
     heater,
     cooler
   };
 
-  bool            enabled;
+  inline bool enabled() { return type != disabled; }
+
+  bool            dampen_heating;
+  bool            dampen_fan;
   deviceType      type;
   celsius_float_t target;
   uint8_t         soft_pwm_amount;
 
-  bool is_off_target(const celsius_float_t offs=0) const {
-    if (type == heater) return (celsius < target - offs);
-    if (type == cooler) return (celsius > target + offs);
-    return false;
-  }
-
   #if WATCH_HOTENDS
-    bool            temps_ready;
     millis_t        next_ms;
     celsius_float_t watch_target;
 
     inline bool watch_elapsed(const millis_t &ms) { return next_ms && ELAPSED(ms, next_ms); }
     inline bool watch_elapsed() { return watch_elapsed(millis()); }
 
-    inline bool watch_check() { return type == cooler ? celsius <= watch_target : celsius >= watch_target; }
+    bool watch_check() {
+      if (enabled() && next_ms) {
+        /// MarlinBio: Make sure we're not going the wrong way.
+        if (type == cooler ? celsius > watch_target + WATCH_TEMP_DECREASE + THERMAL_PROTECTION_HYSTERESIS : celsius < watch_target - WATCH_TEMP_INCREASE - THERMAL_PROTECTION_HYSTERESIS) {
+          return false;
+        }
+
+        if (watch_elapsed()) {
+          /// MarlinBio: Make sure we reached our target.
+          if (type == cooler ? celsius <= watch_target : celsius >= watch_target) {
+            restart_watch();
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
 
     inline void restart_watch() {
-      if (enabled && temps_ready) {
-        const celsius_float_t newtarget = type == cooler ? celsius - WATCH_TEMP_INCREASE : celsius + WATCH_TEMP_INCREASE;
-        if (type == cooler ? newtarget > target + THERMAL_PROTECTION_HYSTERESIS - WATCH_TEMP_INCREASE : newtarget < target - THERMAL_PROTECTION_HYSTERESIS + WATCH_TEMP_INCREASE) {
+      if (enabled()) {
+        const celsius_float_t newtarget = type == cooler ? celsius - WATCH_TEMP_DECREASE : celsius + WATCH_TEMP_INCREASE;
+        if (type == cooler ? newtarget > target + THERMAL_PROTECTION_HYSTERESIS - WATCH_TEMP_DECREASE : newtarget < target - THERMAL_PROTECTION_HYSTERESIS + WATCH_TEMP_INCREASE) {
           watch_target = newtarget;
-          next_ms = millis() + SEC_TO_MS(WATCH_TEMP_PERIOD);
+          next_ms = millis() + SEC_TO_MS(type == cooler ? WATCH_COOL_PERIOD : WATCH_HEAT_PERIOD);
           return;
         }
       }
@@ -786,30 +804,30 @@ class Temperature {
     static millis_t fan_update_ms;
 
     static void manage_extruder_fans(millis_t ms) {
-      #if HAS_FAN_LOGIC
-      if (ELAPSED(ms, fan_update_ms)) { // only need to check fan state very infrequently
-        const millis_t next_ms = ms + fan_update_interval_ms;
-        #if HAS_PWMFANCHECK
-          #define FAN_CHECK_DURATION 100
-          if (fan_check.is_measuring()) {
-            fan_check.compute_speed(ms + FAN_CHECK_DURATION - fan_update_ms);
-            fan_update_ms = next_ms;
-          }
-          else
-            fan_update_ms = ms + FAN_CHECK_DURATION;
-          fan_check.toggle_measuring();
-        #else
-          TERN_(HAS_FANCHECK, fan_check.compute_speed(next_ms - fan_update_ms));
-          fan_update_ms = next_ms;
-        #endif
-        TERN_(HAS_AUTO_FAN, update_autofans()); // Needed as last when HAS_PWMFANCHECK to properly force fan speed
-      }
-      #endif
-
-      #if HAS_HOTEND
+      #if HAS_HOTEND && HAS_FAN
         HOTEND_LOOP() {
-          /// MarlinBio: If the cooler is running, turn the fans on.
-          set_fan_speed(e, temp_hotend[e].type == hotend_info_t::deviceType::cooler && temp_hotend[e].enabled ? FAN_MAX_PWM : 0);
+          if (auto_fan[e] == enabled) {
+            float fan_scale = 0;
+            if (temp_hotend[e].type == hotend_info_t::deviceType::cooler) {
+              if (temp_hotend[e].celsius < temp_hotend[e].target) {
+                /// MarlinBio: When we reach the target, turn on fan dampening.
+                temp_hotend[e].dampen_fan = true;
+              } else if (temp_hotend[e].celsius > temp_hotend[e].target + THERMAL_PROTECTION_HYSTERESIS) {
+                /// MarlinBio: Turn off fan dampening if we drift too far above target (it also starts disabled after setting a new target).
+                temp_hotend[e].dampen_fan = false;
+              }
+
+              if (temp_hotend[e].dampen_fan) {
+                fan_scale = float(AUTO_FAN_DAMPEN) / FAN_MAX_PWM;
+              } else {
+                /// MarlinBio: Adjust the PWM based on the target, max at -10C linearly scaled to off at 90C.
+                fan_scale = (90 - temp_hotend[e].target) * .01;
+                NOMORE(fan_scale, 1);
+                NOLESS(fan_scale, 0);
+              }
+            }
+            set_fan_speed(e, FAN_MAX_PWM * fan_scale);
+          }
         }
       #endif
     }
@@ -886,6 +904,14 @@ class Temperature {
     #if HAS_FAN
 
       static uint8_t fan_speed[FAN_COUNT];
+  
+      /// MarlinBio: Auto fan is disabled forever when M106 is run.
+      enum AutoFan {
+        enabled,
+        disabled
+      };
+      static AutoFan auto_fan[FAN_COUNT];
+
       #define FANS_LOOP(I) for (uint8_t I = 0; I < FAN_COUNT; ++I)
 
       static void set_fan_speed(const uint8_t fan, const uint16_t speed);
@@ -1004,6 +1030,8 @@ class Temperature {
 
     #if HAS_HOTEND
 
+      static bool setTypeHotend(const hotend_info_t::deviceType type, const uint8_t E_NAME);
+
       static void setTargetHotend(const celsius_float_t celsius, const uint8_t E_NAME) {
         const uint8_t ee = HOTEND_INDEX;
         #if PREHEAT_TIME_HOTEND_MS > 0
@@ -1013,7 +1041,15 @@ class Temperature {
             start_hotend_preheat_time(ee);
         #endif
         TERN_(AUTO_POWER_CONTROL, if (celsius) powerManager.power_on());
-        temp_hotend[ee].target = temp_hotend[ee].type == hotend_info_t::deviceType::cooler ? _MAX(celsius, temp_range[ee].mintemp + HOTEND_OVERSHOOT) : _MIN(celsius, temp_range[ee].maxtemp - HOTEND_OVERSHOOT);
+
+        if (temp_hotend[ee].enabled()) {
+          temp_hotend[ee].target = temp_hotend[ee].type == hotend_info_t::deviceType::cooler ? _MAX(celsius, temp_range[ee].mintemp + HOTEND_OVERSHOOT) : _MIN(celsius, temp_range[ee].maxtemp - HOTEND_OVERSHOOT);
+        } else {
+          temp_hotend[ee].target = DISABLED_TEMP;
+        }
+
+        temp_hotend[ee].dampen_fan     = false;
+        temp_hotend[ee].dampen_heating = false;
         TERN_(WATCH_HOTENDS, temp_hotend[ee].restart_watch());
       }
 
@@ -1175,6 +1211,11 @@ class Temperature {
      * The software PWM power for a heater
      */
     static int16_t getHeaterPower(const heater_id_t heater_id);
+
+    /**
+     * Switch off one heater
+     */
+    static void disable_heater(heater_id_t e);
 
     /**
      * Switch off all heaters, set all target temperatures to 0

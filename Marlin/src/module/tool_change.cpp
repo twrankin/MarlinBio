@@ -1129,6 +1129,13 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
     // Nothing to do
     UNUSED(new_tool); UNUSED(no_move);
   
+  #elif !HAS_MULTI_EXTRUDER
+
+    UNUSED(no_move);
+
+    if (new_tool) invalid_extruder_error(new_tool);
+      return;
+
   #else
 
   /// MarlinBio: "if constexpr" will not compile the block that won't be run.
@@ -1159,7 +1166,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
         kill(F("A Z axis raise is specified but the Z axes were not homed"));
       }
       #if HAS_HOTEND_OFFSET
-        if (    (hotend_offset[new_tool].x - hotend_offset[old_tool].x != 0 && !axis_was_homed(X_AXIS))
+        if (   (hotend_offset[new_tool].x - hotend_offset[old_tool].x != 0 && !axis_was_homed(X_AXIS))
             || (hotend_offset[new_tool].y - hotend_offset[old_tool].y != 0 && !axis_was_homed(Y_AXIS))
             || (hotend_offset[new_tool].z - hotend_offset[old_tool].z != 0 && !axis_was_homed(Z_AXIS))) {
           kill(F("A hotend offset is specified but the axes were not homed"));

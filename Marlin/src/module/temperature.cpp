@@ -431,7 +431,9 @@ PGMSTR(str_t_cooling_failed, STR_T_COOLING_FAILED);
 // HAS_FAN does not include CONTROLLER_FAN
 #if HAS_FAN
 
-  uint8_t Temperature::fan_speed[FAN_COUNT] = ARRAY_N_1(FAN_COUNT, FAN_OFF_PWM);
+  /// MarlinBio: Set in factory_reset.
+  uint8_t Temperature::fan_speed[FAN_COUNT];
+  Temperature::AutoFan Temperature::auto_fan[FAN_COUNT];
 
   #if ENABLED(EXTRA_FAN_SPEED)
 
@@ -482,8 +484,6 @@ PGMSTR(str_t_cooling_failed, STR_T_COOLING_FAILED);
         return;
       }
     #endif
-
-    TERN_(SINGLENOZZLE, if (fan < EXTRUDERS) fan = 0); // Always fan 0 for SINGLENOZZLE E fan
 
     if (fan >= FAN_COUNT) return;
 
@@ -714,13 +714,22 @@ void Temperature::factory_reset() {
     /// MarlinBio: Heater info
     ///
     #define HEATER_SETUP(e) do { \
-      temp_hotend[e].enabled         = HAS_COOLER_##e || HAS_HEATER_##e; \
-      temp_hotend[e].type            = HAS_COOLER_##e ? HeaterInfo::deviceType::cooler : HeaterInfo::deviceType::heater; \
+      temp_hotend[e].type = HeaterInfo::deviceType::disabled; \
       temp_hotend[e].soft_pwm_amount = 0; \
-      setTargetHotend(HAS_COOLER_##e ? COOLER_##e##_TARGET : HEATER_##e##_TARGET, e); \
+      setTargetHotend(DISABLED_TEMP, e); \
     } while(0);
 
     REPEAT(HOTENDS, HEATER_SETUP)
+  #endif
+
+  #if HAS_FAN
+    ///
+    /// MarlinBio: Fans
+    ///
+    FANS_LOOP(f) {
+      fan_speed[f] = FAN_OFF_PWM;
+      auto_fan[f]  = enabled;
+    }
   #endif
 
   //
@@ -1919,7 +1928,51 @@ void Temperature::mintemp_error(const heater_id_t heater_id OPTARG(ERR_INCLUDE_T
       //*/
 
     #else // No PID or MPC enabled
-      const float pid_output = temp_hotend[ee].is_off_target() ? BANG_MAX : 0;
+      #define COOL_WINDOW 0.25
+      #define DAMPEN_ON   0.75
+      #define DAMPEN_OFF  0.4
+      #define HEAT_ON     0.4
+      #define HEAT_OFF    0.25
+      #define VERY_BELOW  10
+
+      float           pid_output = 0;
+      celsius_float_t current    = temp_hotend[ee].celsius;
+      celsius_float_t target     = temp_hotend[ee].target;
+
+      /// MarlinBio: Split out heating and cooling for better readability and control.
+      if (temp_hotend[ee].type == hotend_info_t::deviceType::cooler) {
+        if (current > target + COOL_WINDOW) {
+          /// MarlinBio: Turn on when we're above the window.
+          pid_output = BANG_MAX;
+        } else if (current < target - COOL_WINDOW) {
+          /// MarlinBio: Turn off when we're below the window.
+          pid_output = 0;
+        } else {
+          /// MarlinBio: Otherwise, keep the previous setting through the window.
+          pid_output = temp_hotend[ee].soft_pwm_amount ? BANG_MAX : 0;
+        }
+      } else if (temp_hotend[ee].type == hotend_info_t::deviceType::heater) {
+        if (current < target - VERY_BELOW) {
+          /// MarlinBio: Long heats will generate overshoot, try to dampen it by having
+          /// a lower window for the first approach.
+          temp_hotend[ee].dampen_heating = true;
+        }
+        
+        if (temp_hotend[ee].dampen_heating && current > target - DAMPEN_ON && current < target - DAMPEN_OFF) {
+          /// MarlinBio: Turn off early after a long heat.
+          pid_output = 0;
+        } else if (current < target - (temp_hotend[ee].dampen_heating ? DAMPEN_ON : HEAT_ON)) {
+          /// MarlinBio: Turn on when we're well below target.
+          pid_output = BANG_MAX;
+        } else if (current >= target - (temp_hotend[ee].dampen_heating ? DAMPEN_OFF : HEAT_OFF)) {
+          /// MarlinBio: Turn off when we're slightly below target; heat loves to overshoot.
+          temp_hotend[ee].dampen_heating = false;
+          pid_output = 0;
+        } else {
+          /// MarlinBio: Otherwise, keep the previous setting through the window.
+          pid_output = temp_hotend[ee].soft_pwm_amount ? BANG_MAX : 0;
+        }
+      }
     #endif
 
     return pid_output;
@@ -1963,6 +2016,27 @@ void Temperature::mintemp_error(const heater_id_t heater_id OPTARG(ERR_INCLUDE_T
 
 #if HAS_HOTEND
 
+  bool Temperature::setTypeHotend(const hotend_info_t::deviceType type, const uint8_t E_NAME) {
+    if (type == hotend_info_t::deviceType::disabled) {
+      disable_heater(HOTEND_INDEX);
+      return true;
+    }
+
+    if (!IsRunning()) {
+      SERIAL_ECHOLN("Cannot set module type, device is not running.");
+      return false;
+    }
+
+    if (temp_hotend[HOTEND_INDEX].enabled() && type != temp_hotend[HOTEND_INDEX].type) {
+      SERIAL_ECHOLN("The module is already set to ", temp_hotend[HOTEND_INDEX].type == hotend_info_t::deviceType::cooler ? "cooling." : "heating.",
+        " Disable it first and ensure it is wired in the correct orientation.");
+      return false;
+    }
+
+    temp_hotend[HOTEND_INDEX].type = type;
+    return true;
+  }
+
   /**
    * Manage Hotend Temperatures
    * @brief Task for managing hotends, called from Temperature::task()
@@ -1970,8 +2044,9 @@ void Temperature::mintemp_error(const heater_id_t heater_id OPTARG(ERR_INCLUDE_T
    */
   void Temperature::manage_hotends(const millis_t &ms) {
     HOTEND_LOOP() {
-      temp_hotend[e].soft_pwm_amount = 0;
-      if (temp_hotend[e].enabled) {
+      uint8_t pwm_amount = 0;
+
+      if (temp_hotend[e].enabled()) {
         #if ENABLED(THERMAL_PROTECTION_HOTENDS)
           const auto deg = degHotend(e);
           if (deg > temp_range[e].maxtemp) {
@@ -1989,27 +2064,25 @@ void Temperature::mintemp_error(const heater_id_t heater_id OPTARG(ERR_INCLUDE_T
 
         if (   (temp_hotend[e].type == hotend_info_t::deviceType::cooler && temp_hotend[e].celsius > temp_range[e].mintemp)
             || (temp_hotend[e].type == hotend_info_t::deviceType::heater && temp_hotend[e].celsius < temp_range[e].maxtemp)) {
-          temp_hotend[e].soft_pwm_amount = (int)get_pid_output_hotend(e) >> 1;
+          pwm_amount = (int)get_pid_output_hotend(e) >> 1;
         }
 
         #if WATCH_HOTENDS
           /// MarlinBio: Make sure the temperature is near or moving towards the target.
-          if (temp_hotend[e].watch_elapsed(ms)) {
-            if (temp_hotend[e].watch_check())
-              temp_hotend[e].restart_watch();
-            else {
-              TERN_(SOVOL_SV06_RTS, rts.gotoPageBeep(ID_KillHeat_L, ID_KillHeat_D));
-              TERN_(DWIN_CREALITY_LCD, dwinPopupTemperature(0));
-              TERN_(EXTENSIBLE_UI, ExtUI::onHeatingError(e));
-              if (thermalManager.temp_hotend[e].type == hotend_info_t::deviceType::cooler) {
-                _TEMP_ERROR(e, FPSTR(str_t_cooling_failed), MSG_ERR_COOLING_FAILED, temp);
-              } else {
-                _TEMP_ERROR(e, FPSTR(str_t_heating_failed), MSG_ERR_HEATING_FAILED, temp);
-              }
+          if (!temp_hotend[e].watch_check()) {
+            TERN_(SOVOL_SV06_RTS, rts.gotoPageBeep(ID_KillHeat_L, ID_KillHeat_D));
+            TERN_(DWIN_CREALITY_LCD, dwinPopupTemperature(0));
+            TERN_(EXTENSIBLE_UI, ExtUI::onHeatingError(e));
+            if (thermalManager.temp_hotend[e].type == hotend_info_t::deviceType::cooler) {
+              _TEMP_ERROR(e, FPSTR(str_t_cooling_failed), MSG_ERR_COOLING_FAILED, temp);
+            } else {
+              _TEMP_ERROR(e, FPSTR(str_t_heating_failed), MSG_ERR_HEATING_FAILED, temp);
             }
           }
         #endif
       }
+
+      temp_hotend[e].soft_pwm_amount = pwm_amount;
     } // HOTEND_LOOP
   }
 
@@ -2918,24 +2991,15 @@ void Temperature::updateTemperaturesFromRawValues() {
     static constexpr int8_t temp_dir[HOTENDS] = { REPEAT(HOTENDS, _TEMPDIR) };
 
     HOTEND_LOOP() {
-      if (temp_hotend[e].enabled) {
+      if (temp_hotend[e].enabled()) {
         temp_hotend[e].celsius = analog_to_celsius_hotend(temp_hotend[e].getraw(), e);
-
-        #if WATCH_HOTENDS
-          /// MarlinBio: Restart the temperature monitor if this is the first reading, to avoid race conditions.
-          /// Otherwise the monitor might be using an initial temperature of 0.
-          if (!temp_hotend[e].temps_ready) {
-            temp_hotend[e].temps_ready = true;
-            temp_hotend[e].restart_watch();
-          }
-        #endif
 
         const raw_adc_t r = temp_hotend[e].getraw();
         const bool neg = temp_dir[e] < 0, pos = temp_dir[e] > 0;
         if ((neg && r < temp_range[e].raw_max) || (pos && r > temp_range[e].raw_max)) {
           MAXTEMP_ERROR(e, temp_hotend[e].celsius);
         }
-        if (temp_hotend[e].enabled && !is_hotend_preheating(e) && ((neg && r > temp_range[e].raw_min) || (pos && r < temp_range[e].raw_min))) {
+        if (((neg && r > temp_range[e].raw_min) || (pos && r < temp_range[e].raw_min))) {
           MINTEMP_ERROR(e, temp_hotend[e].celsius);
         }
       }
@@ -3115,23 +3179,23 @@ void Temperature::init() {
     HOTEND_LOOP() temp_hotend[e].modeled_block_temp = NAN;
   #endif
 
-  #if HAS_COOLER_0 || HAS_HEATER_0
+  #if HAS_HEATER_0
     #ifdef BOARD_OPENDRAIN_MOSFETS
       OUT_WRITE_OD(HEATER_0_PIN, ENABLED(HEATER_0_INVERTING));
     #else
       OUT_WRITE(HEATER_0_PIN, ENABLED(HEATER_0_INVERTING));
     #endif
   #endif
-  #if HAS_COOLER_1 || HAS_HEATER_1
+  #if HAS_HEATER_1
     OUT_WRITE(HEATER_1_PIN, ENABLED(HEATER_1_INVERTING));
   #endif
-  #if HAS_COOLER_2 || HAS_HEATER_2
+  #if HAS_HEATER_2
     OUT_WRITE(HEATER_2_PIN, ENABLED(HEATER_2_INVERTING));
   #endif
-  #if HAS_COOLER_3 || HAS_HEATER_3
+  #if HAS_HEATER_3
     OUT_WRITE(HEATER_3_PIN, ENABLED(HEATER_3_INVERTING));
   #endif
-  #if HAS_COOLER_4 || HAS_HEATER_4
+  #if HAS_HEATER_4
     OUT_WRITE(HEATER_4_PIN, ENABLED(HEATER_4_INVERTING));
   #endif
   #if HAS_HEATER_5
@@ -3327,13 +3391,6 @@ void Temperature::init() {
     #if _MINMAX_TEST(7, MAX)
       _TEMP_MAX_E(7);
     #endif
-
-    /// MarlinBio: Reset the initial targets after configuring min/max.
-    #define RESET_HOTEND_TARGETS(e) do { \
-      setTargetHotend(HAS_COOLER_##e ? COOLER_##e##_TARGET : HEATER_##e##_TARGET, e); \
-    } while(0);
-
-    REPEAT(HOTENDS, RESET_HOTEND_TARGETS)
   #endif // HAS_HOTEND
 
   // TODO: combine these into the macros above
@@ -3429,10 +3486,10 @@ void Temperature::init() {
     #endif
 
     if (TERN1(THERMAL_PROTECTION_VARIANCE_MONITOR, state != TRMalfunction)) {
-      if (running_temp != target) { // If the target temperature changes, restart
+      if (!temp_hotend[heater_id].enabled() || running_temp != target) { // If the target temperature changes, restart
         running_temp = target;
         state = TRInactive;
-        if (temp_hotend[heater_id].type == heater_info_t::deviceType::cooler ? target < 100 : target > 0) {
+        if (temp_hotend[heater_id].enabled() && target != DISABLED_TEMP) {
           state = TRFirstHeating;
         }
         TERN_(THERMAL_PROTECTION_VARIANCE_MONITOR, variance_timer = 0);
@@ -3497,6 +3554,7 @@ void Temperature::init() {
         #endif
 
         if (temp_hotend[heater_id].type == heater_info_t::deviceType::cooler ? rdiff >= -hysteresis_degc : rdiff <= hysteresis_degc) {
+          // Reset the timer unless we're too above/below target. -hysteresis_degc because a cooling error would be lower - higher < 0.
           timer = now + SEC_TO_MS(period_seconds);
           break;
         }
@@ -3526,23 +3584,28 @@ void Temperature::init() {
 
 #endif // HAS_THERMAL_PROTECTION
 
+void Temperature::disable_heater(heater_id_t e) {
+  #if HAS_HOTEND
+    temp_hotend[e].type = heater_info_t::deviceType::disabled;
+    temp_hotend[e].soft_pwm_amount = 0;
+    setTargetHotend(DISABLED_TEMP, e);
+  #endif
+
+  #if HAS_TEMP_HOTEND
+    #define DISABLE_HEATER(N) if (e == N) WRITE_HEATER_##N(LOW);
+    REPEAT(HOTENDS, DISABLE_HEATER);
+  #endif
+}
+
 void Temperature::disable_all_heaters() {
 
   // Disable autotemp, unpause and reset everything
   TERN_(AUTOTEMP, planner.autotemp.enabled = false);
   TERN_(PROBING_HEATERS_OFF, pause_heaters(false));
 
-  #if HAS_HOTEND
-    HOTEND_LOOP() {
-      temp_hotend[e].enabled = false;
-      temp_hotend[e].soft_pwm_amount = 0;
-    }
-  #endif
-
-  #if HAS_TEMP_HOTEND
-    #define DISABLE_HEATER(N) WRITE_HEATER_##N(LOW);
-    REPEAT(HOTENDS, DISABLE_HEATER);
-  #endif
+  HOTEND_LOOP() {
+    disable_heater(e);
+  }
 
   #if HAS_HEATED_BED
     setTargetBed(0);
@@ -4613,7 +4676,7 @@ void Temperature::isr() {
     header(forReplay);
     SERIAL_ECHO("  Status:       [");
     HOTEND_LOOP() {
-      SERIAL_ECHO(temp_hotend[e].enabled ? (temp_hotend[e].type == hotend_info_t::deviceType::cooler ? "Cooling" : "Heating") : "Disabled");
+      SERIAL_ECHO(temp_hotend[e].enabled() ? (temp_hotend[e].type == hotend_info_t::deviceType::cooler ? "Cooling" : "Heating") : "Disabled");
       if (e < HOTENDS - 1) SERIAL_ECHOPGM(", ");
     }
     SERIAL_ECHOLN("]");
@@ -4621,7 +4684,11 @@ void Temperature::isr() {
     header(forReplay);
     SERIAL_ECHO("  Temperatures: [");
     HOTEND_LOOP() {
-      SERIAL_ECHO(degHotend(e)); // TWR: TODO: p_float_t(c, HEATER_STATE_FLOAT_PRECISION)?
+      if (temp_hotend[e].enabled() && temp_hotend[e].target != DISABLED_TEMP) {
+        SERIAL_ECHO(degHotend(e));
+      } else {
+        SERIAL_ECHO("X");
+      }
       if (e < HOTENDS - 1) SERIAL_ECHOPGM(", ");
     }
     SERIAL_ECHOLN("]");
@@ -4629,7 +4696,11 @@ void Temperature::isr() {
     header(forReplay);
     SERIAL_ECHO("  Targets:      [");
     HOTEND_LOOP() {
-      SERIAL_ECHO(degTargetHotend(e));
+      if (temp_hotend[e].enabled() && temp_hotend[e].target != DISABLED_TEMP) {
+        SERIAL_ECHO(degTargetHotend(e));
+      } else {
+        SERIAL_ECHO("X");
+      }
       if (e < HOTENDS - 1) SERIAL_ECHOPGM(", ");
     }
     SERIAL_ECHOLN("]");

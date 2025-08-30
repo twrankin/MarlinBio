@@ -778,7 +778,9 @@ private:
 
   #if HAS_FAN
     static void M106();
-    static void M107();
+    static void M106_report(const bool forReplay=true);
+    /// MarlinBio: M107 is a pointless command, use M106.
+    //static void M107();
   #endif
 
   #if DISABLED(EMERGENCY_PARSER)
