@@ -28,15 +28,16 @@
  * MarlinBio:
  * M163: Set mixing extruder ratios.
  * 
- * This command sets the ratios for mixing extruders.
- * If no parameters are provided, it reports the current settings.
+ * This command sets the ratios for mixing extruders. The ratio simply scales
+ * extrusion; for example, a specified extrusion of 3mm for an extruder with a ratio of
+ * 0.5 will extrude 1.5mm. If no parameters are provided, it reports the current settings.
  * 
- *  S : Extruder index
- *  P : Syringe inner diameter (mm)
+ *  E : Extruder index.
+ *  R : Ratio.
  *
  * Examples:
- *   M163.         ; Report current parameters
- *   M163 S2 P0.66 ; Set the ratio for the third extruder to 0.66.
+ *   M163          ; Report the current parameters.
+ *   M163 E2 R0.66 ; Set the ratio for the third extruder to 0.66.
  */
 void GcodeSuite::M163() {
   if (!parser.seen_any()) {
@@ -45,18 +46,18 @@ void GcodeSuite::M163() {
     return;
   }
 
-  if (!parser.seenval('S')) {
-    SERIAL_ECHOLN("The extruder index, S, is required");
+  if (!parser.seenval('E')) {
+    SERIAL_ECHOLN("The extruder index, E, is required");
     return;
   }
-  const uint8_t extruder = parser.intval('S');
+  const uint8_t extruder = parser.intval('E');
   if (extruder >= EXTRUDERS) {
     SERIAL_ECHOLN("Invalid extruder index");
     return;
   }
 
-  if (!parser.seenval('P')) {
-    SERIAL_ECHOLN("The mix ratio, P, is required");
+  if (!parser.seenval('R')) {
+    SERIAL_ECHOLN("The mix ratio, R, is required");
     return;
   }
   const float mix_ratio = parser.value_float();

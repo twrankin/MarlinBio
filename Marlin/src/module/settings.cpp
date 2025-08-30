@@ -3904,6 +3904,11 @@ void MarlinSettings::reset() {
     //
     TERN_(HAS_HOTEND, gcode.M105(forReplay));
 
+    ///
+    /// MarlinBio: PWM
+    ///
+    TERN_(HAS_FAN, gcode.M106_report(forReplay));
+
     //
     // M149 Temperature units
     //

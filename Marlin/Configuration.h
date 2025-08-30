@@ -679,32 +679,15 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
 #endif
 
 /*
-* MarlinBio:
-* The target temperatures for the syringe/bed modules.
-* Only COOLER_X_TARGET or HEATER_X_TARGET can be enabled for each module.
-* Disable both if not using the temperature module. Cooler/heater 4 is the bed.
-* If you want temperature control enabled, but want to temporarily turn it off,
-* set the temperature to something like 100°C for cooling or 0°C for heating.
-* The M104 command can also be used to set the targets, but not change between heating/cooling.
-* The M109 command is not supported.
-* WARNING: The peltier must be connected in the correct direction for heating or cooling.
-* WARNING: Always rewire with the power completely disconnected.
+ * The temperature modules start in a disabled state. To enable them to heat or cool,
+ * set a target temperature, or disable them when finished, use the M104 command.
+ * It is not recommended to switch between heating and cooling while the device is powered,
+ * as this requires rewiring, but can be done by first disabling the module.
+ * The M109 command is not supported.
+ * Module 4 is the bed.
+ * WARNING: The peltier must be connected in the correct direction for heating or cooling.
+ * WARNING: Always rewire with the power completely disconnected.
  */
-//#define COOLER_0_TARGET 0
-//#define HEATER_0_TARGET 50
-
-//#define COOLER_1_TARGET 0
-//#define HEATER_1_TARGET 50
-
-//#define COOLER_2_TARGET 0
-//#define HEATER_2_TARGET 50
-
-//#define COOLER_3_TARGET 0
-//#define HEATER_3_TARGET 50
-
-/// MarlinBio: This is the bed.
-//#define COOLER_4_TARGET 0
-//#define HEATER_4_TARGET 50
 
 /// MarlinBio: A fatal error will be issued below this temperature.
 #define HEATER_0_MINTEMP -15
@@ -721,13 +704,24 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
 #define HEATER_4_MAXTEMP 75
 
 /*
- * MarlinBio:
  * Thermal Overshoot.
  * During operation, the temperature can often "overshoot" the target by many degrees.
  * Setting the target temperature too close to MAXTEMP/MINTEMP guarantees a shutdown!
- * Use this value to forbid temperatures being set over/under MAXTEMP/MINTEMP -/+ OVERSHOOT.
+ * Use this value to block temperatures being set over/under MAXTEMP/MINTEMP -/+ OVERSHOOT.
  */
 #define HOTEND_OVERSHOOT 15
+
+/*
+ * Dampen the fans upon reaching the target.
+ * When auto fans are enabled, the fans will run at a certain speed depending on the target
+ * temperature. Once the target is reached and the temperature only needs to be maintained,
+ * the fan speed can be reduced for noise tolerance. This is the PWM that will be set upon
+ * reaching the target. Set it lower if the noise is bothersome, and higher if the conditions
+ * cause the temperature to become unstable. M106 can also be used to disable the auto fan feature
+ * entirely and allow manual control.
+ * 0 - 255.
+ */
+#define AUTO_FAN_DAMPEN 128
 
 //===========================================================================
 //============================= PID Settings ================================
@@ -742,7 +736,8 @@ Comment out this error to acknowledge this disclaimer and allow compilation."
  * PIDTEMP : PID temperature control (~4.1K)
  * MPCTEMP : Predictive Model temperature control. (~1.8K without auto-tune)
  */
-/// MarlinBio: Peltier's don't like PWM, so we run them continuously until they reach the target.
+/// MarlinBio: The efficiency and lifespan of a peltier is decreased with PWM,
+/// so we run them continuously until they reach the target.
 //#define PIDTEMP           // See the PID Tuning Guide at https://reprap.org/wiki/PID_Tuning
 //#define MPCTEMP         // See https://marlinfw.org/docs/features/model_predictive_control.html
 

@@ -24,37 +24,78 @@
 #include "../gcode.h"
 #include "../../module/temperature.h"
 
-/**
+/*
  * MarlinBio:
- * M104: Set temperature module target.
+ * M104: Set temperature module type and target.
+ * 
+ * This command can set a temperature module to heat or cool to a target
+ * temperature, or disable it. Using D without specifying a module will
+ * disable all modules. A module can only go from disabled to heating or
+ * cooling, or from heating or cooling to disabled. 
  *
- * Parameters
- *  T<index>  : Temperature module index.
- *  S<target> : The target temperature in celsius.
+ *  I : Module index selector.
+ *  T : Target temperature (°C).
+ *  D : Disable. If no index is specified, disable all.
+ *  H : Specify heating.
+ *  C : Specify cooling.
  *
  * Examples
- *  M104 T1 S60 : Set the second temperature module to 60°.
+ *   M104 I1 H T50 ; Set the second temperature module to heat to 50°C.
+ *   M104 I1 T60   ; Set the second temperature module to 60°C, still heating.
+ *   M104 I0 T4    ; Set the first temperature module to cool to 4°C.
+ *   M104 I0 D     ; Disable the first temperature module.
  */
 void GcodeSuite::M104_M109(const bool isM109) {
-  /// MarlinBio: A lot of the original fluff was removed. It simply sets the temperature
-  /// for the specified module now.
-  /// Leaving the parameters as T and S to avoid differences with the Marlin documentation.
-  /// Though E(xtruder) or H(otend) and T(emperature) are obviously better choices.
-  const uint8_t module = parser.byteval('T', UINT8_MAX);
-  if (module >= HOTENDS) {
-    SERIAL_ECHOLN("Invalid temperature module index");
+  bool disable = parser.seen('D');
+  bool indexed = parser.seenval('I');
+
+  if (!indexed && !disable) {
+    SERIAL_ECHOLN("A module index is required, except when disabling everything using D.");
+    return;
+  }
+
+  uint8_t index;
+  if (indexed) {
+    index = parser.value_byte();
+    if (index >= HOTENDS) {
+      SERIAL_ECHOLN("Invalid temperature module index.");
+      return;
+    }
+  }
+
+  if (disable) {
+    if (indexed) {
+      thermalManager.disable_heater(index);
+    } else {
+      thermalManager.disable_all_heaters();
+    }
+
+    /// MarlinBio: When D is specified, do nothing else.
     return;
   }
 
   celsius_float_t temp;
-  if (parser.seenval('S')) {
+  if (parser.seenval('T')) {
     temp = parser.value_celsius();
   } else {
-    SERIAL_ECHOLN("A temperature is required");
+    SERIAL_ECHOLN("A target temperature is required.");
     return;
   }
 
-  thermalManager.setTargetHotend(temp, module);
+  if (parser.seen('H') && parser.seen('C')) {
+    SERIAL_ECHOLN("Only heating OR cooling can be specified.");
+    return;
+  } else if (parser.seen('H') || parser.seen('C')) {
+    if (!thermalManager.setTypeHotend(parser.seen('H') ? hotend_info_t::deviceType::heater : hotend_info_t::deviceType::cooler, index)) {
+      return;
+    }
+  }
+
+  if (thermalManager.temp_hotend[index].enabled()) {
+    thermalManager.setTargetHotend(temp, index);
+  } else {
+    SERIAL_ECHOLN("Module ", index, " is not enabled. Use H or C to set it to heating or cooling after ensuring the module is wired in the correct orientation.");
+  }
 }
 
 #endif // HAS_HOTEND

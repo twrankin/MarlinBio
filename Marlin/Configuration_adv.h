@@ -331,8 +331,10 @@
    * and/or decrease WATCH_TEMP_INCREASE. WATCH_TEMP_INCREASE should not be set
    * below 2.
    */
-  #define WATCH_TEMP_PERIOD  40               // (seconds)
+  #define WATCH_HEAT_PERIOD  30               // (seconds)
+  #define WATCH_COOL_PERIOD  60               // (seconds)
   #define WATCH_TEMP_INCREASE 2               // (°C)
+  #define WATCH_TEMP_DECREASE 0.5               // (°C)
 #endif
 
 /**

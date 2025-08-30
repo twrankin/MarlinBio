@@ -247,7 +247,7 @@
 #define STR_REDUNDANT                       "redundant "
 #define STR_LASER_TEMP                      "laser temperature"
 
-#define STR_STOPPED_HEATER                  ", system stopped! Heater_ID: "
+#define STR_STOPPED_HEATER                  ", system stopped! Check your settings and connections. Module ID: "
 #define STR_DETECTED_TEMP_B                 " (temp: "
 #define STR_DETECTED_TEMP_E                 ")"
 #define STR_REDUNDANCY                      "Heater switched off. Temperature difference between temp sensors is too high !"
