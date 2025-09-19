@@ -25,8 +25,8 @@
  * It is much shorter and many irrelevant settings have been removed.
  * If you rely on a traditional Marlin setting for your prints, you can try
  * redefining it; however, the associated feature is highly likely to be broken as
- * a result of our changes. If you test a deleted feature that works, let us know and we'll
- * add it back; if you test a deleted feature that's broken, and you'd like us to fix it, open
+ * a result of our changes. If you test a removed feature that works, let us know and we'll
+ * add it back; if you test a removed feature that's broken, and you'd like us to fix it, open
  * an issue or discussion on github with a compelling use case, and we'll look into it:
  * https://github.com/twrankin/MarlinBio/discussions.
  */
@@ -123,6 +123,29 @@
   #define MAX_SOFTWARE_ENDSTOP_Z
 #endif
 
+// Minimum Z height before homing (to make sure the nozzle doesn't hit anything).
+#define Z_CLEARANCE_FOR_HOMING 0
+
+// Height to move to after homing Z.
+//#define Z_AFTER_HOMING 10
+// Position to move to after homing XY.
+//#define XY_AFTER_HOMING { 10, 10 }
+
+// Commands to run after G28.
+//#define EVENT_GCODE_AFTER_HOMING "M300 P440 S200"
+
+// Direction of endstops when homing; 1 = MAX, -1 = MIN.
+#define X_HOME_DIR -1
+#define Y_HOME_DIR -1
+#define Z_HOME_DIR  1
+
+// Homing speeds (mm/min).
+#define HOMING_FEEDRATE_MM_M { 300, 300, 300 }
+
+// This validates that the endstops are triggered on homing moves.
+// Disable this if the kill on failed homing becomes a nuisance.
+#define VALIDATE_HOMING_ENDSTOPS
+
 /*
  * G2/G3 arc settings.
  */
@@ -206,9 +229,46 @@
   // of that extruder when moving. For example, if extruders 0 and 1 are linked with ratios
   // of 1 and 0.5, an extrusion of 10mm for tool 0 would move extruder 0 by 10mm and extruder
   // 1 by 5mm. Ratios can be changed live using the M163 G-code command.
-  // I.E. "M163 S0 P0.75" would set extruder 0's ratio to 0.75.
+  // I.E. "M163 E0 R0.75" would set extruder 0's ratio to 0.75.
   #define MIX_RATIOS { { 1.0, 0.5 } }
 #endif
+
+#if EXTRUDERS > 1
+  /*
+   * The offset of each nozzle in relation to nozzle 0 in mm. Defining these will move the X/Y/Z
+   * axes according to the offsets when changing tools. The offsets for nozzle 0 must all be zero.
+   * The number of nozzles is calculated using the number of extruders and their linkages (if using MIXING_EXTRUDER).
+   * E.g., 4 extruders with one linked pair is 3 nozzles. These can be altered live using the M218 G-code command.
+   * WARNING: If using offsets, the specified axes must be homed before a tool change!
+   */
+  //#define NOZZLE_OFFSET_X { 0.0, -30.0, -60.0, -90.0 }
+  //#define NOZZLE_OFFSET_Y { 0.0, 0.2, 0.0, -0.1 }
+  //#define NOZZLE_OFFSET_Z { 0.0, -0.23, -0.05, 1.0}
+
+  /*
+   * The absolute Z position to raise the current Z axis to before changing tools.
+   * The new Z axis will lower down to the previous position. This can be changed
+   * live using the M217 Z command. The other M217 parameters are not supported.
+   * If this is non-zero, the Z axes must have been homed at least once before a tool change.
+   */
+  #define TOOLCHANGE_ZRAISE Z_MAX_POS
+
+  // Extra G-code to run after specific tool changes.
+  //#define EVENT_GCODE_TOOLCHANGE_T0 "G28 A\nG1 A0"
+  //#define EVENT_GCODE_TOOLCHANGE_T1 "G1 A10"
+
+  // Extra G-code to run after all tool changes.
+  //#define EVENT_GCODE_AFTER_TOOLCHANGE "G12X"
+
+  /*
+   * Consider coordinates for EVENT_GCODE_TOOLCHANGE_Tx as relative to T0
+   * so that moves in the specified axes are the same for all tools.
+   * This uses NOZZLE_OFFSET_... for the reference.
+   */
+  //#define TC_GCODE_USE_GLOBAL_X
+  //#define TC_GCODE_USE_GLOBAL_Y
+  //#define TC_GCODE_USE_GLOBAL_Z
+#endif // EXTRUDERS > 1
 
 //===========================================================================
 //================================ Temperature ==============================
@@ -382,74 +442,8 @@
     #define Z2_STALL_SENSITIVITY 125
     #define Z3_STALL_SENSITIVITY 125
     #define Z4_STALL_SENSITIVITY 125
-    #define IMPROVE_HOMING_RELIABILITY
   #endif
 #endif
-
-// Minimum Z height before homing (to make sure the nozzle doesn't hit anything).
-#define Z_CLEARANCE_FOR_HOMING 0
-
-// Height to move to after homing Z.
-//#define Z_AFTER_HOMING 10
-// Position to move to after homing XY.
-//#define XY_AFTER_HOMING { 10, 10 }
-
-// Commands to run after G28.
-//#define EVENT_GCODE_AFTER_HOMING "M300 P440 S200"
-
-// Direction of endstops when homing; 1 = MAX, -1 = MIN.
-#define X_HOME_DIR -1
-#define Y_HOME_DIR -1
-#define Z_HOME_DIR  1
-
-// Homing speeds (mm/min).
-#define HOMING_FEEDRATE_MM_M { 300, 300, 300 }
-
-// This validates that the endstops are triggered on homing moves.
-// Disable this if the kill on failed homing is annoying.
-#define VALIDATE_HOMING_ENDSTOPS
-
-#if EXTRUDERS > 1
-  /*
-   * The offset of each nozzle in relation to nozzle 0 in mm. Defining these will move the X/Y/Z
-   * axes according to the offsets when changing tools. The offsets for nozzle 0 must all be zero.
-   * The number of nozzles is calculated using the number of extruders and their linkages (if using MIXING_EXTRUDER).
-   * E.g., 4 extruders with one linked pair is 3 nozzles.
-   * WARNING: If using offsets, the specified axes must be homed before a tool change!
-   */
-  //#define NOZZLE_OFFSET_X { 0.0, -30.0, -60.0, -90.0 }
-  //#define NOZZLE_OFFSET_Y { 0.0, 0.2, 0.0, -0.1 }
-  //#define NOZZLE_OFFSET_Z { 0.0, -0.23, -0.05, 1.0}
-
-  /*
-   * The absolute Z position to raise the current Z axis to before changing tools.
-   * The new Z axis will lower down to the previous position.
-   * If this is non-zero, the Z axes must have been homed at least once before a tool change.
-   */
-  #define TOOLCHANGE_ZRAISE Z_MAX_POS
-  // Don't return to previous position on tool-change.
-  //#define TOOLCHANGE_NO_RETURN
-  #if ENABLED(TOOLCHANGE_NO_RETURN)
-    // Extra G-code to run after tool-change.
-    //#define EVENT_GCODE_AFTER_TOOLCHANGE "G12X"
-  #endif
-
-  /*
-   * Extra G-code to run after executing tool-change commands.
-   * They will only run after their specified tool is selected.
-   */
-  //#define EVENT_GCODE_TOOLCHANGE_T0 "G28 A\nG1 A0"
-  //#define EVENT_GCODE_TOOLCHANGE_T1 "G1 A10"
-
-  /*
-   * Consider coordinates for EVENT_GCODE_TOOLCHANGE_Tx as relative to T0
-   * so that moves in the specified axes are the same for all tools.
-   * This uses NOZZLE_OFFSET_... for the reference.
-   */
-  //#define TC_GCODE_USE_GLOBAL_X
-  //#define TC_GCODE_USE_GLOBAL_Y
-  //#define TC_GCODE_USE_GLOBAL_Z
-#endif // EXTRUDERS > 1
 
 //===========================================================================
 //================================== Extra ==================================
