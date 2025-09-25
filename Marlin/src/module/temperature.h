@@ -805,6 +805,7 @@ class Temperature {
 
     static void manage_extruder_fans(millis_t ms) {
       #if HAS_HOTEND && HAS_FAN
+        constexpr float damp_scale = float(AUTO_FAN_DAMPEN) / FAN_MAX_PWM;
         HOTEND_LOOP() {
           if (auto_fan[e] == enabled) {
             float fan_scale = 0;
@@ -817,14 +818,13 @@ class Temperature {
                 temp_hotend[e].dampen_fan = false;
               }
 
+              /// MarlinBio: Adjust the PWM based on the target, max at -10C linearly scaled to off at 90C.
+              fan_scale = (90 - temp_hotend[e].target) * .01;
               if (temp_hotend[e].dampen_fan) {
-                fan_scale = float(AUTO_FAN_DAMPEN) / FAN_MAX_PWM;
-              } else {
-                /// MarlinBio: Adjust the PWM based on the target, max at -10C linearly scaled to off at 90C.
-                fan_scale = (90 - temp_hotend[e].target) * .01;
-                NOMORE(fan_scale, 1);
-                NOLESS(fan_scale, 0);
+                fan_scale = MIN(fan_scale, damp_scale);
               }
+              NOMORE(fan_scale, 1);
+              NOLESS(fan_scale, 0);
             }
             set_fan_speed(e, FAN_MAX_PWM * fan_scale);
           }

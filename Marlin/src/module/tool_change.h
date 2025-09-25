@@ -44,9 +44,14 @@
       xyz_pos_t change_point;       // M217 X Y I J K C H O
     #endif
     float z_raise;                  // M217 Z
+    /// MarlinBio: We need to keep track of individual Z heights for software endstops, but altering the type
+    /// system to allow this would be a nightmare. We'll just swap the global Z height on tool change.
+    float z_pos[TOOL_NUM];
   } toolchange_settings_t;
 
   extern toolchange_settings_t toolchange_settings;
+
+  inline void reset_tool_z_pos() {for (int i = 0; i < TOOL_NUM; i++) toolchange_settings.z_pos[i] = Z_HOME_POS;}
 
   #if ENABLED(TOOLCHANGE_FS_PRIME_FIRST_USED)
     extern bool enable_first_prime; // M217 V

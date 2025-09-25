@@ -89,8 +89,8 @@
 #define DEFAULT_TRAVEL_ACCELERATION 500
 
 // Invert the stepper direction if an axis goes the wrong way.
-#define INVERT_X_DIR  true
-#define INVERT_Y_DIR  true
+#define INVERT_X_DIR  false
+#define INVERT_Y_DIR  false
 #define INVERT_Z_DIR  false
 #define INVERT_E0_DIR true
 #define INVERT_E1_DIR true
@@ -241,17 +241,24 @@
    * E.g., 4 extruders with one linked pair is 3 nozzles. These can be altered live using the M218 G-code command.
    * WARNING: If using offsets, the specified axes must be homed before a tool change!
    */
-  //#define NOZZLE_OFFSET_X { 0.0, -30.0, -60.0, -90.0 }
+  #define NOZZLE_OFFSET_X { 0.0, 30.0, 60.0, 90.0 }
   //#define NOZZLE_OFFSET_Y { 0.0, 0.2, 0.0, -0.1 }
   //#define NOZZLE_OFFSET_Z { 0.0, -0.23, -0.05, 1.0}
 
   /*
-   * The absolute Z position to raise the current Z axis to before changing tools.
-   * The new Z axis will lower down to the previous position. This can be changed
+   * The absolute Z position to raise the current Z axis to before changing tools,
+   * if it is currently below this position. This can be changed
    * live using the M217 Z command. The other M217 parameters are not supported.
    * If this is non-zero, the Z axes must have been homed at least once before a tool change.
    */
   #define TOOLCHANGE_ZRAISE Z_MAX_POS
+
+  /*
+   * After a tool change, the new tool will move to the previous tool's position,
+   * whether or not it was higher or lower. This is most useful when combined with
+   * TOOLCHANGE_ZRAISE. This feature can be disabled here.
+   */
+  //#define DISABLE_TOOLCHANGE_Z_RETURN
 
   // Extra G-code to run after specific tool changes.
   //#define EVENT_GCODE_TOOLCHANGE_T0 "G28 A\nG1 A0"
@@ -333,7 +340,6 @@
    * If you get false errors for "Heating/Cooling failed", increase WATCH_HEAT/COOL_PERIOD
    * and/or decrease WATCH_TEMP_INCREASE/DECREASE, but beware the hazard of doing so.
    */
-
   #define WATCH_HEAT_PERIOD   30
   #define WATCH_COOL_PERIOD   60
   #define WATCH_TEMP_INCREASE 2
