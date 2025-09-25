@@ -77,6 +77,10 @@
   #include "../feature/bedlevel/bdl/bdl.h"
 #endif
 
+#if HAS_TOOLCHANGE
+  #include "tool_change.h"
+#endif
+
 // Relative Mode. Enable with G91, disable with G90.
 bool relative_mode; // = false
 
@@ -2250,6 +2254,12 @@ void prepare_line_to_destination(const bool print_move/*=false*/) {
       // Set delta/cartesian axes directly
       target[axis] = distance;                  // The move will be towards the endstop
       planner.buffer_segment(target OPTARG(HAS_DIST_MM_ARG, cart_dist_mm), home_fr_mm_s, active_extruder);
+    #endif
+
+    #if HAS_MULTI_EXTRUDER
+      if (axis == Z_AXIS) {
+        reset_tool_z_pos();
+      }
     #endif
 
     planner.synchronize();

@@ -1261,6 +1261,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
           TERN_(HAS_SOFTWARE_ENDSTOPS, NOMORE(toolchange_settings.z_raise, soft_endstop.max.z));
           if (current_position.z < toolchange_settings.z_raise) {
             do_blocking_move_to_z(toolchange_settings.z_raise, planner.settings.max_feedrate_mm_s[Z_AXIS] * 0.5f);
+            SERIAL_ECHOLN("Z raise from ", current_position.z, " to ", toolchange_settings.z_raise);
           }
         }
       #endif
@@ -1328,6 +1329,16 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
         }
       #endif
 
+      /// MarlinBio: Swap the Z positions
+      toolchange_settings.z_pos[old_tool] = current_position.z;
+      current_position.z = toolchange_settings.z_pos[new_tool];
+      SERIAL_ECHOLN("Updated Zs ", toolchange_settings.z_pos[0], ", ", toolchange_settings.z_pos[1], ", ", toolchange_settings.z_pos[2], ", ", toolchange_settings.z_pos[3]);
+      sync_plan_position();
+      #if ENABLED(DISABLE_TOOLCHANGE_Z_RETURN)
+        /// MarlinBio: Don't move back later.
+        destination.z = current_position.z;
+      #endif
+
       IF_DISABLED(DUAL_X_CARRIAGE, active_extruder = new_tool); // Set the new active extruder
 
       /// MarlinBio: Update the Z locks so that only the Z axis for the active extruder is unlocked.
@@ -1378,36 +1389,27 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
         // Should the nozzle move back to the old position?
         if (can_move_away) {
-          #if ENABLED(TOOLCHANGE_NO_RETURN)
-            // Just move back down
-            DEBUG_ECHOLNPGM("Move back Z only");
+          // Move back to the original (or adjusted) position
+          DEBUG_POS("Move back", destination);
 
-            if (TERN1(TOOLCHANGE_PARK, toolchange_settings.enable_park))
-              do_blocking_move_to_z(destination.z, planner.settings.max_feedrate_mm_s[Z_AXIS]);
-
+          #if ENABLED(TOOLCHANGE_PARK)
+            if (toolchange_settings.enable_park) do_blocking_move_to_xy_z(destination, destination.z, MMM_TO_MMS(TOOLCHANGE_PARK_XY_FEEDRATE));
           #else
-            // Move back to the original (or adjusted) position
-            DEBUG_POS("Move back", destination);
+            do_blocking_move_to_xy(destination, planner.settings.max_feedrate_mm_s[X_AXIS]* 0.5f);
 
-            #if ENABLED(TOOLCHANGE_PARK)
-              if (toolchange_settings.enable_park) do_blocking_move_to_xy_z(destination, destination.z, MMM_TO_MMS(TOOLCHANGE_PARK_XY_FEEDRATE));
-            #else
-              do_blocking_move_to_xy(destination, planner.settings.max_feedrate_mm_s[X_AXIS]* 0.5f);
-
-              // If using MECHANICAL_SWITCHING extruder/nozzle, set HOTEND_OFFSET in Z axis after running EVENT_GCODE_TOOLCHANGE below.
-              #if NONE(MECHANICAL_SWITCHING_EXTRUDER, MECHANICAL_SWITCHING_NOZZLE)
-                do_blocking_move_to_z(destination.z, planner.settings.max_feedrate_mm_s[Z_AXIS] * 0.5f);
-                SECONDARY_AXIS_CODE(
-                  do_blocking_move_to_i(destination.i, planner.settings.max_feedrate_mm_s[I_AXIS]),
-                  do_blocking_move_to_j(destination.j, planner.settings.max_feedrate_mm_s[J_AXIS]),
-                  do_blocking_move_to_k(destination.k, planner.settings.max_feedrate_mm_s[K_AXIS]),
-                  do_blocking_move_to_u(destination.u, planner.settings.max_feedrate_mm_s[U_AXIS]),
-                  do_blocking_move_to_v(destination.v, planner.settings.max_feedrate_mm_s[V_AXIS]),
-                  do_blocking_move_to_w(destination.w, planner.settings.max_feedrate_mm_s[W_AXIS])
-                );
-              #endif
+            // If using MECHANICAL_SWITCHING extruder/nozzle, set HOTEND_OFFSET in Z axis after running EVENT_GCODE_TOOLCHANGE below.
+            #if NONE(MECHANICAL_SWITCHING_EXTRUDER, MECHANICAL_SWITCHING_NOZZLE)
+              do_blocking_move_to_z(destination.z, planner.settings.max_feedrate_mm_s[Z_AXIS] * 0.5f);
+              SERIAL_ECHOLN("Z move from ", current_position.z, " to ", destination.z);
+              SECONDARY_AXIS_CODE(
+                do_blocking_move_to_i(destination.i, planner.settings.max_feedrate_mm_s[I_AXIS]),
+                do_blocking_move_to_j(destination.j, planner.settings.max_feedrate_mm_s[J_AXIS]),
+                do_blocking_move_to_k(destination.k, planner.settings.max_feedrate_mm_s[K_AXIS]),
+                do_blocking_move_to_u(destination.u, planner.settings.max_feedrate_mm_s[U_AXIS]),
+                do_blocking_move_to_v(destination.v, planner.settings.max_feedrate_mm_s[V_AXIS]),
+                do_blocking_move_to_w(destination.w, planner.settings.max_feedrate_mm_s[W_AXIS])
+              );
             #endif
-
           #endif
         }
 

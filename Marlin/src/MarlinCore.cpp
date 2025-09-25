@@ -1385,6 +1385,10 @@ void setup() {
 
   sync_plan_position();               // Vital to init stepper/planner equivalent for current_position
 
+  #if HAS_MULTI_EXTRUDER
+    reset_tool_z_pos();
+  #endif
+
   SETUP_RUN(thermalManager.init());   // Initialize temperature loop
 
   SETUP_RUN(print_job_timer.init());  // Initial setup of print job timer
