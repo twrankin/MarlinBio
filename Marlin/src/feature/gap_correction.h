@@ -23,7 +23,8 @@
 
 /// MarlinBio: The number of channels to monitor on the capacitance sensor.
 /// Redefined here just for visibility.
-#define GC_CHANNEL_NUM _GC_CHANNEL_NUM
+/// TWR: TODO: Change back
+#define GC_CHANNEL_NUM 1
 
 /// MarlinBio: If this many sensor readings are exactly the same, something
 /// is probably wrong with the sensor.
@@ -44,6 +45,7 @@ class GapCorrection {
   friend class MarlinSettings;
 
   static bool sampling;
+  static bool branching;
 
   static float capacitance_initial[GC_CHANNEL_NUM];
   static float capacitance_current[GC_CHANNEL_NUM];
@@ -60,7 +62,7 @@ class GapCorrection {
 public:
 
   #if GC_DEBUG
-    static uint16_t stream_secs;
+    static millis_t stream_ms;
     static millis_t last_report;
   #endif
 
@@ -75,6 +77,7 @@ public:
 
   static void init();
 
+  /// MarlinBio: These are getters in order to allow different channel to direction mappings.
   static float x_plus_initial()      {return capacitance_initial[GC_X_PLUS_CHANNEL];}
   static float x_plus_capacitance()  {return capacitance_current[GC_X_PLUS_CHANNEL];}
   static float x_minus_initial()     {return capacitance_initial[GC_X_MINUS_CHANNEL];}
@@ -84,13 +87,21 @@ public:
   static float y_minus_initial()     {return capacitance_initial[GC_Y_MINUS_CHANNEL];}
   static float y_minus_capacitance() {return capacitance_current[GC_Y_MINUS_CHANNEL];}
 
-  static void calibrate();
+  /// MarlinBio: Sample the current capacitances.
   static void update_capacitances(bool verify=false);
+
+  /// MarlinBio: Perform an update to set the "background" capacitances.
+  static void calibrate();
+
+  /// MarlinBio: Initiate the gap correction algorithm.
+  /// This should be invoked by calling the G789 B command.
   static void branch_point();
 
   static void print_capacitances();
 
   #if GC_DEBUG
+    /// MarlinBio: Update and print the capacitances every interval.
+    /// This should be invoked by the G789 S<time> command.
     static void debug_stream(millis_t time=millis());
   #endif
 };

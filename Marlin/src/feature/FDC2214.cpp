@@ -24,13 +24,6 @@
 #include "FDC2214.h"
 #include <Wire.h>
 
-/// MarlinBio: Convert a value from the DATA registers to a frequency.
-/// MarlinBio: DATA ≈ (fSENSOR / fREF) * 2^28 / FIN_DIV  =>  fSENSOR ≈ DATA * fREF / 2^28 * FIN_DIV
-double dataToSensorHz(uint32_t data28, double fRefHz, uint8_t finDiv) {
-  const double scale = 268435456.0; /// MarlinBio: 2^28
-  return (double)data28 * fRefHz / scale * (double)finDiv;
-}
-
 /// MarlinBio: Write a register over I2C.
 bool FDC2214::write16(uint8_t reg, uint16_t value) {
   Wire.beginTransmission(I2C_ADDR);
@@ -175,6 +168,17 @@ bool FDC2214::init(uint8_t fin_sel, uint16_t fref_div, uint16_t rcount, uint16_t
   /// MarlinBio: Disable interrupts for now.
   if (!setIntbEnabled(false)) return false;
 
+  /// MarlinBio: 0x5449 = "TI" in ASCII.
+  #define TI_MANUFACTURER_ID 0x5449
+  #define FDC221x_DEVICE_ID  0x3055
+
+  uint16_t manufacturerID, deviceID;
+  if (!readIDs(manufacturerID, deviceID)) return false;
+  if (manufacturerID != TI_MANUFACTURER_ID || deviceID != FDC221x_DEVICE_ID) {
+    SERIAL_ECHOLN("Bad sensor values: ", manufacturerID, "/", deviceID);
+    return false;
+  }
+
   return true;
 }
 
@@ -194,8 +198,32 @@ bool FDC2214::wake() {
   return write16(REG_CONFIG, cfg);
 }
 
-float FDC2214::read_channel(uint8_t channel) {
-  /// TWR: TODO: Resume here
+/// MarlinBio: Convert a value from the DATA registers to a frequency.
+/// According to the datasheet: fSENSORx = CHx_FIN_SEL * fREFx * DATAx / 2^28.
+/// Additionally, fREFx = fCLK / CHx_FREF_DIVIDER.
+bool FDC2214::read_channel(uint8_t channel, float &capacitance) {
+  /// MarlinBio: Precalculate (2π)^2 and CHx_FIN_SEL * fREFx / 2^28.
+  constexpr double TWO_PI_SQUARED = 39.47841760435743;
+  constexpr double K = (static_cast<double>(FIN_SEL) * (static_cast<double>(FCLK) / FREF_DIV)) / 268435456.0;
+
+  uint32_t DATAx = 0;
+  if (!readData28(channel, DATAx)) {
+    return false;
+  }
+
+  /// MarlinBio: K * DATAx == CHx_FIN_SEL * fREFx * DATAxx / 2^28.
+  const double fSENSORx = K * DATAx;
+
+  /// MarlinBio: According to the datasheet (and also the formula for LC tank circuits):
+  /// C = 1 / L * (2 * π * fSENSORx) ^ 2.
+  const double denom = static_cast<double>(INDUCTANCE) * TWO_PI_SQUARED * fSENSORx * fSENSORx;
+  if (!(denom > 0.0)) {
+    return false;
+  }
+
+  const double C = 1.0 / denom;
+  capacitance = static_cast<float>(C);
+  return true;
 }
 
 #endif // NEED_FDC2214

@@ -51,6 +51,12 @@
 /// MarlinBio: The maximum clock allowed is 400kbps.
 #define I2C_CLK 400000
 
+/// MarlinBio: The inductance of the LC circuit.
+#define INDUCTANCE 0.000018
+
+/// MarlinBio: The frequency of the external clock source.
+#define FCLK 40000000
+
 /// MarlinBio: The value for CHx_FIN_SEL; should be 2 for single ended (most common),
 /// 1 for differential with resonance frequencies between 0.01MHz and 8.75MHz,
 /// and 2 for differential with resonance frequencies between 5MHz and 10MHz.
@@ -254,7 +260,7 @@ public:
   }
 
   /// MarlinBio: Read a value from the sensor for a channel and convert it to capacitance in pF.
-  float read_channel(uint8_t channel);
+  bool read_channel(uint8_t channel, float &capacitance);
 };
 
 #endif /// MarlinBio: NEED_FDC2214

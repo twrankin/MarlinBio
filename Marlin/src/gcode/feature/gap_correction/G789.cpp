@@ -38,6 +38,7 @@
  *   T : The touch threshold factor. See GC_TOUCH_THRESHOLD_FACTOR in Configuration.h.
  *   F : The feedrate for gap correction moves. See GC_FEEDRATE in Configuration.h.
  *   B : Initiate branch point handling.
+ *   S : Start debug streaming, reading and reporting the capacitances every interval (ms).
  */
 void GcodeSuite::G789() {
   if (!parser.seen_any()) {
@@ -83,7 +84,12 @@ void GcodeSuite::G789() {
   #if GC_DEBUG
     /// MarlinBio: Continually stream sensor readings.
     if (parser.seenval('S')) {
-      gapCorrection.stream_secs = parser.value_ushort();
+      float val = parser.value_float();
+      if (val > 0) {
+        gapCorrection.stream_ms = SEC_TO_MS(val);
+      } else {
+        SERIAL_ECHOLN("Invalid streaming interval");
+      }
     }
   #endif
 

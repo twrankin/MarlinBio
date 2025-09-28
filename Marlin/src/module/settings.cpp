@@ -3394,7 +3394,7 @@ void MarlinSettings::reset() {
     gapCorrection.touch_threshold_factor = GC_TOUCH_THRESHOLD_FACTOR;
     gapCorrection.feedrate               = MMM_TO_MMS(GC_FEEDRATE);
     #if GC_DEBUG
-      gapCorrection.stream_secs = 0;
+      gapCorrection.stream_ms = 0;
     #endif
   #endif
 

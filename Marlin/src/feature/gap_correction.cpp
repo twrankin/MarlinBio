@@ -39,21 +39,18 @@ float   GapCorrection::capacitance_variance[GC_CHANNEL_NUM] = {0};
 float GapCorrection::touch_threshold_factor;
 float GapCorrection::feedrate;
 #if GC_DEBUG
-  uint16_t GapCorrection::stream_secs;
+  millis_t GapCorrection::stream_ms;
   millis_t GapCorrection::last_report = 0;
 #endif
 
-bool GapCorrection::sampling = false;
+bool GapCorrection::sampling  = false;
+bool GapCorrection::branching = false;
 FDC2214 GapCorrection::sensor = FDC2214();
 
 void GapCorrection::init() {
   if (!sensor.init()) {
     kill(F("The sensor could not be initialized."));
   }
-
-  uint16_t manufacturerID, deviceID;
-  sensor.readIDs(manufacturerID, deviceID);
-  /// TWR: TODO: Resume here, verify IDs or fail
 }
 
 void GapCorrection::start_sampling() {
@@ -91,12 +88,18 @@ void GapCorrection::update_capacitances(bool verify/*=false*/) {
   start_sampling();
 
   for (int i = 0; i < GC_CHANNEL_NUM; i++) {
-    bool tempFail = false;
-    float accum   = 0;
+    bool    tempFail = false;
+    float   accum    = 0;
+    uint8_t num      = 0;
     /// MarlinBio: Read the value GC_SENSOR_READS times and average.
     for (int j = 0; j < GC_SENSOR_READS; j++) {
+      float sample;
       /// MarlinBio: TODO: Possibly remove outliers
-      accum += sensor.read_channel(i);
+      if (!sensor.read_channel(i, sample)) {
+        tempFail = true;
+      } else {
+        accum += sample;
+      }
     }
     capacitance_current[i] = accum / GC_SENSOR_READS;
 
@@ -112,7 +115,7 @@ void GapCorrection::update_capacitances(bool verify/*=false*/) {
   }
 
   #if GC_DEBUG
-    if (stream_secs > 0) {
+    if (stream_ms > 0) {
       print_capacitances();
     }
   #endif
@@ -132,7 +135,8 @@ float GapCorrection::capacitance_to_mm(float capacitance) {
 void GapCorrection::branch_point() {
   /// MarlinBio: Set the feedrate for our upcoming moves; we restore it before returning.
   feedRate_t tempFR = feedrate_mm_s;
-  feedrate_mm_s = feedrate;
+  feedrate_mm_s     = feedrate;
+  branching         = true;
 
   uint8_t attempts = GC_ATTEMPT_LIMIT;
   while (--attempts) {
@@ -195,7 +199,8 @@ void GapCorrection::branch_point() {
   }
 
   feedrate_mm_s = tempFR;
-  end_sampling();
+  branching     = false;
+  if (TERN1(GC_DEBUG, stream_ms != 0)) end_sampling();
 }
 
 void GapCorrection::print_capacitances() {
@@ -208,11 +213,15 @@ void GapCorrection::print_capacitances() {
 
 #if GC_DEBUG
   void GapCorrection::debug_stream(millis_t time/*=millis()*/) {
-    if (stream_secs > 0 && ELAPSED(time, last_report, SEC_TO_MS(stream_secs))) {
-      last_report = time;
-      update_capacitances();
-    } else if (stream_secs == 0) {
-      end_sampling();
+    /// MarlinBio: Update and print the capacitances if streaming is enabled.
+    /// But not if we're currently branching, which will also update and print the capacitances.
+    if (!branching) {
+      if (stream_ms > 0 && ELAPSED(time, last_report, stream_ms)) {
+        last_report = time;
+        update_capacitances();
+      } else if (stream_ms == 0) {
+        end_sampling();
+      }
     }
   }
 #endif
