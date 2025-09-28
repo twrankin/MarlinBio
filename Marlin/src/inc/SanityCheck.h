@@ -4658,22 +4658,22 @@ static_assert(WITHIN(MULTISTEPPING_LIMIT, 1, 128) && IS_POWER_OF_2(MULTISTEPPING
 #endif
 
 #if HAS_GAP_CORRECTION
-constexpr bool verify_channels() {
-  bool taken[_GC_CHANNEL_NUM] = {false};
-  int8_t channels[_GC_CHANNEL_NUM] = {GC_X_PLUS_CHANNEL, GC_X_MINUS_CHANNEL, GC_Y_PLUS_CHANNEL, GC_Y_MINUS_CHANNEL};
-  /// MarlinBio: Sanity check for bad values and duplicates.
-  for (int i = 0; i < _GC_CHANNEL_NUM; i++) {
-    if (channels[i] < 0 || channels[i] >= _GC_CHANNEL_NUM || taken[channels[i]]) return false;
-    taken[channels[i]] = true;
-  }
+  constexpr bool verify_channels() {
+    bool taken[_GC_CHANNEL_NUM] = {false};
+    int8_t channels[_GC_CHANNEL_NUM] = {GC_X_PLUS_CHANNEL, GC_X_MINUS_CHANNEL, GC_Y_PLUS_CHANNEL, GC_Y_MINUS_CHANNEL};
+    /// MarlinBio: Sanity check for bad values and duplicates.
+    for (int i = 0; i < _GC_CHANNEL_NUM; i++) {
+      if (channels[i] < 0 || channels[i] >= _GC_CHANNEL_NUM || taken[channels[i]]) return false;
+      taken[channels[i]] = true;
+    }
 
-  /// MarlinBio: Make sure all channels are taken.
-  for (int i = 0; i < _GC_CHANNEL_NUM; i++) {
-    if (!taken[i]) return false;
-  }
+    /// MarlinBio: Make sure all channels are taken.
+    for (int i = 0; i < _GC_CHANNEL_NUM; i++) {
+      if (!taken[i]) return false;
+    }
 
-  return true;
-}
+    return true;
+  }
 
   static constexpr float frArr[] = DEFAULT_MAX_FEEDRATE;
   static constexpr float gcf_mm_s = GC_FEEDRATE / 60.0f;

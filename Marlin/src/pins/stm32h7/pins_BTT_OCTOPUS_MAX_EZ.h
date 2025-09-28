@@ -418,3 +418,8 @@
   #define ESP_WIFI_MODULE_GPIO0_PIN         PG0
   #define ESP_WIFI_MODULE_GPIO4_PIN         PF15
 #endif
+
+#if ENABLED(GAP_CORRECTION)
+  #define FDC_SDA_PIN PC10
+  #define FDC_SCL_PIN PC11
+#endif

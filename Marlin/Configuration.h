@@ -177,7 +177,7 @@
  * Some per-extruder parameters will need to be updated when EXTRUDERS is changed.
  * When enabling MIXING_EXTRUDERS, still use the actual number of extruders here.
  */
-#define EXTRUDERS 4
+#define EXTRUDERS 1
 
 /*
  * The following are parameters for constant extrusion based on a syringe extruder system.
@@ -193,19 +193,19 @@
  */
 
 // Constant extrusion can be enabled by default here, and enabled/disabled live by the M789 command.
-#define CONSTANT_EXTRUSION_DEFAULT_ON
+//#define CONSTANT_EXTRUSION_DEFAULT_ON
 
 // The inner diameter of the syringe in mm.
-#define SYRINGE_INNER_DIAMETER { 4.78, 4.78, 4.78, 4.78 }
+#define SYRINGE_INNER_DIAMETER { 4.78 }
 
 // The inner diameter of the needle in mm.
-#define NEEDLE_INNER_DIAMETER { 0.838, 0.838, 0.838, 0.838 }
+#define NEEDLE_INNER_DIAMETER { 0.838 }
 
 // The coefficient to scale the extrusion rate.
-#define EXTRUSION_COEFFICIENT { 2.0, 2.0, 2.0, 2.0 }
+#define EXTRUSION_COEFFICIENT { 2.0 }
 
 // The distance to pressurize/depressurize the syringe before/after printing in mm.
-#define PRESSURIZATION_LENGTH { 0.5, 0.5, 0.5, 0.5 }
+#define PRESSURIZATION_LENGTH { 0.5 }
 
 /*
  * This enables the use of mixing materials together using a mixing module or printhead to extrude

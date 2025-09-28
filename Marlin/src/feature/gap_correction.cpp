@@ -43,10 +43,35 @@ float GapCorrection::feedrate;
   millis_t GapCorrection::last_report = 0;
 #endif
 
+bool GapCorrection::sampling = false;
 FDC2214 GapCorrection::sensor = FDC2214();
 
 void GapCorrection::init() {
-  sensor.init();
+  if (!sensor.init()) {
+    kill(F("The sensor could not be initialized."));
+  }
+
+  uint16_t manufacturerID, deviceID;
+  sensor.readIDs(manufacturerID, deviceID);
+  /// TWR: TODO: Resume here, verify IDs or fail
+}
+
+void GapCorrection::start_sampling() {
+  if (!sampling) {
+    if (!sensor.wake()) {
+      kill(F("Could not wake the sensor."));
+    }
+    sampling = true;
+  }
+}
+
+void GapCorrection::end_sampling() {
+  if (sampling) {
+    if (!sensor.sleep()) {
+      kill(F("Could not sleep the sensor."));
+    }
+    sampling = false;
+  }
 }
 
 void GapCorrection::calibrate() {
@@ -63,13 +88,15 @@ void GapCorrection::calibrate() {
 void GapCorrection::update_capacitances(bool verify/*=false*/) {
   bool failed = false;
 
+  start_sampling();
+
   for (int i = 0; i < GC_CHANNEL_NUM; i++) {
     bool tempFail = false;
     float accum   = 0;
     /// MarlinBio: Read the value GC_SENSOR_READS times and average.
     for (int j = 0; j < GC_SENSOR_READS; j++) {
       /// MarlinBio: TODO: Possibly remove outliers
-      accum += sensor.read_sensor(i);
+      accum += sensor.read_channel(i);
     }
     capacitance_current[i] = accum / GC_SENSOR_READS;
 
@@ -168,6 +195,7 @@ void GapCorrection::branch_point() {
   }
 
   feedrate_mm_s = tempFR;
+  end_sampling();
 }
 
 void GapCorrection::print_capacitances() {
@@ -183,6 +211,8 @@ void GapCorrection::print_capacitances() {
     if (stream_secs > 0 && ELAPSED(time, last_report, SEC_TO_MS(stream_secs))) {
       last_report = time;
       update_capacitances();
+    } else if (stream_secs == 0) {
+      end_sampling();
     }
   }
 #endif

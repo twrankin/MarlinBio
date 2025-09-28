@@ -43,6 +43,8 @@ class GapCorrection {
   friend class GcodeSuite;
   friend class MarlinSettings;
 
+  static bool sampling;
+
   static float capacitance_initial[GC_CHANNEL_NUM];
   static float capacitance_current[GC_CHANNEL_NUM];
 
@@ -63,6 +65,9 @@ public:
   #endif
 
 private:
+
+  static void start_sampling();
+  static void end_sampling();
 
   static float capacitance_to_mm(float capacitance);
 
