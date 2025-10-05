@@ -38,7 +38,8 @@
  *   T : The touch threshold factor. See GC_TOUCH_THRESHOLD_FACTOR in Configuration.h.
  *   F : The feedrate for gap correction moves. See GC_FEEDRATE in Configuration.h.
  *   B : Initiate branch point handling.
- *   S : Start debug streaming, reading and reporting the capacitances every interval (ms).
+ *   S : Start debug streaming, reading and reporting the capacitances every interval (ms). Requires GC_DEBUG.
+ *   R : Dump all registers. Requires GC_DEBUG.
  */
 void GcodeSuite::G789() {
   if (!parser.seen_any()) {
@@ -85,11 +86,18 @@ void GcodeSuite::G789() {
     /// MarlinBio: Continually stream sensor readings.
     if (parser.seenval('S')) {
       float val = parser.value_float();
-      if (val > 0) {
+      if (val >= 0) {
         gapCorrection.stream_ms = SEC_TO_MS(val);
       } else {
         SERIAL_ECHOLN("Invalid streaming interval");
       }
+    }
+  #endif
+
+  #if GC_DEBUG
+    /// MarlinBio: Dump the registers.
+    if (parser.seen('R')) {
+      gapCorrection.dump();
     }
   #endif
 
@@ -112,7 +120,7 @@ void GcodeSuite::G789_report(const bool forReplay/*=true*/) {
   SERIAL_ECHOLN(", Feedrate:", uint(MMS_TO_MMM(gapCorrection.feedrate)));
 
   header(forReplay);
-  SERIAL_ECHO("  Initial capacitances:");
+  SERIAL_ECHO("  Initial capacitances (pF):");
   SERIAL_ECHO(" X+:", gapCorrection.x_plus_initial());
   SERIAL_ECHO(" X-:", gapCorrection.x_minus_initial());
   SERIAL_ECHO(" Y+:", gapCorrection.y_plus_initial());

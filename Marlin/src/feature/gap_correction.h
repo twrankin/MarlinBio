@@ -22,9 +22,8 @@
 #include "../inc/MarlinConfig.h"
 
 /// MarlinBio: The number of channels to monitor on the capacitance sensor.
-/// Redefined here just for visibility.
-/// TWR: TODO: Change back
-#define GC_CHANNEL_NUM 1
+/// Redefined here just for visibility. Do not change here, change _GC_CHANNEL_NUM.
+#define GC_CHANNEL_NUM _GC_CHANNEL_NUM
 
 /// MarlinBio: If this many sensor readings are exactly the same, something
 /// is probably wrong with the sensor.
@@ -103,6 +102,11 @@ public:
     /// MarlinBio: Update and print the capacitances every interval.
     /// This should be invoked by the G789 S<time> command.
     static void debug_stream(millis_t time=millis());
+  #endif
+
+  #if GC_DEBUG
+    /// Dump
+    static void dump();
   #endif
 };
 

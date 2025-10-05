@@ -80,7 +80,7 @@ void GapCorrection::calibrate() {
 }
 
 /// MarlinBio: The maximum sensible value that could be returned by the FDC2214 is 250nf.
-#define CAP_SENSOR_MAX_VALUE 250
+#define CAP_SENSOR_MAX_VALUE 250000
 
 void GapCorrection::update_capacitances(bool verify/*=false*/) {
   bool failed = false;
@@ -94,14 +94,16 @@ void GapCorrection::update_capacitances(bool verify/*=false*/) {
     /// MarlinBio: Read the value GC_SENSOR_READS times and average.
     for (int j = 0; j < GC_SENSOR_READS; j++) {
       float sample;
-      /// MarlinBio: TODO: Possibly remove outliers
-      if (!sensor.read_channel(i, sample)) {
-        tempFail = true;
-      } else {
+      /// MarlinBio: TODO: The first couple samples always seem to be 0, we should look into why.
+      if (sensor.read_channel(i, sample)) {
+        /// MarlinBio: TODO: Possibly remove outliers.
         accum += sample;
+        num++;
       }
     }
-    capacitance_current[i] = accum / GC_SENSOR_READS;
+    if (num > 0) {
+      capacitance_current[i] = accum / num;
+    }
 
     /// MarlinBio: Check for bad values, and make sure the value is changing at least a tiny bit.
     if (capacitance_current[i] <= 0) tempFail = true;
@@ -204,7 +206,7 @@ void GapCorrection::branch_point() {
 }
 
 void GapCorrection::print_capacitances() {
-  SERIAL_ECHO("  Current capacitances:");
+  SERIAL_ECHO("  Current capacitances (pF):");
   SERIAL_ECHO(" X+:", gapCorrection.x_plus_capacitance());
   SERIAL_ECHO(" X-:", gapCorrection.x_minus_capacitance());
   SERIAL_ECHO(" Y+:", gapCorrection.y_plus_capacitance());
@@ -223,6 +225,12 @@ void GapCorrection::print_capacitances() {
         end_sampling();
       }
     }
+  }
+#endif
+
+#if GC_DEBUG
+  void GapCorrection::dump() {
+    sensor.dump();
   }
 #endif
 

@@ -40,8 +40,8 @@
 /// as we find the ideal settings.
 
 /// The I2C address for the device.
-/// 0x2A when the ADDR pin is low, 0x2B when it is high. This will need
-/// to be split out when using multiple boards if they share SCL/SDA lines.
+/// 0x2A when the ADDR pin is low, 0x2B when it is high.
+/// TODO: This will need to be split out when using multiple boards if they share SCL/SDA lines.
 #define I2C_ADDR 0x2A
 
 /// MarlinBio: These are defined in the board's pins file, to be more portable.
@@ -142,7 +142,7 @@ class FDC2214 {
     REG_DEVICE_ID       = 0x7F
   };
 
-  /// MarlinBio: CONFIG bits (partial)
+  /// MarlinBio: CONFIG bits (partial).
   struct ConfigBits {
     /// MarlinBio: 15:14 ACTIVE_CHAN: active channel in single-channel mode.
     static constexpr uint16_t ACTIVE_CHAN_SHIFT = 14;
@@ -181,7 +181,26 @@ class FDC2214 {
 
   /// MarlinBio: STATUS bits (partial).
   struct StatusBits {
-    static constexpr uint16_t DRDY_MASK = 0x0008;
+    /// MarlinBio: 3 CH0_UNREADCONV: data available for channel 0, 0=unready, 1=ready.
+    static constexpr uint16_t CH0_UNREADCONV_MASK = 0x0008;
+    /// MarlinBio: 2 CH1_UNREADCONV: data available for channel 1, 0=unready, 1=ready.
+    static constexpr uint16_t CH1_UNREADCONV_MASK = 0x0004;
+    /// MarlinBio: 1 CH2_UNREADCONV: data available for channel 2, 0=unready, 1=ready.
+    static constexpr uint16_t CH2_UNREADCONV_MASK = 0x0002;
+    /// MarlinBio: 0 CH3_UNREADCONV: data available for channel 3, 0=unready, 1=ready.
+    static constexpr uint16_t CH3_UNREADCONV_MASK = 0x0001;
+  };
+
+  /// MarlinBio: RESET_DEV bits.
+  struct ResetDevBits {
+    /// MarlinBio: 15 RESET_DEV: set to reset.
+    static constexpr uint16_t RESET_DEV = (1u<<15);
+  };
+
+  /// MarlinBio: DRIVE_CURRENT bits.
+  struct DriveCurrentBits {
+    /// MarlinBio: 15:11 CHx_IDRIVE: Channel drive current, see datasheet for values.
+    static constexpr uint16_t CH_IDRIVE_SHIFT = 11;
   };
 
   /// MarlinBio: Deglitch enumerations for convenience.
@@ -192,7 +211,8 @@ class FDC2214 {
     DEGLITCH_33MHZ = 0b011
   };
 
-  /// MarlinBio: Register helpers.
+  /// MarlinBio: Register helpers for channel offsets.
+  static inline uint8_t unreadConv(uint8_t ch) { return (uint8_t)(StatusBits::CH3_UNREADCONV_MASK << (3 - ch)); }
   static inline uint8_t regDataMSB(uint8_t ch) { return (uint8_t)(REG_DATA_CH0_MSB + (ch<<1)); }
   static inline uint8_t regDataLSB(uint8_t ch) { return (uint8_t)(REG_DATA_CH0_LSB + (ch<<1)); }
   static inline uint8_t regRcount (uint8_t ch) { return (uint8_t)(REG_RCOUNT_CH0 + ch); }
@@ -238,6 +258,13 @@ class FDC2214 {
   /// MarlinBio: Read the status register.
   bool readStatus(uint16_t &status);
 
+  /// MarlinBio: Issue a reset.
+  /// This should only be called by init.
+  bool reset();
+
+  /// MarlinBio: Check if the device is asleep.
+  bool checkSleep(bool &asleep);
+
 public:
 
   /// MarlinBio: Initialize the FDC2214.
@@ -261,6 +288,10 @@ public:
 
   /// MarlinBio: Read a value from the sensor for a channel and convert it to capacitance in pF.
   bool read_channel(uint8_t channel, float &capacitance);
+
+  #if GC_DEBUG
+    void dump();
+  #endif
 };
 
 #endif /// MarlinBio: NEED_FDC2214

@@ -420,6 +420,8 @@
 #endif
 
 #if ENABLED(GAP_CORRECTION)
+  /// MarlinBio: These are the only easily accessible I2C capable pins we have.
+  /// They're originally meant for the ESP32 Wi-Fi module.
   #define FDC_SDA_PIN PC10
   #define FDC_SCL_PIN PC11
 #endif

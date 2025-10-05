@@ -17,20 +17,28 @@
  *
  */
 
-#include "../inc/MarlinConfig.h"
+#include "../MarlinCore.h"
 
 #if NEED_FDC2214
 
 #include "FDC2214.h"
 #include <Wire.h>
+#include "../libs/hex_print.h"
 
 /// MarlinBio: Write a register over I2C.
 bool FDC2214::write16(uint8_t reg, uint16_t value) {
+  bool ret;
+
   Wire.beginTransmission(I2C_ADDR);
   Wire.write(reg);
   Wire.write((uint8_t)(value >> 8));
   Wire.write((uint8_t)(value & 0xFF));
-  return (Wire.endTransmission() == 0);
+  ret = Wire.endTransmission() == 0;
+
+  if (!ret) {
+    SERIAL_ECHOLN("FDC2214 write failed.");
+  }
+  return ret;
 }
 
 /// MarlinBio: Read a register over I2C.
@@ -38,16 +46,24 @@ bool FDC2214::read16(uint8_t reg, uint16_t &value) {
   Wire.beginTransmission(I2C_ADDR);
   Wire.write(reg);
   /// MarlinBio: Repeated start.
-  if (Wire.endTransmission(false) != 0) return false;
+  if (Wire.endTransmission(false) != 0) {
+    SERIAL_ECHOLN("FDC2214 read failed.");
+    return false;
+  }
 
-  /// MarlinBio: Read two bytes
+  /// MarlinBio: Read two bytes.
   uint8_t toRead = 2;
   uint32_t start = millis();
+
   Wire.requestFrom((int)I2C_ADDR, (int)toRead);
   while (Wire.available() < toRead) {
-    if (millis() - start > 20) return false;
+    if (millis() - start > 20) {
+      SERIAL_ECHOLN("FDC2214 read failed, no reply.");
+      return false;
+    }
     delayMicroseconds(100);
   }
+
   uint8_t hi = Wire.read();
   uint8_t lo = Wire.read();
   value = (uint16_t(hi) << 8) | lo;
@@ -66,9 +82,8 @@ bool FDC2214::setRcount(uint8_t ch, uint16_t rcount) {
 
 bool FDC2214::setIDrive(uint8_t ch, uint8_t idrive) {
   if (ch > 3 || idrive > 0x1F) return false;
-  SERIAL_ECHOLN("Setting iDrive: ", idrive);
   uint16_t reg = regDrive(ch);
-  uint16_t val = (uint16_t(idrive) << 11);
+  uint16_t val = (uint16_t(idrive) << DriveCurrentBits::CH_IDRIVE_SHIFT);
   return write16(reg, val);
 }
 
@@ -116,9 +131,31 @@ bool FDC2214::readStatus(uint16_t &status) {
   return read16(REG_STATUS, status);
 }
 
+bool FDC2214::reset() {
+  return write16(REG_RESET_DEV, ResetDevBits::RESET_DEV);
+}
+
+bool FDC2214::checkSleep(bool &asleep) {
+  uint16_t cfg;
+  if (!read16(REG_CONFIG, cfg)) return false;
+  asleep = bool(cfg & ConfigBits::SLEEP_MODE_EN);
+  return true;
+}
+
 /// MarlinBio: Read raw 28-bit DATA for channel (0..3). Returns false on I2C error.
 bool FDC2214::readData28(uint8_t ch, uint32_t &data28) {
   if (ch > 3) return false;
+
+  /// MarlinBio: Poll the ready flag until a conversion is available.
+  uint16_t status;
+  int      retries = 10;
+  while(retries--) {
+    if (!read16(REG_STATUS, status)) return false;
+    if (status & unreadConv(ch)) break;
+    safe_delay(10);
+  }
+  if (!(status & unreadConv(ch))) return false;
+
   uint8_t msbReg = regDataMSB(ch);
   uint8_t lsbReg = regDataLSB(ch);
 
@@ -139,52 +176,59 @@ bool FDC2214::init(uint8_t fin_sel, uint16_t fref_div, uint16_t rcount, uint16_t
   /// MarlinBio: Up to 400kHz according to the datasheet.
   Wire.setClock(I2C_CLK);
 
-  /// MarlinBio: Put the device into sleep mode (if it wasn't already) to allow configuration changes.
-  if (!sleep()) return false;
-
-  /// MarlinBio: Set the reference clock to use an external source.
-  if (!setRefClockExternal()) return false;
-
-  /// MarlinBio: Set up the clocks.
-  if (!setClockDividers(0, fref_div, fin_sel)) return false;
-  if (!setClockDividers(1, fref_div, fin_sel)) return false;
-
-  /// MarlinBio: Two channels.
-  if (!setMultiChannel(2)) return false;
-
-  /// MarlinBio: Set the deglitch low pass filter cutoff.
-  if (!setDeglitch(deglitch)) return false;
-
-  /// MarlinBio: Timing
-  if (!setRcount(0, rcount)) return false;
-  if (!setRcount(1, rcount)) return false;
-  if (!setSettleCount(0, settlecount)) return false;
-  if (!setSettleCount(1, settlecount)) return false;
-
-  /// MarlinBio: Set the circuit drive current.
-  if (!setIDrive(0, idrive)) return false;
-  if (!setIDrive(1, idrive)) return false;
-
-  /// MarlinBio: Disable interrupts for now.
-  if (!setIntbEnabled(false)) return false;
+  reset();
 
   /// MarlinBio: 0x5449 = "TI" in ASCII.
   #define TI_MANUFACTURER_ID 0x5449
   #define FDC221x_DEVICE_ID  0x3055
-
+  /// MarlinBio: Read the manufacturer and device IDs to confirm communication.
   uint16_t manufacturerID, deviceID;
-  if (!readIDs(manufacturerID, deviceID)) return false;
+  int retries = 10;
+  while (retries--) {
+    if (!readIDs(manufacturerID, deviceID)) return false;
+    if (manufacturerID == TI_MANUFACTURER_ID && deviceID == FDC221x_DEVICE_ID) break;
+    safe_delay(500);
+  }
   if (manufacturerID != TI_MANUFACTURER_ID || deviceID != FDC221x_DEVICE_ID) {
-    SERIAL_ECHOLN("Bad sensor values: ", manufacturerID, "/", deviceID);
     return false;
   }
+
+  /// MarlinBio: Ensure the device is in sleep mode to allow configuration changes.
+  /// It is supposed to be in sleep after reset.
+  bool asleep = false;
+  if (!checkSleep(asleep) || !asleep) return false;
+
+  /// MarlinBio: Set the reference clock to use an external source.
+  if (!setRefClockExternal()) return false;
+
+  /// MarlinBio: Set the number of channels.
+  if (!setMultiChannel(_GC_CHANNEL_NUM)) return false;
+
+  /// MarlinBio: Set the deglitch low pass filter cutoff.
+  if (!setDeglitch(deglitch)) return false;
+
+  for (int ch = 0; ch < _GC_CHANNEL_NUM; ch++) {
+    /// MarlinBio: Set up the clocks.
+    if (!setClockDividers(ch, fref_div, fin_sel)) return false;
+
+    /// MarlinBio: Set up timing.
+    if (!setRcount(ch, rcount)) return false;
+    if (!setSettleCount(ch, settlecount)) return false;
+
+    /// MarlinBio: Set the circuit drive current.
+    if (!setIDrive(ch, idrive)) return false;
+  }
+
+  /// MarlinBio: Disable interrupts for now.
+  if (!setIntbEnabled(false)) return false;
+
+  /// MarlinBio: Note: It won't start sampling data until wake is called.
 
   return true;
 }
 
 bool FDC2214::sleep() {
   uint16_t cfg;
-  SERIAL_ECHOLN("Sleeping");
   if (!read16(REG_CONFIG, cfg)) return false;
   cfg |= ConfigBits::SLEEP_MODE_EN;
   return write16(REG_CONFIG, cfg);
@@ -192,7 +236,6 @@ bool FDC2214::sleep() {
 
 bool FDC2214::wake() {
   uint16_t cfg;
-  SERIAL_ECHOLN("Waking");
   if (!read16(REG_CONFIG, cfg)) return false;
   cfg &= ~ConfigBits::SLEEP_MODE_EN;
   return write16(REG_CONFIG, cfg);
@@ -217,13 +260,38 @@ bool FDC2214::read_channel(uint8_t channel, float &capacitance) {
   /// MarlinBio: According to the datasheet (and also the formula for LC tank circuits):
   /// C = 1 / L * (2 * π * fSENSORx) ^ 2.
   const double denom = static_cast<double>(INDUCTANCE) * TWO_PI_SQUARED * fSENSORx * fSENSORx;
-  if (!(denom > 0.0)) {
+  if (denom <= 0) {
     return false;
   }
 
-  const double C = 1.0 / denom;
+  /// MarlinBio: Convert to pF.
+  const double C = 1e12 / denom;
   capacitance = static_cast<float>(C);
+
+  /// MarlinBio: Uncomment this to print the values.
+  //SERIAL_ECHOLN("Channel: ", channel, " DATAx: ", DATAx, " fSENSORx: ", fSENSORx, " capacitance: ", capacitance);
+
   return true;
 }
+
+#if GC_DEBUG
+  void FDC2214::dump() {
+    SERIAL_ECHOLN("Dumping FDC2214 registers.");
+
+    uint16_t data;
+    for (int reg = 0; reg <= REG_DEVICE_ID; reg++) {
+      /// MarlinBio: These addresses are skipped for some reason.
+      if (reg == 0x1d || (reg > REG_DRIVE_CURRENT_CH3 && reg < REG_MANUFACTURER_ID)) continue;
+
+      if (read16(reg, data)) {
+        SERIAL_ECHO("Register: 0x");
+        print_hex_word(reg);
+        SERIAL_ECHO(" Data: 0x");
+        print_hex_word(data);
+        SERIAL_EOL();
+      }
+    }
+  }
+#endif
 
 #endif // NEED_FDC2214

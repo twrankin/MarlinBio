@@ -283,7 +283,7 @@
  * to fix connection errors when intersecting lines made of certain materials inside certain baths.
  * WARNING: if you do not know that you need this feature, you can safely ignore this entire section.
  */
-#define GAP_CORRECTION
+//#define GAP_CORRECTION
 #if ENABLED(GAP_CORRECTION)
   // The maximum amount of travel in mm for each axis in one move.
   #define GC_MAX_TRAVEL 0.2
