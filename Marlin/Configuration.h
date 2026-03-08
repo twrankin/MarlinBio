@@ -486,7 +486,7 @@
 #define CUSTOM_MACHINE_NAME "Printess 2.0"
 
 #define SERIAL_PORT -1
-#define BAUDRATE 250000
+#define BAUDRATE 115200
 #define MAX_CMD_SIZE 96
 #define BUFSIZE 4
 #define RX_BUFFER_MONITOR

@@ -18,6 +18,59 @@ For instructions on building the firmware from source, follow along with Marlin'
 ### Installing the firmware
 All roads should lead to a firmware.bin file; to install it, simply copy the file onto a microSD card, insert the card into the slot on the control board, and power on or reset the board. On start up, the board's bootloader will check the SD card for a "firmware.bin" file, copy it to the board's flash storage, rename it "FIRMWARE.CUR", and immediately run it. If an SD card or "firmware.bin" file is not present, the bootloader will load and run the existing firmware.
 
+## Quickstart
+
+Now that the firmware is installed and the hardware is set up, here's how to connect to the Printess and start sending commands.
+
+### Connecting with Pronterface
+
+[Pronterface](https://github.com/kliment/Printrun/releases) is a free, open-source G-code sender (part of the Printrun project) that provides a simple interface for communicating with the printer over USB. Download the latest release for your operating system, then:
+
+1. Connect the Printess to your computer via USB.
+2. Open Pronterface, select the correct serial port from the dropdown, and set the baud rate to **115200**.
+3. Click **Connect**.
+4. Type G-code commands into the text field at the bottom and press Enter to send them.
+
+### G-code basics
+
+G-code is the language used to control the printer. Each command is a letter followed by a number (e.g. `G28`, `M104`), sometimes with parameters. Here are the most essential commands:
+
+| Command | What it does |
+|---|---|
+| `G28` | Home axes |
+| `G0 X10` | Rapid move — no extrusion |
+| `G1 X10 F300` | Print move at 300 mm/min (extrusion runs automatically if constant extrusion is on) |
+| `G90` / `G91` | Absolute / relative positioning |
+| `T0`–`T3` | Switch tools |
+| `M789` | View/set constant extrusion parameters |
+| `M104` | Set temperature target |
+| `M105` | Report temperatures |
+
+**Note:** All axes default to **relative mode** (G91), so `G0 X10` moves 10 mm from the current position, not to the absolute position 10.
+
+**Note:** The `F` parameter sets the feedrate in mm/min and persists until changed. It is recommended to keep feedrates at or below 300 mm/min.
+
+### First moves
+
+1. **Home the axes** with `G28`. Sensorless homing can be finicky — see the [Sensorless homing](#sensorless-homing) section for troubleshooting tips. It is safer to home manually rather than in a script, so you can retry if an axis fails.
+2. **Select your tool** right away with `T0` (or whichever tool you intend to use). This ensures the correct Z axis and extruder are active before you start moving.
+3. **Try a small move:** `G0 X5`, then `G0 X-5` to move back.
+4. **Move Z:** `G0 Z2`, then `G0 Z-2`.
+5. **Switch tools:** `T1` to switch to the second tool (observe the Z axes swap), then `T0` to switch back. Axes must be homed before tool changes if nozzle offsets or Z raise are configured.
+6. **Check constant extrusion:** Send `M789` with no parameters to see the current defaults (syringe diameter 4.78 mm, needle diameter 0.838 mm, coefficient 2.0, pressurization 0.5 mm). Adjust with e.g. `M789 S8.66 N0.603 K1.5 P0.25`.
+7. **Try a print move:** `G1 X10 F300` — with constant extrusion on (the default), the extruder runs automatically. `G0` moves do not trigger extrusion. See the [Constant extrusion](#constant-extrusion) section for details.
+
+### Temperature control
+
+If your Printess has thermoelectric temperature modules, you can control them with `M104`. A module starts disabled and must be explicitly set to heat or cool. A few examples:
+
+- `M104 I0 T37 H` — heat module 0 to 37°C
+- `M104 I0 T4 C` — cool module 0 to 4°C
+- `M104 D` — disable all modules
+- `M105` — check current temperatures
+
+See the [Temperature control](#temperature-control) section for safety notes and fan configuration.
+
 ## New and changed features
 
 To make Marlin more suitable for the needs of bioprinting, we added several new features and changed some of the existing functionality. If you find something surprising that isn't documented here, please open a [discussion](https://github.com/twrankin/MarlinBio/discussions) and let us know.
