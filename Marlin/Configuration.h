@@ -217,7 +217,7 @@
  * functionality will be added in the future, let us know if this is needed sooner.
  * Make sure to update the nozzle offsets below.
  */
-//#define MIXING_EXTRUDER
+#define MIXING_EXTRUDER
 #if ENABLED(MIXING_EXTRUDER)
   // The configuration of mixing extruders is specified as an array of arrays,
   // where the inner arrays link extruders together. Linked extruders must be sequential,
@@ -235,10 +235,11 @@
 
 #if EXTRUDERS > 1
   /*
-   * The offset of each nozzle in relation to nozzle 0 in mm. Defining these will move the X/Y/Z
-   * axes according to the offsets when changing tools. The offsets for nozzle 0 must all be zero.
-   * The number of nozzles is calculated using the number of extruders and their linkages (if using MIXING_EXTRUDER).
-   * E.g., 4 extruders with one linked pair is 3 nozzles. These can be altered live using the M218 G-code command.
+   * The offset of each physical extruder in relation to extruder 0 in mm.
+   * Always specify EXTRUDERS entries (one per physical extruder).
+   * When extruders are linked (MIXING_EXTRUDER), the tool's offset is automatically
+   * computed as the midpoint of its member extruders' offsets. On unlink, offsets revert
+   * to these defaults. Tool offsets can also be altered live using M218.
    * WARNING: If using offsets, the specified axes must be homed before a tool change!
    */
   #define NOZZLE_OFFSET_X { 0.0, 30.0, 60.0, 90.0 }

@@ -66,6 +66,10 @@
   #include "../feature/fwretract.h"
 #endif
 
+#if ENABLED(MIXING_EXTRUDER)
+  #include "../feature/mixing.h"
+#endif
+
 #if ENABLED(BABYSTEP_DISPLAY_TOTAL)
   #include "../feature/babystep.h"
 #endif
@@ -129,15 +133,47 @@ xyze_pos_t destination; // {0}
 // Extruder offsets
 #if HAS_HOTEND_OFFSET
   xyz_pos_t hotend_offset[TOOL_NUM]; // Initialized by settings.load
+  xyz_pos_t default_hotend_offset[EXTRUDERS]; // Per-physical-extruder offsets from Configuration.h
+
   void reset_hotend_offsets() {
-    constexpr float tmp[XYZ][TOOL_NUM] = { NOZZLE_OFFSET_X, NOZZLE_OFFSET_Y, NOZZLE_OFFSET_Z };
+    constexpr float tmp[XYZ][EXTRUDERS] = { NOZZLE_OFFSET_X, NOZZLE_OFFSET_Y, NOZZLE_OFFSET_Z };
     static_assert(
       !tmp[X_AXIS][0] && !tmp[Y_AXIS][0] && !tmp[Z_AXIS][0],
       "Offsets for the first hotend must be 0.0."
     );
-    // Transpose from [XYZ][TOOL_NUM] to [TOOL_NUM][XYZ]
-    EXTRUDER_LOOP() LOOP_ABC(a) hotend_offset[e][a] = tmp[a][e];
+    // Store per-extruder defaults (never modified after init)
+    EXTRUDER_LOOP() LOOP_ABC(a) default_hotend_offset[e][a] = tmp[a][e];
+    recompute_hotend_offsets();
     TERN_(DUAL_X_CARRIAGE, hotend_offset[1].x = _MAX(X2_HOME_POS, X2_MAX_POS));
+  }
+
+  void recompute_hotend_offsets() {
+    #if ENABLED(MIXING_EXTRUDER)
+      // Compute per-tool offsets from the current mix_config
+      for (uint8_t t = 0; t < mixer.mix_config.size(); t++) {
+        const auto &group = mixer.mix_config[t];
+        if (group.size() == 1) {
+          hotend_offset[t] = default_hotend_offset[group[0]];
+        } else {
+          // Midpoint of all member extruder offsets
+          hotend_offset[t].reset();
+          for (auto e : group) {
+            hotend_offset[t].x += default_hotend_offset[e].x;
+            hotend_offset[t].y += default_hotend_offset[e].y;
+            hotend_offset[t].z += default_hotend_offset[e].z;
+          }
+          const float n = group.size();
+          hotend_offset[t].x /= n;
+          hotend_offset[t].y /= n;
+          hotend_offset[t].z /= n;
+        }
+      }
+      // Zero out unused entries beyond current tool count
+      for (uint8_t t = mixer.mix_config.size(); t < EXTRUDERS; t++)
+        hotend_offset[t].reset();
+    #else
+      EXTRUDER_LOOP() LOOP_ABC(a) hotend_offset[e][a] = default_hotend_offset[e][a];
+    #endif
   }
 #endif
 

@@ -878,6 +878,8 @@ private:
   #if ENABLED(MIXING_EXTRUDER)
     static void M163();
     static void M163_report(const bool forReplay=true);
+    static void M164();
+    static void M164_report(const bool forReplay=true);
     #if ENABLED(GRADIENT_MIX)
       static void M166();
     #endif

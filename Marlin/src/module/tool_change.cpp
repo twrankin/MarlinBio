@@ -1139,7 +1139,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
   #else
 
   /// MarlinBio: "if constexpr" will not compile the block that won't be run.
-  if constexpr (TOOL_NUM < 2) {
+  if constexpr (EXTRUDERS < 2) {
 
     UNUSED(no_move);
 
@@ -1155,7 +1155,7 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
          return invalid_extruder_error(new_tool);
     #endif
 
-    if (new_tool >= TOOL_NUM)
+    if (new_tool >= TERN(MIXING_EXTRUDER, mixer.get_tool_count(), EXTRUDERS))
       return invalid_extruder_error(new_tool);
 
     const uint8_t old_tool = active_extruder;
@@ -1332,7 +1332,11 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
       /// MarlinBio: Swap the Z positions
       toolchange_settings.z_pos[old_tool] = current_position.z;
       current_position.z = toolchange_settings.z_pos[new_tool];
-      SERIAL_ECHOLN("Updated Zs ", toolchange_settings.z_pos[0], ", ", toolchange_settings.z_pos[1], ", ", toolchange_settings.z_pos[2], ", ", toolchange_settings.z_pos[3]);
+      SERIAL_ECHOPGM("Updated Zs");
+      for (uint8_t t = 0; t < TERN(MIXING_EXTRUDER, mixer.get_tool_count(), EXTRUDERS); t++) {
+        SERIAL_ECHOPGM(" "); SERIAL_ECHO(toolchange_settings.z_pos[t]);
+      }
+      SERIAL_EOL();
       sync_plan_position();
       #if ENABLED(DISABLE_TOOLCHANGE_Z_RETURN)
         /// MarlinBio: Don't move back later.

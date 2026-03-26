@@ -27,6 +27,10 @@
 #include "../gcode.h"
 #include "../../module/motion.h"
 
+#if ENABLED(MIXING_EXTRUDER)
+  #include "../../feature/mixing.h"
+#endif
+
 #if ENABLED(DELTA)
   #include "../../module/planner.h"
 #endif
@@ -45,6 +49,13 @@ void GcodeSuite::M218() {
 
   const int8_t target_extruder = get_target_extruder_from_command();
   if (target_extruder < 0) return;
+
+  // Validate target is within the current tool count
+  const uint8_t tool_count = TERN(MIXING_EXTRUDER, mixer.get_tool_count(), EXTRUDERS);
+  if (target_extruder >= tool_count) {
+    SERIAL_ECHOLN("Invalid tool index");
+    return;
+  }
 
   #if HAS_X_AXIS
     if (parser.seenval('X')) hotend_offset[target_extruder].x = parser.value_linear_units();
@@ -65,8 +76,9 @@ void GcodeSuite::M218() {
 void GcodeSuite::M218_report(const bool forReplay/*=true*/) {
   TERN_(MARLIN_SMALL_BUILD, return);
 
+  const uint8_t tool_count = TERN(MIXING_EXTRUDER, mixer.get_tool_count(), EXTRUDERS);
   report_heading(forReplay, F(STR_HOTEND_OFFSETS));
-  for (uint8_t e = 1; e < TOOL_NUM; ++e) {
+  for (uint8_t e = 1; e < tool_count; ++e) {
     report_echo_start(forReplay);
     SERIAL_ECHOLNPGM_P(
       PSTR("  M218 T"), e,

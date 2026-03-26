@@ -716,6 +716,7 @@ void GcodeSuite::process_parsed_command(bool no_ok/*=false*/) {
 
       #if ENABLED(MIXING_EXTRUDER)
         case 163: M163(); break;                                  // M163: Set a component weight for mixing extruder
+        case 164: M164(); break;                                  // M164: Link/unlink mixing extruders
         #if ENABLED(GRADIENT_MIX)
           case 166: M166(); break;                                // M166: Set Gradient Mix
         #endif

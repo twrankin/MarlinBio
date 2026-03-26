@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V90"
+#define EEPROM_VERSION "V91"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -47,6 +47,7 @@
 #include "settings.h"
 
 #include "endstops.h"
+#include "motion.h"
 #include "planner.h"
 #include "stepper.h"
 #include "temperature.h"
@@ -132,6 +133,10 @@
 #if HAS_MULTI_EXTRUDER
   #include "tool_change.h"
   void M217_report(const bool eeprom);
+#endif
+
+#if ENABLED(MIXING_EXTRUDER)
+  #include "../feature/mixing.h"
 #endif
 
 #if ENABLED(BLTOUCH)
@@ -246,6 +251,14 @@ typedef struct SettingsDataStruct {
   //
   #if HAS_HOTEND_OFFSET
     xyz_pos_t hotend_offset[EXTRUDERS - 1];               // M218 XYZ
+  #endif
+
+  //
+  // Mixing Extruder Configuration
+  //
+  #if ENABLED(MIXING_EXTRUDER)
+    uint8_t mix_group_head[EXTRUDERS];                    // M164 - group head for each extruder
+    float   mix_ratio[EXTRUDERS];                         // M163 - ratio for each extruder
   #endif
 
   //
@@ -957,6 +970,32 @@ void MarlinSettings::postprocess() {
         // Skip hotend 0 which must be 0
         for (uint8_t e = 1; e < EXTRUDERS; ++e)
           EEPROM_WRITE(hotend_offset[e]);
+      #endif
+    }
+
+    //
+    // Mixing Extruder Configuration
+    //
+    {
+      #if ENABLED(MIXING_EXTRUDER)
+        // Flatten mix_config into a per-extruder group_head + ratio representation
+        uint8_t mix_group_head[EXTRUDERS];
+        float   mix_ratio[EXTRUDERS];
+        for (uint8_t e = 0; e < EXTRUDERS; e++) {
+          const uint8_t t = mixer.tool_for_extruder(e);
+          mix_group_head[e] = (t < EXTRUDERS) ? mixer.mix_config[t][0] : e;
+          // Find this extruder's ratio within its group
+          mix_ratio[e] = 1.0f;
+          if (t < EXTRUDERS) {
+            const auto &group = mixer.mix_config[t];
+            const auto &ratios = mixer.mix_ratios[t];
+            for (uint8_t j = 0; j < group.size(); j++) {
+              if (group[j] == e) { mix_ratio[e] = ratios[j]; break; }
+            }
+          }
+        }
+        EEPROM_WRITE(mix_group_head);
+        EEPROM_WRITE(mix_ratio);
       #endif
     }
 
@@ -2018,6 +2057,44 @@ void MarlinSettings::postprocess() {
           // Skip hotend 0 which must be 0
           for (uint8_t e = 1; e < EXTRUDERS; ++e)
             EEPROM_READ(hotend_offset[e]);
+        #endif
+      }
+
+      //
+      // Mixing Extruder Configuration
+      //
+      {
+        #if ENABLED(MIXING_EXTRUDER)
+          uint8_t mix_group_head[EXTRUDERS];
+          float   mix_ratio[EXTRUDERS];
+          _FIELD_TEST(mix_group_head);
+          EEPROM_READ(mix_group_head);
+          EEPROM_READ(mix_ratio);
+
+          if (!validating) {
+            // Reconstruct compact mix_config from flat group_head representation
+            mixer.mix_config.clear();
+            mixer.mix_ratios.clear();
+            for (uint8_t e = 0; e < EXTRUDERS; e++) {
+              if (mix_group_head[e] == e) {
+                // This extruder is a group head — collect all members
+                std::vector<uint8_t> group;
+                std::vector<float>   ratios;
+                group.push_back(e);
+                ratios.push_back(mix_ratio[e]);
+                for (uint8_t m = e + 1; m < EXTRUDERS; m++) {
+                  if (mix_group_head[m] == e) {
+                    group.push_back(m);
+                    ratios.push_back(mix_ratio[m]);
+                  }
+                }
+                mixer.mix_config.push_back(group);
+                mixer.mix_ratios.push_back(ratios);
+              }
+              // else: absorbed into another group, skip
+            }
+            TERN_(HAS_HOTEND_OFFSET, recompute_hotend_offsets());
+          }
         #endif
       }
 
@@ -3380,6 +3457,8 @@ void MarlinSettings::reset() {
       mixer.mix_config.push_back(std::vector<uint8_t>(1, curr_extruder++));
       mixer.mix_ratios.push_back(std::vector<float>(1, 1));
     }
+    /// MarlinBio: Recompute per-tool offsets from default per-extruder offsets.
+    TERN_(HAS_HOTEND_OFFSET, recompute_hotend_offsets());
   #endif
 
   //
@@ -3933,6 +4012,7 @@ void MarlinSettings::reset() {
     /// MarlinBio: Mixing extruders
     ///
     TERN_(MIXING_EXTRUDER, gcode.M163_report(forReplay));
+    TERN_(MIXING_EXTRUDER, gcode.M164_report(forReplay));
 
     //
     // M203 Maximum feedrates (units/s)

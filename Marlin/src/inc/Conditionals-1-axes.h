@@ -163,6 +163,8 @@
 
 #if ENABLED(MIXING_EXTRUDER)
   #include <vector>
+  /// MarlinBio: count_tools() is used only for compile-time validation in SanityCheck.h.
+  /// At runtime, the tool count is dynamic (mixer.get_tool_count()).
   static constexpr uint8_t count_tools() {
     uint8_t tool_num = EXTRUDERS;
     const std::vector<std::vector<uint8_t>> mix_config = MIXING_CONFIGURATION;
@@ -173,7 +175,9 @@
     return tool_num;
   }
 
-  constexpr uint8_t TOOL_NUM = count_tools();
+  /// MarlinBio: TOOL_NUM is always EXTRUDERS so that fixed arrays are max-sized.
+  /// The actual runtime tool count may be smaller when extruders are linked.
+  #define TOOL_NUM EXTRUDERS
 #else
   #define TOOL_NUM EXTRUDERS
 #endif

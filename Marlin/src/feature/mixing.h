@@ -50,6 +50,21 @@ class Mixer {
   FORCE_INLINE static const std::vector<float> get_ratios(uint8_t tool) {
     return mix_ratios[tool];
   }
+
+  /// MarlinBio: Runtime tool count (may be less than EXTRUDERS when extruders are linked).
+  FORCE_INLINE static uint8_t get_tool_count() { return mix_config.size(); }
+
+  /// MarlinBio: Find which tool index owns a given physical extruder.
+  /// Returns EXTRUDERS if not found.
+  static uint8_t tool_for_extruder(uint8_t extruder);
+
+  /// MarlinBio: Link sequential extruders first_ext..last_ext into one tool.
+  /// Returns true on success, false on validation failure.
+  static bool link(uint8_t first_ext, uint8_t last_ext);
+
+  /// MarlinBio: Unlink a tool back into individual extruders.
+  /// Returns true on success, false on validation failure.
+  static bool unlink(uint8_t tool);
 };
 
 extern Mixer mixer;
