@@ -144,34 +144,65 @@
   #define Z2_CS_PIN                         PC7
 #endif
 
-#define E0_STEP_PIN                         PF9   // MOTOR 4
-#define E0_DIR_PIN                          PF10
-#define E0_ENABLE_PIN                       PG2
+#define Z3_STEP_PIN                         PF9   // MOTOR 4
+#define Z3_DIR_PIN                          PF10
+#define Z3_ENABLE_PIN                       PA0
+#ifndef Z3_CS_PIN
+  #define Z3_CS_PIN                         PC7
+#endif
+
+#define E0_STEP_PIN                         PC13  // MOTOR 5
+#define E0_DIR_PIN                          PF0
+#define E0_ENABLE_PIN                       PF1
 #ifndef E0_CS_PIN
-  #define E0_CS_PIN                         PF2
+  #define E0_CS_PIN                         PE4
 #endif
 
-#define E1_STEP_PIN                         PC13  // MOTOR 5
-#define E1_DIR_PIN                          PF0
-#define E1_ENABLE_PIN                       PF1
+#define E1_STEP_PIN                         PE2   // MOTOR 6
+#define E1_DIR_PIN                          PE3
+#define E1_ENABLE_PIN                       PD4
 #ifndef E1_CS_PIN
-  #define E1_CS_PIN                         PE4
+
+  #define E1_CS_PIN                         PE1
 #endif
 
-#define E2_STEP_PIN                         PE2   // MOTOR 6
-#define E2_DIR_PIN                          PE3
-#define E2_ENABLE_PIN                       PD4
+#define E2_STEP_PIN                         PE6   // MOTOR 7
+#define E2_DIR_PIN                          PA14
+#define E2_ENABLE_PIN                       PE0
 #ifndef E2_CS_PIN
-
-  #define E2_CS_PIN                         PE1
+  #define E2_CS_PIN                         PD3
 #endif
 
-#define E3_STEP_PIN                         PE6   // MOTOR 7
-#define E3_DIR_PIN                          PA14
-#define E3_ENABLE_PIN                       PE0
-#ifndef E3_CS_PIN
-  #define E3_CS_PIN                         PD3
-#endif
+//Here lies the original pin setup for E1, E2, and E3 which has been commented out in favor of the new pin assignments above.
+
+// #define E0_STEP_PIN                         PF9   // MOTOR 4
+// #define E0_DIR_PIN                          PF10
+// #define E0_ENABLE_PIN                       PG2
+// #ifndef E0_CS_PIN
+//   #define E0_CS_PIN                         PF2
+// #endif
+
+// #define E1_STEP_PIN                         PC13  // MOTOR 5
+// #define E1_DIR_PIN                          PF0
+// #define E1_ENABLE_PIN                       PF1
+// #ifndef E1_CS_PIN
+//   #define E1_CS_PIN                         PE4
+// #endif
+
+// #define E2_STEP_PIN                         PE2   // MOTOR 6
+// #define E2_DIR_PIN                          PE3
+// #define E2_ENABLE_PIN                       PD4
+// #ifndef E2_CS_PIN
+
+//   #define E2_CS_PIN                         PE1
+// #endif
+
+// #define E3_STEP_PIN                         PE6   // MOTOR 7
+// #define E3_DIR_PIN                          PA14
+// #define E3_ENABLE_PIN                       PE0
+// #ifndef E3_CS_PIN
+//   #define E3_CS_PIN                         PD3
+// #endif
 
 //
 // Temperature Sensors
