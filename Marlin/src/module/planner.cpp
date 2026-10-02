@@ -65,6 +65,8 @@
  *   di -> (d + d1 - d2) / 2
  */
 
+#include <vector>
+
 #include "planner.h"
 #include "stepper.h"
 #include "motion.h"

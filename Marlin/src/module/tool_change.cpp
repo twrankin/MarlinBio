@@ -1138,8 +1138,8 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
 
   #else
 
-  /// MarlinBio: "if constexpr" will not compile the block that won't be run.
-  if constexpr (TOOL_NUM < 2) {
+  /// MarlinBio: TOOL_NUM may be constexpr (not a macro) with MIXING_EXTRUDER, so this can't be an #if.
+  if (TOOL_NUM < 2) {
 
     UNUSED(no_move);
 
@@ -1332,7 +1332,12 @@ void tool_change(const uint8_t new_tool, bool no_move/*=false*/) {
       /// MarlinBio: Swap the Z positions
       toolchange_settings.z_pos[old_tool] = current_position.z;
       current_position.z = toolchange_settings.z_pos[new_tool];
-      SERIAL_ECHOLN("Updated Zs ", toolchange_settings.z_pos[0], ", ", toolchange_settings.z_pos[1], ", ", toolchange_settings.z_pos[2], ", ", toolchange_settings.z_pos[3]);
+      SERIAL_ECHO("Updated Zs ");
+      for (uint8_t t = 0; t < TOOL_NUM; t++) {
+        if (t) SERIAL_ECHO(", ");
+        SERIAL_ECHO(toolchange_settings.z_pos[t]);
+      }
+      SERIAL_EOL();
       sync_plan_position();
       #if ENABLED(DISABLE_TOOLCHANGE_Z_RETURN)
         /// MarlinBio: Don't move back later.

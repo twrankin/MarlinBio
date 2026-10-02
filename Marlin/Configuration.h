@@ -177,7 +177,7 @@
  * Some per-extruder parameters will need to be updated when EXTRUDERS is changed.
  * When enabling MIXING_EXTRUDERS, still use the actual number of extruders here.
  */
-#define EXTRUDERS 2
+#define EXTRUDERS 3
 
 /*
  * The following are parameters for constant extrusion based on a syringe extruder system.
@@ -196,16 +196,16 @@
 #define CONSTANT_EXTRUSION_DEFAULT_ON
 
 // The inner diameter of the syringe in mm.
-#define SYRINGE_INNER_DIAMETER { 4.78, 4.78 }
+#define SYRINGE_INNER_DIAMETER { 4.78, 4.78, 4.78 }
 
 // The inner diameter of the needle in mm.
-#define NEEDLE_INNER_DIAMETER { 0.838, 0.838 }
+#define NEEDLE_INNER_DIAMETER { 0.838, 0.838, 0.838 }
 
 // The coefficient to scale the extrusion rate.
-#define EXTRUSION_COEFFICIENT { 2.0,  2.0 }
+#define EXTRUSION_COEFFICIENT { 2.0, 2.0, 2.0 }
 
 // The distance to pressurize/depressurize the syringe before/after printing in mm.
-#define PRESSURIZATION_LENGTH { 0.5, 0.5 }
+#define PRESSURIZATION_LENGTH { 0.5, 0.5, 0.5 }
 
 /*
  * This enables the use of mixing materials together using a mixing module or printhead to extrude
@@ -241,7 +241,7 @@
    * E.g., 4 extruders with one linked pair is 3 nozzles. These can be altered live using the M218 G-code command.
    * WARNING: If using offsets, the specified axes must be homed before a tool change!
    */
-  #define NOZZLE_OFFSET_X { 0.0, 30.0, 60.0, 90.0 }
+  #define NOZZLE_OFFSET_X { 0.0, 30.0, 60.0 }
   //#define NOZZLE_OFFSET_Y { 0.0, 0.2, 0.0, -0.1 }
   //#define NOZZLE_OFFSET_Z { 0.0, -0.23, -0.05, 1.0}
 
@@ -498,7 +498,7 @@
 #define Z_DRIVER_TYPE  TMC2209
 #define Z2_DRIVER_TYPE TMC2209
 #define Z3_DRIVER_TYPE TMC2209
-#define Z4_DRIVER_TYPE TMC2209
+//#define Z4_DRIVER_TYPE TMC2209
 #define E0_DRIVER_TYPE TMC2209
 #define E1_DRIVER_TYPE TMC2209
 // #define E2_DRIVER_TYPE TMC2209

@@ -1073,12 +1073,17 @@
     #endif
   #endif
 #endif
+/// MarlinBio: Also drop the homing currents of absent Z steppers, otherwise Zn_HAS_HOME_CURRENT
+/// is set and the homing code references a stepperZn that doesn't exist.
 #if NUM_Z_STEPPERS < 4
   #undef INVERT_Z4_VS_Z_DIR
+  #undef Z4_CURRENT_HOME
   #if NUM_Z_STEPPERS < 3
     #undef INVERT_Z3_VS_Z_DIR
+    #undef Z3_CURRENT_HOME
     #if NUM_Z_STEPPERS < 2
       #undef INVERT_Z2_VS_Z_DIR
+      #undef Z2_CURRENT_HOME
     #endif
   #endif
 #endif

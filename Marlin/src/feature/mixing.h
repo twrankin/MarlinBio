@@ -22,6 +22,8 @@
 
 #include "../inc/MarlinConfig.h"
 
+#include <vector>
+
 #define MIXER_STEPPER_LOOP(VAR, tool) for (auto VAR : mixer.get_steppers(tool))
 
 /**
