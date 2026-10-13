@@ -715,6 +715,8 @@ void Temperature::factory_reset() {
     ///
     #define HEATER_SETUP(e) do { \
       temp_hotend[e].type = HeaterInfo::deviceType::disabled; \
+      temp_hotend[e].heat_window = heater_info_t::default_heat_window; \
+      temp_hotend[e].cool_window = heater_info_t::default_cool_window; \
       temp_hotend[e].soft_pwm_amount = 0; \
       setTargetHotend(DISABLED_TEMP, e); \
     } while(0);
@@ -1928,23 +1930,16 @@ void Temperature::mintemp_error(const heater_id_t heater_id OPTARG(ERR_INCLUDE_T
       //*/
 
     #else // No PID or MPC enabled
-      #define COOL_WINDOW 0.25
-      #define DAMPEN_ON   0.75
-      #define DAMPEN_OFF  0.4
-      #define HEAT_ON     0.4
-      #define HEAT_OFF    0.25
-      #define VERY_BELOW  10
-
       float           pid_output = 0;
       celsius_float_t current    = temp_hotend[ee].celsius;
       celsius_float_t target     = temp_hotend[ee].target;
 
       /// MarlinBio: Split out heating and cooling for better readability and control.
       if (temp_hotend[ee].type == hotend_info_t::deviceType::cooler) {
-        if (current > target + COOL_WINDOW) {
+        if (current > target + temp_hotend[ee].cool_window) {
           /// MarlinBio: Turn on when we're above the window.
           pid_output = BANG_MAX;
-        } else if (current < target - COOL_WINDOW) {
+        } else if (current < target - temp_hotend[ee].cool_window) {
           /// MarlinBio: Turn off when we're below the window.
           pid_output = 0;
         } else {
@@ -1952,21 +1947,11 @@ void Temperature::mintemp_error(const heater_id_t heater_id OPTARG(ERR_INCLUDE_T
           pid_output = temp_hotend[ee].soft_pwm_amount ? BANG_MAX : 0;
         }
       } else if (temp_hotend[ee].type == hotend_info_t::deviceType::heater) {
-        if (current < target - VERY_BELOW) {
-          /// MarlinBio: Long heats will generate overshoot, try to dampen it by having
-          /// a lower window for the first approach.
-          temp_hotend[ee].dampen_heating = true;
-        }
-        
-        if (temp_hotend[ee].dampen_heating && current > target - DAMPEN_ON && current < target - DAMPEN_OFF) {
-          /// MarlinBio: Turn off early after a long heat.
-          pid_output = 0;
-        } else if (current < target - (temp_hotend[ee].dampen_heating ? DAMPEN_ON : HEAT_ON)) {
+        if (current < target - temp_hotend[ee].heat_window) {
           /// MarlinBio: Turn on when we're well below target.
           pid_output = BANG_MAX;
-        } else if (current >= target - (temp_hotend[ee].dampen_heating ? DAMPEN_OFF : HEAT_OFF)) {
-          /// MarlinBio: Turn off when we're slightly below target; heat loves to overshoot.
-          temp_hotend[ee].dampen_heating = false;
+        } else if (current > target + temp_hotend[ee].heat_window) {
+          /// MarlinBio: Turn off when we're above the window.
           pid_output = 0;
         } else {
           /// MarlinBio: Otherwise, keep the previous setting through the window.

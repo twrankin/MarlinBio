@@ -136,7 +136,7 @@
  *
  * M102 - Configure Bed Distance Sensor. (Requires BD_SENSOR)
  *
- * M104 - Set extruder target temp.
+ * M104 - Set temperature module target and bang-bang windows (MarlinBio: W<heating °C>, K<cooling °C>).
  * M105 - Report current temperatures.
  * M106 - Set print fan speed.
  * M107 - Print fan off.

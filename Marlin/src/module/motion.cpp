@@ -1472,6 +1472,28 @@ float get_move_distance(const xyze_pos_t &diff OPTARG(HAS_ROTATIONAL_AXES, bool 
         #endif
       );
 
+    #elif ENABLED(LIFT_AXES_FEEDRATE)
+
+      /**
+       * Printess: Z, A(I), B(J), C(K) are four parallel, independent lifts and
+       * U, V, W, D are syringe plungers.
+       *
+       *   D^2 = dX^2 + dY^2 + max(|dZ|, |dA|, |dB|, |dC|)^2
+       *   if D^2 == 0 (no motion axis moves):
+       *     D = max(|dU|, |dV|, |dW|, |dD|)
+       *
+       * The lift (or plunger) with the longest travel runs at the commanded F
+       * and the others arrive at the same time. Plungers never add to the
+       * length of a move that includes a motion axis, like E on a 3D printer.
+       */
+      const float lift_mm = _MAX(ABS(diff.z), ABS(diff.i), ABS(diff.j), ABS(diff.k));
+      float distance_sqr = sq(diff.x) + sq(diff.y) + sq(lift_mm);
+
+      if (UNEAR_ZERO(distance_sqr)) {
+        const float plunger_mm = _MAX(ABS(diff.u), ABS(diff.v), ABS(diff.w), ABS(diff.d));
+        distance_sqr = sq(plunger_mm);
+      }
+
     #else
 
       /**

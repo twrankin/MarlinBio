@@ -442,6 +442,9 @@ typedef struct TempInfo {
 /// Leaving the naming to minimize changes.
 /// We also consolidated some of the temperature monitoring here.
 typedef struct HeaterInfo : public TempInfo {
+  static constexpr celsius_float_t default_heat_window = 0.4f;
+  static constexpr celsius_float_t default_cool_window = 0.25f;
+
   enum deviceType {
     disabled,
     heater,
@@ -450,10 +453,11 @@ typedef struct HeaterInfo : public TempInfo {
 
   inline bool enabled() { return type != disabled; }
 
-  bool            dampen_heating;
   bool            dampen_fan;
   deviceType      type;
   celsius_float_t target;
+  celsius_float_t heat_window = default_heat_window;
+  celsius_float_t cool_window = default_cool_window;
   uint8_t         soft_pwm_amount;
 
   #if WATCH_HOTENDS
@@ -1049,7 +1053,6 @@ class Temperature {
         }
 
         temp_hotend[ee].dampen_fan     = false;
-        temp_hotend[ee].dampen_heating = false;
         TERN_(WATCH_HOTENDS, temp_hotend[ee].restart_watch());
       }
 

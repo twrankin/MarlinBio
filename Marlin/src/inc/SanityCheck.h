@@ -1160,6 +1160,19 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
 #endif
 
 /**
+ * Printess lift / plunger feedrate rule
+ */
+#if ENABLED(LIFT_AXES_FEEDRATE)
+  #if !(HAS_Z_AXIS && HAS_I_AXIS && HAS_J_AXIS && HAS_K_AXIS && HAS_U_AXIS && HAS_V_AXIS && HAS_W_AXIS && HAS_D_AXIS)
+    #error "LIFT_AXES_FEEDRATE requires all of Z, I, J, K (lifts) and U, V, W, D (plungers) to be enabled."
+  #elif HAS_ROTATIONAL_AXES
+    #error "LIFT_AXES_FEEDRATE requires all axes to be linear (no AXISn_ROTATES)."
+  #elif ANY(ARTICULATED_ROBOT_ARM, FOAMCUTTER_XYUV)
+    #error "LIFT_AXES_FEEDRATE is incompatible with ARTICULATED_ROBOT_ARM and FOAMCUTTER_XYUV."
+  #endif
+#endif
+
+/**
  * Allow only extra axis codes that do not conflict with G-code parameter names
  */
 #if HAS_I_AXIS

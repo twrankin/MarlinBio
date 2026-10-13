@@ -54,12 +54,13 @@
  * Default axis steps per unit (steps/mm).
  * This is how many steps will be issued to move an axis 1mm.
  * If the MICROSTEPS setting is changed, this needs to be multiplied
- * accordingly. E.g. E = 256usteps/steps * 200steps/mm = 51200 usteps/mm.
+ * accordingly. E.g. 16 usteps/step * 200 steps/rev = 3200 usteps/mm at 1 mm/rev.
  * Override with M92.
  * X, Y, Z, A, B, C, U, V, W, D.
- * The syringe axes (U, V, W, D) use 256 microsteps, see U_MICROSTEPS below.
+ * Motion axes (X, Y, Z, A, B, C) use 1/16 microstepping: 3200 steps/mm.
+ * Syringe axes (U, V, W, D) use 1/64 microstepping: 12800 steps/mm. See X_MICROSTEPS / U_MICROSTEPS below.
  */
- #define DEFAULT_AXIS_STEPS_PER_UNIT { 200, 200, 200, 200, 200, 200, 51200, 51200, 51200, 51200 }
+ #define DEFAULT_AXIS_STEPS_PER_UNIT { 3200, 3200, 3200, 3200, 3200, 3200, 12800, 12800, 12800, 12800 }
 
 /*
  * Default max feed rate (mm/s).
@@ -451,15 +452,15 @@
    */
   #define X_CURRENT       600
   #define X_CURRENT_HOME  450
-  #define X_MICROSTEPS    0
+  #define X_MICROSTEPS    16
 
   #define Y_CURRENT       600
   #define Y_CURRENT_HOME  450
-  #define Y_MICROSTEPS    0
+  #define Y_MICROSTEPS    16
 
   #define Z_CURRENT       600
   #define Z_CURRENT_HOME  450
-  #define Z_MICROSTEPS    0
+  #define Z_MICROSTEPS    16
 
   // A, B, C: additional Z-style axes.
   #define I_CURRENT       Z_CURRENT
@@ -474,11 +475,11 @@
   #define K_CURRENT_HOME  Z_CURRENT_HOME
   #define K_MICROSTEPS    Z_MICROSTEPS
 
-  // U, V, W, D: syringe axes. High microsteps allow for smoother extrusion.
+  // U, V, W, D: syringe axes. Finer microsteps keep slow dispensing smooth.
   // If U_MICROSTEPS is changed, update DEFAULT_AXIS_STEPS_PER_UNIT accordingly.
-  #define U_CURRENT       500
-  #define U_CURRENT_HOME  U_CURRENT
-  #define U_MICROSTEPS    256
+  #define U_CURRENT       600
+  #define U_CURRENT_HOME  450
+  #define U_MICROSTEPS    64
 
   #define V_CURRENT       U_CURRENT
   #define V_CURRENT_HOME  U_CURRENT_HOME
@@ -586,6 +587,18 @@
 #define AXIS8_NAME 'V'
 #define AXIS9_NAME 'W'
 #define AXIS10_NAME 'D'
+
+/**
+ * Printess move-length (feedrate) rule.
+ * Z, A, B, C are four parallel lifts and U, V, W, D are syringe plungers.
+ * With this enabled a move's length (which F divides to get move time) is:
+ *   D = sqrt(dX^2 + dY^2 + max(|dZ|,|dA|,|dB|,|dC|)^2)
+ *   or, when no motion axis moves, D = max(|dU|,|dV|,|dW|,|dD|)
+ * so the lift or plunger with the longest path runs at F and the rest keep pace.
+ * Plungers never contribute to the length of a move that includes a motion axis, like E.
+ * Disable to get stock Marlin behavior (XYZ distance only; A, B, C ignored when XYZ move).
+ */
+#define LIFT_AXES_FEEDRATE
 
 #define TEMP_SENSOR_0 61
 #define TEMP_SENSOR_1 61
