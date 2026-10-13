@@ -97,6 +97,9 @@ static void set_stealth_status(const bool enable, const int8_t eindex) {
       #if W_HAS_STEALTHCHOP
         case W_AXIS: TMC_SET_STEALTH(W); break;
       #endif
+      #if D_HAS_STEALTHCHOP
+        case D_AXIS: TMC_SET_STEALTH(D); break;
+      #endif
 
       #if E_STEPPERS
         case E_AXIS: {
@@ -130,6 +133,7 @@ static void say_stealth_status() {
   OPTCODE( U_HAS_STEALTHCHOP, TMC_SAY_STEALTH_STATUS(U))
   OPTCODE( V_HAS_STEALTHCHOP, TMC_SAY_STEALTH_STATUS(V))
   OPTCODE( W_HAS_STEALTHCHOP, TMC_SAY_STEALTH_STATUS(W))
+  OPTCODE( D_HAS_STEALTHCHOP, TMC_SAY_STEALTH_STATUS(D))
   OPTCODE(E0_HAS_STEALTHCHOP, TMC_SAY_STEALTH_STATUS(E0))
   OPTCODE(E1_HAS_STEALTHCHOP, TMC_SAY_STEALTH_STATUS(E1))
   OPTCODE(E2_HAS_STEALTHCHOP, TMC_SAY_STEALTH_STATUS(E2))
@@ -174,9 +178,10 @@ void GcodeSuite::M569_report(const bool forReplay/*=true*/) {
              chop_k = TERN0(K_HAS_STEALTHCHOP, stepperK.get_stored_stealthChop()),
              chop_u = TERN0(U_HAS_STEALTHCHOP, stepperU.get_stored_stealthChop()),
              chop_v = TERN0(V_HAS_STEALTHCHOP, stepperV.get_stored_stealthChop()),
-             chop_w = TERN0(W_HAS_STEALTHCHOP, stepperW.get_stored_stealthChop());
+             chop_w = TERN0(W_HAS_STEALTHCHOP, stepperW.get_stored_stealthChop()),
+             chop_d = TERN0(D_HAS_STEALTHCHOP, stepperD.get_stored_stealthChop());
 
-  if (chop_x || chop_y || chop_z || chop_i || chop_j || chop_k || chop_u || chop_v || chop_w) {
+  if (chop_x || chop_y || chop_z || chop_i || chop_j || chop_k || chop_u || chop_v || chop_w || chop_d) {
     say_M569(forReplay);
     NUM_AXIS_CODE(
       if (chop_x) SERIAL_ECHOPGM_P(SP_X_STR),
@@ -187,7 +192,8 @@ void GcodeSuite::M569_report(const bool forReplay/*=true*/) {
       if (chop_k) SERIAL_ECHOPGM_P(SP_K_STR),
       if (chop_u) SERIAL_ECHOPGM_P(SP_U_STR),
       if (chop_v) SERIAL_ECHOPGM_P(SP_V_STR),
-      if (chop_w) SERIAL_ECHOPGM_P(SP_W_STR)
+      if (chop_w) SERIAL_ECHOPGM_P(SP_W_STR),
+      if (chop_d) SERIAL_ECHOPGM_P(SP_D_STR)
     );
     SERIAL_EOL();
   }
@@ -203,7 +209,7 @@ void GcodeSuite::M569_report(const bool forReplay/*=true*/) {
       if (chop_y2) SERIAL_ECHOPGM_P(SP_Y_STR),
       if (chop_z2) SERIAL_ECHOPGM_P(SP_Z_STR),
       NOOP, NOOP, NOOP,
-      NOOP, NOOP, NOOP
+      NOOP, NOOP, NOOP, NOOP
     );
     SERIAL_EOL();
   }
@@ -227,6 +233,9 @@ void GcodeSuite::M569_report(const bool forReplay/*=true*/) {
   #endif
   #if HAS_W_AXIS
     if (TERN0(W_HAS_STEALTHCHOP, stepperW.get_stored_stealthChop()))  { say_M569(forReplay, FPSTR(SP_W_STR), true); }
+  #endif
+  #if HAS_D_AXIS
+    if (TERN0(D_HAS_STEALTHCHOP, stepperD.get_stored_stealthChop()))  { say_M569(forReplay, FPSTR(SP_D_STR), true); }
   #endif
   if (TERN0(E0_HAS_STEALTHCHOP, stepperE0.get_stored_stealthChop())) { say_M569(forReplay, F("T0 E"), true); }
   if (TERN0(E1_HAS_STEALTHCHOP, stepperE1.get_stored_stealthChop())) { say_M569(forReplay, F("T1 E"), true); }

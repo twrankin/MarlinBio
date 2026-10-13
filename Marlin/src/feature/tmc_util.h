@@ -465,6 +465,7 @@ void test_tmc_connection(LOGICAL_AXIS_DECL_LC(const bool, true));
     OPTCODE(U_HAS_HOME_CURRENT,  uint16_t U)
     OPTCODE(V_HAS_HOME_CURRENT,  uint16_t V)
     OPTCODE(W_HAS_HOME_CURRENT,  uint16_t W)
+    OPTCODE(D_HAS_HOME_CURRENT,  uint16_t D)
   };
 
   #if ENABLED(EDITABLE_HOMING_CURRENT)

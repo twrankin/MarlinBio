@@ -457,6 +457,7 @@ inline void manage_inactivity(const bool no_stepper_sleep=false) {
           TERN_(DISABLE_IDLE_U, stepper.disable_axis(U_AXIS));
           TERN_(DISABLE_IDLE_V, stepper.disable_axis(V_AXIS));
           TERN_(DISABLE_IDLE_W, stepper.disable_axis(W_AXIS));
+          TERN_(DISABLE_IDLE_D, stepper.disable_axis(D_AXIS));
           TERN_(DISABLE_IDLE_E, stepper.disable_e_steppers());
 
           TERN_(AUTO_BED_LEVELING_UBL, bedlevel.steppers_were_disabled());
@@ -1022,6 +1023,9 @@ inline void tmc_standby_setup() {
   #endif
   #if PIN_EXISTS(W_STDBY)
     SET_INPUT_PULLDOWN(W_STDBY_PIN);
+  #endif
+  #if PIN_EXISTS(D_STDBY)
+    SET_INPUT_PULLDOWN(D_STDBY_PIN);
   #endif
   #if PIN_EXISTS(E0_STDBY)
     SET_INPUT_PULLDOWN(E0_STDBY_PIN);

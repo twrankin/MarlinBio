@@ -462,6 +462,10 @@
         if (monitor_tmc_driver(stepperW, need_update_error_counters, need_debug_reporting))
           step_current_down(stepperW);
       #endif
+      #if D_IS_TRINAMIC
+        if (monitor_tmc_driver(stepperD, need_update_error_counters, need_debug_reporting))
+          step_current_down(stepperD);
+      #endif
 
       TERN_(E0_IS_TRINAMIC, (void)monitor_tmc_driver(stepperE0, need_update_error_counters, need_debug_reporting));
       TERN_(E1_IS_TRINAMIC, (void)monitor_tmc_driver(stepperE1, need_update_error_counters, need_debug_reporting));
@@ -877,6 +881,7 @@
     TERN_(U_IS_TRINAMIC, if (u) tmc_status(stepperU, n));
     TERN_(V_IS_TRINAMIC, if (v) tmc_status(stepperV, n));
     TERN_(W_IS_TRINAMIC, if (w) tmc_status(stepperW, n));
+    TERN_(D_IS_TRINAMIC, if (d) tmc_status(stepperD, n));
 
     if (TERN0(HAS_EXTRUDERS, e)) {
       TERN_(E0_IS_TRINAMIC, tmc_status(stepperE0, n));
@@ -916,6 +921,7 @@
     TERN_(U_IS_TRINAMIC, if (u) tmc_parse_drv_status(stepperU, n));
     TERN_(V_IS_TRINAMIC, if (v) tmc_parse_drv_status(stepperV, n));
     TERN_(W_IS_TRINAMIC, if (w) tmc_parse_drv_status(stepperW, n));
+    TERN_(D_IS_TRINAMIC, if (d) tmc_parse_drv_status(stepperD, n));
 
     if (TERN0(HAS_EXTRUDERS, e)) {
       TERN_(E0_IS_TRINAMIC, tmc_parse_drv_status(stepperE0, n));
@@ -1099,6 +1105,7 @@
     TERN_(U_IS_TRINAMIC, if (u) tmc_get_registers(stepperU, n));
     TERN_(V_IS_TRINAMIC, if (v) tmc_get_registers(stepperV, n));
     TERN_(W_IS_TRINAMIC, if (w) tmc_get_registers(stepperW, n));
+    TERN_(D_IS_TRINAMIC, if (d) tmc_get_registers(stepperD, n));
 
     if (TERN0(HAS_EXTRUDERS, e)) {
       TERN_(E0_IS_TRINAMIC, tmc_get_registers(stepperE0, n));
@@ -1238,6 +1245,7 @@ void test_tmc_connection(LOGICAL_AXIS_ARGS_LC(const bool)) {
   TERN_(U_IS_TRINAMIC, if (u) axis_connection += test_connection(stepperU));
   TERN_(V_IS_TRINAMIC, if (v) axis_connection += test_connection(stepperV));
   TERN_(W_IS_TRINAMIC, if (w) axis_connection += test_connection(stepperW));
+  TERN_(D_IS_TRINAMIC, if (d) axis_connection += test_connection(stepperD));
 
   if (TERN0(HAS_EXTRUDERS, e)) {
     TERN_(E0_IS_TRINAMIC, axis_connection += test_connection(stepperE0));

@@ -42,8 +42,8 @@
   #define MIN_ARC_SEGMENT_MM MAX_ARC_SEGMENT_MM
 #endif
 
-#define ARC_LIJKUVW_CODE(L,I,J,K,U,V,W)    CODE_N(SUB2(NUM_AXES),L,I,J,K,U,V,W)
-#define ARC_LIJKUVWE_CODE(L,I,J,K,U,V,W,E) ARC_LIJKUVW_CODE(L,I,J,K,U,V,W); CODE_ITEM_E(E)
+#define ARC_LIJKUVWD_CODE(L,I,J,K,U,V,W,D)    CODE_N(SUB2(NUM_AXES),L,I,J,K,U,V,W,D)
+#define ARC_LIJKUVWDE_CODE(L,I,J,K,U,V,W,D,E) ARC_LIJKUVWD_CODE(L,I,J,K,U,V,W,D); CODE_ITEM_E(E)
 
 /**
  * Plan an arc in 2 dimensions, with linear motion in the other axes.
@@ -78,7 +78,7 @@ void plan_arc(
 
   // Starting position of the move for all non-arc axes
   // i.e., only one of X, Y, or Z, plus the rest.
-  ARC_LIJKUVWE_CODE(
+  ARC_LIJKUVWDE_CODE(
     float start_L = current_position[axis_l],
     float start_I = current_position.i,
     float start_J = current_position.j,
@@ -86,6 +86,7 @@ void plan_arc(
     float start_U = current_position.u,
     float start_V = current_position.v,
     float start_W = current_position.w,
+    float start_D = current_position.d,
     float start_E = current_position.e
   );
 
@@ -123,7 +124,7 @@ void plan_arc(
   }
 
   // Total travel on all the non-arc axes
-  ARC_LIJKUVWE_CODE(
+  ARC_LIJKUVWDE_CODE(
     float travel_L = cart[axis_l] - start_L,
     float travel_I = cart.i       - start_I,
     float travel_J = cart.j       - start_J,
@@ -131,6 +132,7 @@ void plan_arc(
     float travel_U = cart.u       - start_U,
     float travel_V = cart.v       - start_V,
     float travel_W = cart.w       - start_W,
+    float travel_D = cart.d       - start_D,
     float travel_E = cart.e       - start_E
   );
 
@@ -139,7 +141,7 @@ void plan_arc(
     const float total_angular = abs_angular_travel + circles * RADIANS(360),    // Total rotation with all circles and remainder
               part_per_circle = RADIANS(360) / total_angular;                   // Each circle's part of the total
 
-    ARC_LIJKUVWE_CODE(
+    ARC_LIJKUVWDE_CODE(
       const float per_circle_L = travel_L * part_per_circle,    // X, Y, or Z movement per circle
       const float per_circle_I = travel_I * part_per_circle,    // The rest are also non-arc
       const float per_circle_J = travel_J * part_per_circle,
@@ -147,12 +149,13 @@ void plan_arc(
       const float per_circle_U = travel_U * part_per_circle,
       const float per_circle_V = travel_V * part_per_circle,
       const float per_circle_W = travel_W * part_per_circle,
+      const float per_circle_D = travel_D * part_per_circle,
       const float per_circle_E = travel_E * part_per_circle     // E movement per circle
     );
 
     xyze_pos_t temp_position = current_position;
     for (uint16_t n = circles; n--;) {
-      ARC_LIJKUVWE_CODE(                                        // Destination Linear Axes
+      ARC_LIJKUVWDE_CODE(                                        // Destination Linear Axes
         temp_position[axis_l] += per_circle_L,                  // Linear X, Y, or Z
         temp_position.i       += per_circle_I,                  // The rest are also non-circular
         temp_position.j       += per_circle_J,
@@ -160,13 +163,14 @@ void plan_arc(
         temp_position.u       += per_circle_U,
         temp_position.v       += per_circle_V,
         temp_position.w       += per_circle_W,
+        temp_position.d       += per_circle_D,
         temp_position.e       += per_circle_E                   // Destination E axis
       );
       plan_arc(temp_position, offset, clockwise, 0);            // Plan a single whole circle
     }
 
     // Get starting coordinates for the remainder from the current position
-    ARC_LIJKUVWE_CODE(
+    ARC_LIJKUVWDE_CODE(
       start_L = current_position[axis_l],
       start_I = current_position.i,
       start_J = current_position.j,
@@ -174,11 +178,12 @@ void plan_arc(
       start_U = current_position.u,
       start_V = current_position.v,
       start_W = current_position.w,
+      start_D = current_position.d,
       start_E = current_position.e
     );
 
     // Update travel distance for the remainder
-    ARC_LIJKUVWE_CODE(
+    ARC_LIJKUVWDE_CODE(
       travel_L = cart[axis_l] - start_L,                        // Linear X, Y, or Z
       travel_I = cart.i       - start_I,                        // The rest are also non-arc
       travel_J = cart.j       - start_J,
@@ -186,6 +191,7 @@ void plan_arc(
       travel_U = cart.u       - start_U,
       travel_V = cart.v       - start_V,
       travel_W = cart.w       - start_W,
+      travel_D = cart.d       - start_D,
       travel_E = cart.e       - start_E
     );
   }
@@ -202,7 +208,8 @@ void plan_arc(
       && NEAR_ZERO(travel_K),
       && NEAR_ZERO(travel_U),
       && NEAR_ZERO(travel_V),
-      && NEAR_ZERO(travel_W)
+      && NEAR_ZERO(travel_W),
+      && NEAR_ZERO(travel_D)
     )
   ) {
     #if HAS_EXTRUDERS
@@ -277,7 +284,7 @@ void plan_arc(
                 sin_T = theta_per_segment - sq_theta_per_segment * theta_per_segment / 6,
                 cos_T = 1 - 0.5f * sq_theta_per_segment; // Small angle approximation
 
-    ARC_LIJKUVWE_CODE(
+    ARC_LIJKUVWDE_CODE(
       const float per_segment_L = travel_L / segments,
       const float per_segment_I = travel_I / segments,
       const float per_segment_J = travel_J / segments,
@@ -285,11 +292,12 @@ void plan_arc(
       const float per_segment_U = travel_U / segments,
       const float per_segment_V = travel_V / segments,
       const float per_segment_W = travel_W / segments,
+      const float per_segment_D = travel_D / segments,
       const float per_segment_E = travel_E / segments
     );
 
     // Initialize all linear axes and E
-    ARC_LIJKUVWE_CODE(
+    ARC_LIJKUVWDE_CODE(
       raw[axis_l] = start_L,
       raw.i       = start_I,
       raw.j       = start_J,
@@ -297,6 +305,7 @@ void plan_arc(
       raw.u       = start_U,
       raw.v       = start_V,
       raw.w       = start_W,
+      raw.d       = start_D,
       raw.e       = start_E
     );
 
@@ -351,7 +360,7 @@ void plan_arc(
       // Update raw location
       raw[axis_p] = center_P + rvec.a;
       raw[axis_q] = center_Q + rvec.b;
-      ARC_LIJKUVWE_CODE(
+      ARC_LIJKUVWDE_CODE(
         raw[axis_l] = start_L + per_segment_L * i,
         raw.i       = start_I + per_segment_I * i,
         raw.j       = start_J + per_segment_J * i,
@@ -359,6 +368,7 @@ void plan_arc(
         raw.u       = start_U + per_segment_U * i,
         raw.v       = start_V + per_segment_V * i,
         raw.w       = start_W + per_segment_W * i,
+        raw.d       = start_D + per_segment_D * i,
         raw.e       = start_E + per_segment_E * i
       );
 

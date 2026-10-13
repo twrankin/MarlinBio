@@ -133,7 +133,7 @@ void GcodeSuite::M240() {
       current_position.y + parser.linearval('B'),
       current_position.z,
       current_position.i, current_position.j, current_position.k,
-      current_position.u, current_position.v, current_position.w
+      current_position.u, current_position.v, current_position.w, current_position.d
     );
 
     #ifdef PHOTO_RETRACT_MM

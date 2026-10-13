@@ -295,6 +295,7 @@ public:
       || TERN0(AXIS7_ROTATES, axis == U_AXIS)
       || TERN0(AXIS8_ROTATES, axis == V_AXIS)
       || TERN0(AXIS9_ROTATES, axis == W_AXIS)
+      || TERN0(AXIS10_ROTATES, axis == D_AXIS)
     );
   }
 
@@ -355,6 +356,7 @@ public:
   #define U_AXIS_UNIT(V) TERN(AXIS7_ROTATES, (V), LINEAR_UNIT(V))
   #define V_AXIS_UNIT(V) TERN(AXIS8_ROTATES, (V), LINEAR_UNIT(V))
   #define W_AXIS_UNIT(V) TERN(AXIS9_ROTATES, (V), LINEAR_UNIT(V))
+  #define D_AXIS_UNIT(V) TERN(AXIS10_ROTATES, (V), LINEAR_UNIT(V))
 
   static float value_linear_units()                      { return linear_value_to_mm(value_float()); }
   static float value_axis_units(const AxisEnum axis)     { return axis_value_to_mm(axis, value_float()); }

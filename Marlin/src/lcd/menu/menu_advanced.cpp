@@ -516,7 +516,8 @@ void menu_backlash();
           planner.settings.max_acceleration_mm_per_s2[K_AXIS],
           planner.settings.max_acceleration_mm_per_s2[U_AXIS],
           planner.settings.max_acceleration_mm_per_s2[V_AXIS],
-          planner.settings.max_acceleration_mm_per_s2[W_AXIS]
+          planner.settings.max_acceleration_mm_per_s2[W_AXIS],
+          planner.settings.max_acceleration_mm_per_s2[D_AXIS]
         ))
       #else
         0
@@ -560,7 +561,7 @@ void menu_backlash();
     NUM_AXIS_CODE(
       EDIT_AMAX(A, 100), EDIT_AMAX(B, 100), EDIT_AMAX(C, 10),
       EDIT_AMAX(I,  10), EDIT_AMAX(J,  10), EDIT_AMAX(K, 10),
-      EDIT_AMAX(U,  10), EDIT_AMAX(V,  10), EDIT_AMAX(W, 10)
+      EDIT_AMAX(U,  10), EDIT_AMAX(V,  10), EDIT_AMAX(W, 10), EDIT_AMAX(D, 10)
     );
 
     #if ENABLED(DISTINCT_E_FACTORS)

@@ -39,9 +39,9 @@
  * Default axis mode.
  * true initializes an axis to relative mode (G91).
  * false initializes an axis to absolute mode (G90).
- * X, Y, Z, E.
+ * X, Y, Z, A, B, C, U, V, W, D.
  */
- #define AXIS_RELATIVE_MODES { true, true, true, true }
+ #define AXIS_RELATIVE_MODES { true, true, true, true, true, true, true, true, true, true }
 
 /*
  * With this option, each E stepper can have its own factors for some
@@ -56,46 +56,59 @@
  * If the MICROSTEPS setting is changed, this needs to be multiplied
  * accordingly. E.g. E = 256usteps/steps * 200steps/mm = 51200 usteps/mm.
  * Override with M92.
- * X, Y, Z, E0 [, E1[, E2...]].
+ * X, Y, Z, A, B, C, U, V, W, D.
+ * The syringe axes (U, V, W, D) use 256 microsteps, see U_MICROSTEPS below.
  */
- #define DEFAULT_AXIS_STEPS_PER_UNIT { 200, 200, 200, 51200 }
+ #define DEFAULT_AXIS_STEPS_PER_UNIT { 200, 200, 200, 200, 200, 200, 51200, 51200, 51200, 51200 }
 
 /*
  * Default max feed rate (mm/s).
  * Too high of a feedrate will cause stalling.
  * Override with M203.
- * X, Y, Z, E0 [, E1[, E2...]].
+ * X, Y, Z, A, B, C, U, V, W, D.
  */
-#define DEFAULT_MAX_FEEDRATE { (600 / 60), (600 / 60), (600 / 60), (600 / 60) }
+#define DEFAULT_MAX_FEEDRATE { (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60) }
 
 /*
  * Default max acceleration (mm/s^2).
  * Too high of an acceleration will cause stalling.
  * Override with M201.
- * X, Y, Z, E0 [, E1[, E2...]].
+ * X, Y, Z, A, B, C, U, V, W, D.
  */
-#define DEFAULT_MAX_ACCELERATION { 500, 500, 500, 500 }
+#define DEFAULT_MAX_ACCELERATION { 500, 500, 500, 500, 500, 500, 500, 500, 500, 500 }
 
 /*
  * Default acceleration (mm/s^2).
  * Override with M204.
  */
 
-// X, Y, Z and E acceleration for printing moves.
+// Acceleration for printing moves.
 #define DEFAULT_ACCELERATION 500
-// Acceleration when only E is specified.
+// Acceleration when only E is specified (unused with EXTRUDERS 0).
 #define DEFAULT_RETRACT_ACCELERATION 500
-// X, Y, Z acceleration for travel (non printing) moves.
+// Acceleration for travel (non printing) moves.
 #define DEFAULT_TRAVEL_ACCELERATION 500
+
+/*
+ * Axis naming.
+ * Marlin internally calls the 4th-10th axes I, J, K, U, V, W, D. They are exposed to G-code
+ * with the letters set by AXISn_NAME in the Advanced section below (A, B, C, U, V, W, D).
+ * Every I/J/K setting in this file therefore refers to the A/B/C axes:
+ *   I = A, J = B, K = C.
+ * The 10th axis (D) is a MarlinBio extension of Marlin's core, which normally stops at W.
+ */
 
 // Invert the stepper direction if an axis goes the wrong way.
 #define INVERT_X_DIR  false
 #define INVERT_Y_DIR  false
 #define INVERT_Z_DIR  false
-#define INVERT_E0_DIR true
-#define INVERT_E1_DIR true
-#define INVERT_E2_DIR true
-#define INVERT_E3_DIR true
+#define INVERT_I_DIR  false // A
+#define INVERT_J_DIR  false // B
+#define INVERT_K_DIR  false // C
+#define INVERT_U_DIR  true
+#define INVERT_V_DIR  true
+#define INVERT_W_DIR  true
+#define INVERT_D_DIR  true
 
 // Travel limits.
 #define X_MIN_POS 0
@@ -104,6 +117,21 @@
 #define Y_MAX_POS 100
 #define Z_MIN_POS 0
 #define Z_MAX_POS 100
+#define I_MIN_POS 0   // A
+#define I_MAX_POS 100
+#define J_MIN_POS 0   // B
+#define J_MAX_POS 100
+#define K_MIN_POS 0   // C
+#define K_MAX_POS 100
+// The syringe axes are not limited by software endstops (see below), these are nominal.
+#define U_MIN_POS 0
+#define U_MAX_POS 100
+#define V_MIN_POS 0
+#define V_MAX_POS 100
+#define W_MIN_POS 0
+#define W_MAX_POS 100
+#define D_MIN_POS 0
+#define D_MAX_POS 100
 
 /*
  * Software endstops prevent moves outside of the set machine bounds.
@@ -114,6 +142,13 @@
   #define MIN_SOFTWARE_ENDSTOP_X
   #define MIN_SOFTWARE_ENDSTOP_Y
   #define MIN_SOFTWARE_ENDSTOP_Z
+  #define MIN_SOFTWARE_ENDSTOP_I // A
+  #define MIN_SOFTWARE_ENDSTOP_J // B
+  #define MIN_SOFTWARE_ENDSTOP_K // C
+  //#define MIN_SOFTWARE_ENDSTOP_U
+  //#define MIN_SOFTWARE_ENDSTOP_V
+  //#define MIN_SOFTWARE_ENDSTOP_W
+  //#define MIN_SOFTWARE_ENDSTOP_D
 #endif
 
 #define MAX_SOFTWARE_ENDSTOPS
@@ -121,6 +156,13 @@
   #define MAX_SOFTWARE_ENDSTOP_X
   #define MAX_SOFTWARE_ENDSTOP_Y
   #define MAX_SOFTWARE_ENDSTOP_Z
+  #define MAX_SOFTWARE_ENDSTOP_I // A
+  #define MAX_SOFTWARE_ENDSTOP_J // B
+  #define MAX_SOFTWARE_ENDSTOP_K // C
+  //#define MAX_SOFTWARE_ENDSTOP_U
+  //#define MAX_SOFTWARE_ENDSTOP_V
+  //#define MAX_SOFTWARE_ENDSTOP_W
+  //#define MAX_SOFTWARE_ENDSTOP_D
 #endif
 
 // Minimum Z height before homing (to make sure the nozzle doesn't hit anything).
@@ -134,13 +176,22 @@
 // Commands to run after G28.
 //#define EVENT_GCODE_AFTER_HOMING "M300 P440 S200"
 
-// Direction of endstops when homing; 1 = MAX, -1 = MIN.
+// Direction of endstops when homing; 1 = MAX, -1 = MIN, 0 = axis cannot be homed.
+// The syringe axes (U, V, W, D) sit on motors 7-10, which have no DIAG/endstop input on the Max EZ.
 #define X_HOME_DIR -1
 #define Y_HOME_DIR -1
 #define Z_HOME_DIR  1
+#define I_HOME_DIR  1 // A
+#define J_HOME_DIR  1 // B
+#define K_HOME_DIR  1 // C
+#define U_HOME_DIR  0
+#define V_HOME_DIR  0
+#define W_HOME_DIR  0
+#define D_HOME_DIR  0
 
 // Homing speeds (mm/min).
-#define HOMING_FEEDRATE_MM_M { 300, 300, 300 }
+// X, Y, Z, A, B, C, U, V, W, D.
+#define HOMING_FEEDRATE_MM_M { 300, 300, 300, 300, 300, 300, 300, 300, 300, 300 }
 
 // This validates that the endstops are triggered on homing moves.
 // Disable this if the kill on failed homing becomes a nuisance.
@@ -176,8 +227,13 @@
  * This defines the number of extruders (and correspondingly the number of Z axes); 0, 1, 2, 3, or 4.
  * Some per-extruder parameters will need to be updated when EXTRUDERS is changed.
  * When enabling MIXING_EXTRUDERS, still use the actual number of extruders here.
+ *
+ * With EXTRUDERS 0 there is no tool system: no E axis, no tool changes (T), no constant extrusion
+ * and no mixing. Every motor is instead driven directly as one of the independent axes
+ * X, Y, Z, A, B, C, U, V, W, D (see the driver and axis name settings in the Advanced section).
+ * The extrusion settings below are kept for reference but have no effect while EXTRUDERS is 0.
  */
-#define EXTRUDERS 3
+#define EXTRUDERS 0
 
 /*
  * The following are parameters for constant extrusion based on a syringe extruder system.
@@ -405,30 +461,36 @@
   #define Z_CURRENT_HOME  450
   #define Z_MICROSTEPS    0
 
-  #define Z2_CURRENT      Z_CURRENT
-  #define Z2_CURRENT_HOME Z_CURRENT_HOME
-  #define Z2_MICROSTEPS   Z_MICROSTEPS
+  // A, B, C: additional Z-style axes.
+  #define I_CURRENT       Z_CURRENT
+  #define I_CURRENT_HOME  Z_CURRENT_HOME
+  #define I_MICROSTEPS    Z_MICROSTEPS
 
-  #define Z3_CURRENT      Z_CURRENT
-  #define Z3_CURRENT_HOME Z_CURRENT_HOME
-  #define Z3_MICROSTEPS   Z_MICROSTEPS
+  #define J_CURRENT       Z_CURRENT
+  #define J_CURRENT_HOME  Z_CURRENT_HOME
+  #define J_MICROSTEPS    Z_MICROSTEPS
 
-  #define Z4_CURRENT      Z_CURRENT
-  #define Z4_CURRENT_HOME Z_CURRENT_HOME
-  #define Z4_MICROSTEPS   Z_MICROSTEPS
+  #define K_CURRENT       Z_CURRENT
+  #define K_CURRENT_HOME  Z_CURRENT_HOME
+  #define K_MICROSTEPS    Z_MICROSTEPS
 
-  // High E microsteps allows for smoother constant extrusion.
-  #define E0_CURRENT      500
-  #define E0_MICROSTEPS   256
+  // U, V, W, D: syringe axes. High microsteps allow for smoother extrusion.
+  // If U_MICROSTEPS is changed, update DEFAULT_AXIS_STEPS_PER_UNIT accordingly.
+  #define U_CURRENT       500
+  #define U_CURRENT_HOME  U_CURRENT
+  #define U_MICROSTEPS    256
 
-  #define E1_CURRENT      E0_CURRENT
-  #define E1_MICROSTEPS   E0_MICROSTEPS
+  #define V_CURRENT       U_CURRENT
+  #define V_CURRENT_HOME  U_CURRENT_HOME
+  #define V_MICROSTEPS    U_MICROSTEPS
 
-  #define E2_CURRENT      E0_CURRENT
-  #define E2_MICROSTEPS   E0_MICROSTEPS
+  #define W_CURRENT       U_CURRENT
+  #define W_CURRENT_HOME  U_CURRENT_HOME
+  #define W_MICROSTEPS    U_MICROSTEPS
 
-  #define E3_CURRENT      E0_CURRENT
-  #define E3_MICROSTEPS   E0_MICROSTEPS
+  #define D_CURRENT       U_CURRENT
+  #define D_CURRENT_HOME  U_CURRENT_HOME
+  #define D_MICROSTEPS    U_MICROSTEPS
 
   /*
    * Sensorless homing uses a feature on TMC drivers that detects when a
@@ -445,9 +507,10 @@
     #define X_STALL_SENSITIVITY  125
     #define Y_STALL_SENSITIVITY  125
     #define Z_STALL_SENSITIVITY  125
-    #define Z2_STALL_SENSITIVITY 125
-    #define Z3_STALL_SENSITIVITY 125
-    #define Z4_STALL_SENSITIVITY 125
+    #define I_STALL_SENSITIVITY  125 // A
+    #define J_STALL_SENSITIVITY  125 // B
+    #define K_STALL_SENSITIVITY  125 // C
+    // U, V, W, D have no DIAG input on the Max EZ and cannot use sensorless homing.
   #endif
 #endif
 
@@ -481,7 +544,7 @@
 #define CONFIGURATION_H_VERSION 02010300
 #define STRING_CONFIG_H_AUTHOR "MarlinBio"
 #ifndef MOTHERBOARD
-  #define MOTHERBOARD BOARD_BTT_OCTOPUS_V1_1
+  #define MOTHERBOARD BOARD_BTT_OCTOPUS_MAX_EZ_V1_0
 #endif
 #define CUSTOM_MACHINE_NAME "Printess 2.0"
 
@@ -493,18 +556,36 @@
 #define SERIAL_OVERRUN_PROTECTION
 #define PROPORTIONAL_FONT_RATIO 1.0
 
+/*
+ * Axis drivers. Stock Marlin supports at most 9 non-extruder axes (X, Y, Z, I, J, K, U, V, W).
+ * MarlinBio extends the core with a 10th axis, internally named D, so with EXTRUDERS 0 all
+ * ten motors are independent axes. The G-code letters for I, J, K, U, V, W, D are set with
+ * AXISn_NAME. AXIS10_NAME may be 'D', 'H', 'L', 'O' or 'Q'.
+ *
+ * Octopus Max EZ motor ports (see pins_BTT_OCTOPUS_MAX_EZ.h):
+ *   MOTOR 1 X, MOTOR 2 Y, MOTOR 3 Z, MOTOR 4 A, MOTOR 5 B, MOTOR 6 C,
+ *   MOTOR 7 U, MOTOR 8 V, MOTOR 9 W, MOTOR 10 D.
+ * Only motors 1-6 have a DIAG/endstop input on this board, so only X, Y, Z, A, B, C can be homed.
+ */
 #define X_DRIVER_TYPE  TMC2209
 #define Y_DRIVER_TYPE  TMC2209
 #define Z_DRIVER_TYPE  TMC2209
-#define Z2_DRIVER_TYPE TMC2209
-#define Z3_DRIVER_TYPE TMC2209
-//#define Z4_DRIVER_TYPE TMC2209
-#define E0_DRIVER_TYPE TMC2209
-#define E1_DRIVER_TYPE TMC2209
-// #define E2_DRIVER_TYPE TMC2209
-// #define E3_DRIVER_TYPE TMC2209
+#define I_DRIVER_TYPE  TMC2209 // A
+#define J_DRIVER_TYPE  TMC2209 // B
+#define K_DRIVER_TYPE  TMC2209 // C
+#define U_DRIVER_TYPE  TMC2209
+#define V_DRIVER_TYPE  TMC2209
+#define W_DRIVER_TYPE  TMC2209
+#define D_DRIVER_TYPE  TMC2209
 
-#define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
+// G-code letters for the 4th-10th axes.
+#define AXIS4_NAME 'A'
+#define AXIS5_NAME 'B'
+#define AXIS6_NAME 'C'
+#define AXIS7_NAME 'U'
+#define AXIS8_NAME 'V'
+#define AXIS9_NAME 'W'
+#define AXIS10_NAME 'D'
 
 #define TEMP_SENSOR_0 61
 #define TEMP_SENSOR_1 61
@@ -537,6 +618,8 @@
 #define V_MAX_ENDSTOP_HIT_STATE HIGH
 #define W_MIN_ENDSTOP_HIT_STATE HIGH
 #define W_MAX_ENDSTOP_HIT_STATE HIGH
+#define D_MIN_ENDSTOP_HIT_STATE HIGH
+#define D_MAX_ENDSTOP_HIT_STATE HIGH
 #define Z_MIN_PROBE_ENDSTOP_HIT_STATE HIGH
 #define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
 
@@ -547,7 +630,13 @@
 #define X_ENABLE_ON LOW
 #define Y_ENABLE_ON LOW
 #define Z_ENABLE_ON LOW
-#define E_ENABLE_ON LOW
+#define I_ENABLE_ON LOW
+#define J_ENABLE_ON LOW
+#define K_ENABLE_ON LOW
+#define U_ENABLE_ON LOW
+#define V_ENABLE_ON LOW
+#define W_ENABLE_ON LOW
+#define D_ENABLE_ON LOW
 
 #define EDITABLE_HOMING_FEEDRATE
 
@@ -560,21 +649,33 @@
 
 #define PRINTJOB_TIMER_AUTOSTART
 
-#define HOMING_BUMP_MM      { 0, 0, 0 }
-#define HOMING_BUMP_DIVISOR { 2, 2, 4 }
+#define HOMING_BUMP_MM      { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define HOMING_BUMP_DIVISOR { 2, 2, 4, 4, 4, 4, 4, 4, 4, 4 }
 #define QUICK_HOME
 #define HOME_Z_FIRST
 
 #define STEP_STATE_X HIGH
 #define STEP_STATE_Y HIGH
 #define STEP_STATE_Z HIGH
-#define STEP_STATE_E HIGH
+#define STEP_STATE_I HIGH
+#define STEP_STATE_J HIGH
+#define STEP_STATE_K HIGH
+#define STEP_STATE_U HIGH
+#define STEP_STATE_V HIGH
+#define STEP_STATE_W HIGH
+#define STEP_STATE_D HIGH
 
 #define DEFAULT_STEPPER_TIMEOUT_SEC 120
 #define DISABLE_IDLE_X
 #define DISABLE_IDLE_Y
 #define DISABLE_IDLE_Z
-#define DISABLE_IDLE_E
+#define DISABLE_IDLE_I
+#define DISABLE_IDLE_J
+#define DISABLE_IDLE_K
+#define DISABLE_IDLE_U
+#define DISABLE_IDLE_V
+#define DISABLE_IDLE_W
+#define DISABLE_IDLE_D
 
 #define DEFAULT_MINIMUMFEEDRATE 0.0
 #define DEFAULT_MINTRAVELFEEDRATE 0.0
@@ -656,6 +757,20 @@
   #define Z3_CHAIN_POS -1
   #define Z4_RSENSE    Z_RSENSE
   #define Z4_CHAIN_POS -1
+  #define I_RSENSE     Z_RSENSE
+  #define I_CHAIN_POS  -1
+  #define J_RSENSE     Z_RSENSE
+  #define J_CHAIN_POS  -1
+  #define K_RSENSE     Z_RSENSE
+  #define K_CHAIN_POS  -1
+  #define U_RSENSE     0.11
+  #define U_CHAIN_POS  -1
+  #define V_RSENSE     U_RSENSE
+  #define V_CHAIN_POS  -1
+  #define W_RSENSE     U_RSENSE
+  #define W_CHAIN_POS  -1
+  #define D_RSENSE     U_RSENSE
+  #define D_CHAIN_POS  -1
   #define E0_RSENSE    0.11
   #define E0_CHAIN_POS -1
   #define E1_RSENSE    E0_RSENSE
@@ -673,6 +788,7 @@
   #define STEALTHCHOP_U
   #define STEALTHCHOP_V
   #define STEALTHCHOP_W
+  #define STEALTHCHOP_D
   #define STEALTHCHOP_E
   #define CHOPPER_TIMING CHOPPER_DEFAULT_24V
 
@@ -689,6 +805,13 @@
   #define Z2_HYBRID_THRESHOLD 3
   #define Z3_HYBRID_THRESHOLD 3
   #define Z4_HYBRID_THRESHOLD 3
+  #define I_HYBRID_THRESHOLD  3
+  #define J_HYBRID_THRESHOLD  3
+  #define K_HYBRID_THRESHOLD  3
+  #define U_HYBRID_THRESHOLD  30
+  #define V_HYBRID_THRESHOLD  30
+  #define W_HYBRID_THRESHOLD  30
+  #define D_HYBRID_THRESHOLD  30
   #define E0_HYBRID_THRESHOLD 30
   #define E1_HYBRID_THRESHOLD 30
   #define E2_HYBRID_THRESHOLD 30

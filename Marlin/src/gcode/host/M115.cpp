@@ -250,9 +250,9 @@ void GcodeSuite::M115() {
     // Machine Geometry
     #if ENABLED(M115_GEOMETRY_REPORT)
       constexpr xyz_pos_t bmin{0},
-                          bmax = NUM_AXIS_ARRAY(X_BED_SIZE, Y_BED_SIZE, Z_MAX_POS, I_MAX_POS, J_MAX_POS, K_MAX_POS, U_MAX_POS, V_MAX_POS, W_MAX_POS),
-                          dmin = NUM_AXIS_ARRAY(X_MIN_POS,  Y_MIN_POS,  Z_MIN_POS, I_MIN_POS, J_MIN_POS, K_MIN_POS, U_MIN_POS, V_MIN_POS, W_MIN_POS),
-                          dmax = NUM_AXIS_ARRAY(X_MAX_POS,  Y_MAX_POS,  Z_MAX_POS, I_MAX_POS, J_MAX_POS, K_MAX_POS, U_MAX_POS, V_MAX_POS, W_MAX_POS);
+                          bmax = NUM_AXIS_ARRAY(X_BED_SIZE, Y_BED_SIZE, Z_MAX_POS, I_MAX_POS, J_MAX_POS, K_MAX_POS, U_MAX_POS, V_MAX_POS, W_MAX_POS, D_MAX_POS),
+                          dmin = NUM_AXIS_ARRAY(X_MIN_POS,  Y_MIN_POS,  Z_MIN_POS, I_MIN_POS, J_MIN_POS, K_MIN_POS, U_MIN_POS, V_MIN_POS, W_MIN_POS, D_MIN_POS),
+                          dmax = NUM_AXIS_ARRAY(X_MAX_POS,  Y_MAX_POS,  Z_MAX_POS, I_MAX_POS, J_MAX_POS, K_MAX_POS, U_MAX_POS, V_MAX_POS, W_MAX_POS, D_MAX_POS);
       xyz_pos_t cmin = bmin, cmax = bmax;
       apply_motion_limits(cmin);
       apply_motion_limits(cmax);
@@ -266,13 +266,13 @@ void GcodeSuite::M115() {
               NUM_AXIS_PAIRED_LIST(
                  "x:", lmin.x, ",y:", lmin.y, ",z:", lmin.z,
                 ",i:", lmin.i, ",j:", lmin.j, ",k:", lmin.k,
-                ",u:", lmin.u, ",v:", lmin.v, ",w:", lmin.w
+                ",u:", lmin.u, ",v:", lmin.v, ",w:", lmin.w, ",d:", lmin.d
               ),
             "},max:{"
               NUM_AXIS_PAIRED_LIST(
                  "x:", lmax.x, ",y:", lmax.y, ",z:", lmax.z,
                 ",i:", lmax.i, ",j:", lmax.j, ",k:", lmax.k,
-                ",u:", lmax.u, ",v:", lmax.v, ",w:", lmax.w
+                ",u:", lmax.u, ",v:", lmax.v, ",w:", lmax.w, ",d:", lmax.d
               ),
             "}" // max
           "}," // full
@@ -283,13 +283,13 @@ void GcodeSuite::M115() {
               NUM_AXIS_PAIRED_LIST(
                  "x:", wmin.x, ",y:", wmin.y, ",z:", wmin.z,
                 ",i:", wmin.i, ",j:", wmin.j, ",k:", wmin.k,
-                ",u:", wmin.u, ",v:", wmin.v, ",w:", wmin.w
+                ",u:", wmin.u, ",v:", wmin.v, ",w:", wmin.w, ",d:", wmin.d
               ),
             "},max:{"
               NUM_AXIS_PAIRED_LIST(
                  "x:", wmax.x, ",y:", wmax.y, ",z:", wmax.z,
                 ",i:", wmax.i, ",j:", wmax.j, ",k:", wmax.k,
-                ",u:", wmax.u, ",v:", wmax.v, ",w:", wmax.w
+                ",u:", wmax.u, ",v:", wmax.v, ",w:", wmax.w, ",d:", wmax.d
               ),
             "}" // max
           "}" // work

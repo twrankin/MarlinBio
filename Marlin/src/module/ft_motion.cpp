@@ -477,7 +477,8 @@ void FTMotion::loadBlockData(block_t * const current_block) {
     current_block->steps.k * planner.mm_per_step[K_AXIS] * (current_block->direction_bits.k ? 1 : -1),
     current_block->steps.u * planner.mm_per_step[U_AXIS] * (current_block->direction_bits.u ? 1 : -1),
     current_block->steps.v * planner.mm_per_step[V_AXIS] * (current_block->direction_bits.v ? 1 : -1),
-    current_block->steps.w * planner.mm_per_step[W_AXIS] * (current_block->direction_bits.w ? 1 : -1)
+    current_block->steps.w * planner.mm_per_step[W_AXIS] * (current_block->direction_bits.w ? 1 : -1),
+    current_block->steps.d * planner.mm_per_step[D_AXIS] * (current_block->direction_bits.d ? 1 : -1)
   );
 
   ratio = moveDist * oneOverLength;
@@ -729,7 +730,7 @@ void FTMotion::convertToSteps(const uint32_t idx) {
       TOSTEPS(e, block_extruder_axis), // May be eliminated if guaranteed positive.
       TOSTEPS(x, X_AXIS), TOSTEPS(y, Y_AXIS), TOSTEPS(z, Z_AXIS),
       TOSTEPS(i, I_AXIS), TOSTEPS(j, J_AXIS), TOSTEPS(k, K_AXIS),
-      TOSTEPS(u, U_AXIS), TOSTEPS(v, V_AXIS), TOSTEPS(w, W_AXIS)
+      TOSTEPS(u, U_AXIS), TOSTEPS(v, V_AXIS), TOSTEPS(w, W_AXIS), TOSTEPS(d, D_AXIS)
     );
     xyze_long_t delta = steps_tar - steps;
   #else
@@ -738,7 +739,7 @@ void FTMotion::convertToSteps(const uint32_t idx) {
       TOSTEPS(e, block_extruder_axis),
       TOSTEPS(x, X_AXIS), TOSTEPS(y, Y_AXIS), TOSTEPS(z, Z_AXIS),
       TOSTEPS(i, I_AXIS), TOSTEPS(j, J_AXIS), TOSTEPS(k, K_AXIS),
-      TOSTEPS(u, U_AXIS), TOSTEPS(v, V_AXIS), TOSTEPS(w, W_AXIS)
+      TOSTEPS(u, U_AXIS), TOSTEPS(v, V_AXIS), TOSTEPS(w, W_AXIS), TOSTEPS(d, D_AXIS)
     );
   #endif
 

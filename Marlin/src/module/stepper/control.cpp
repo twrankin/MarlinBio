@@ -93,7 +93,7 @@
     if (!initialized) return;
     for (uint8_t i = 0; i < COUNT(motor_current_setting); ++i) {
       switch (i) {
-        #if ANY_PIN(MOTOR_CURRENT_PWM_XY, MOTOR_CURRENT_PWM_X, MOTOR_CURRENT_PWM_Y, MOTOR_CURRENT_PWM_I, MOTOR_CURRENT_PWM_J, MOTOR_CURRENT_PWM_K, MOTOR_CURRENT_PWM_U, MOTOR_CURRENT_PWM_V, MOTOR_CURRENT_PWM_W)
+        #if ANY_PIN(MOTOR_CURRENT_PWM_XY, MOTOR_CURRENT_PWM_X, MOTOR_CURRENT_PWM_Y, MOTOR_CURRENT_PWM_I, MOTOR_CURRENT_PWM_J, MOTOR_CURRENT_PWM_K, MOTOR_CURRENT_PWM_U, MOTOR_CURRENT_PWM_V, MOTOR_CURRENT_PWM_W, MOTOR_CURRENT_PWM_D)
           case 0:
         #endif
         #if HAS_MOTOR_CURRENT_PWM_Z
@@ -145,6 +145,9 @@
           #endif
           #if PIN_EXISTS(MOTOR_CURRENT_PWM_W)
             _WRITE_CURRENT_PWM(W);
+          #endif
+          #if PIN_EXISTS(MOTOR_CURRENT_PWM_D)
+            _WRITE_CURRENT_PWM(D);
           #endif
           break;
         case 1:
@@ -200,6 +203,9 @@
       #endif
       #if PIN_EXISTS(MOTOR_CURRENT_PWM_W)
         INIT_CURRENT_PWM(W);
+      #endif
+      #if PIN_EXISTS(MOTOR_CURRENT_PWM_D)
+        INIT_CURRENT_PWM(D);
       #endif
       #if HAS_MOTOR_CURRENT_PWM_Z
         INIT_CURRENT_PWM(Z);
@@ -312,6 +318,12 @@
         SET_OUTPUT(W_MS3_PIN);
       #endif
     #endif
+    #if HAS_D_MS_PINS
+      SET_OUTPUT(D_MS1_PIN); SET_OUTPUT(D_MS2_PIN);
+      #if PIN_EXISTS(D_MS3)
+        SET_OUTPUT(D_MS3_PIN);
+      #endif
+    #endif
     #if HAS_E0_MS_PINS
       SET_OUTPUT(E0_MS1_PIN); SET_OUTPUT(E0_MS2_PIN);
       #if PIN_EXISTS(E0_MS3)
@@ -422,6 +434,9 @@
       #if HAS_W_MS_PINS
         case  W_AXIS: WRITE(W_MS1_PIN, ms1); break;
       #endif
+      #if HAS_D_MS_PINS
+        case  D_AXIS: WRITE(D_MS1_PIN, ms1); break;
+      #endif
       #if HAS_E0_MS_PINS
         case  E_AXIS: WRITE(E0_MS1_PIN, ms1); break;
       #endif
@@ -502,6 +517,9 @@
       #if HAS_W_MS_PINS
         case  W_AXIS: WRITE(W_MS2_PIN, ms2); break;
       #endif
+      #if HAS_D_MS_PINS
+        case  D_AXIS: WRITE(D_MS2_PIN, ms2); break;
+      #endif
       #if HAS_E0_MS_PINS
         case  E_AXIS: WRITE(E0_MS2_PIN, ms2); break;
       #endif
@@ -581,6 +599,9 @@
       #endif
       #if HAS_W_MS_PINS && PIN_EXISTS(W_MS3)
         case  W_AXIS: WRITE(W_MS3_PIN, ms3); break;
+      #endif
+      #if HAS_D_MS_PINS && PIN_EXISTS(D_MS3)
+        case  D_AXIS: WRITE(D_MS3_PIN, ms3); break;
       #endif
       #if HAS_E0_MS_PINS && PIN_EXISTS(E0_MS3)
         case  E_AXIS: WRITE(E0_MS3_PIN, ms3); break;
@@ -719,6 +740,12 @@
       MS_LINE(W);
       #if PIN_EXISTS(W_MS3)
         PIN_CHAR(W_MS3);
+      #endif
+    #endif
+    #if HAS_D_MS_PINS
+      MS_LINE(D);
+      #if PIN_EXISTS(D_MS3)
+        PIN_CHAR(D_MS3);
       #endif
     #endif
     #if HAS_E0_MS_PINS

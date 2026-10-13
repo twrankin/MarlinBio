@@ -74,6 +74,9 @@ void GcodeSuite::M210() {
   #if HAS_W_AXIS
     if (parser.floatval(AXIS9_NAME) > 0) homing_feedrate_mm_m.w = parser.value_axis_units(W_AXIS);
   #endif
+  #if HAS_D_AXIS
+    if (parser.floatval(AXIS10_NAME) > 0) homing_feedrate_mm_m.d = parser.value_axis_units(D_AXIS);
+  #endif
 }
 
 void GcodeSuite::M210_report(const bool forReplay/*=true*/) {
@@ -91,7 +94,7 @@ void GcodeSuite::M210_report(const bool forReplay/*=true*/) {
     SP_K_STR, K_AXIS_UNIT(homing_feedrate_mm_m.k),
     SP_U_STR, U_AXIS_UNIT(homing_feedrate_mm_m.u),
     SP_V_STR, V_AXIS_UNIT(homing_feedrate_mm_m.v),
-    SP_W_STR, W_AXIS_UNIT(homing_feedrate_mm_m.w)
+    SP_W_STR, W_AXIS_UNIT(homing_feedrate_mm_m.w), SP_D_STR, D_AXIS_UNIT(homing_feedrate_mm_m.d)
   ));
 }
 

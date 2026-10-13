@@ -101,7 +101,8 @@
       planner.get_axis_position_mm(K_AXIS),
       planner.get_axis_position_mm(U_AXIS),
       planner.get_axis_position_mm(V_AXIS),
-      planner.get_axis_position_mm(W_AXIS)
+      planner.get_axis_position_mm(W_AXIS),
+      planner.get_axis_position_mm(D_AXIS)
     );
     report_all_axis_pos(from_steppers);
 

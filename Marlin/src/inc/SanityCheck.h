@@ -41,8 +41,8 @@
 #endif
 
 // Strings for sanity check messages
-#define _NUM_AXES_STR NUM_AXIS_GANG("X ", "Y ", "Z ", "I ", "J ", "K ", "U ", "V ", "W ")
-#define _LOGICAL_AXES_STR LOGICAL_AXIS_GANG("E ", "X ", "Y ", "Z ", "I ", "J ", "K ", "U ", "V ", "W ")
+#define _NUM_AXES_STR NUM_AXIS_GANG("X ", "Y ", "Z ", "I ", "J ", "K ", "U ", "V ", "W ", "D ")
+#define _LOGICAL_AXES_STR LOGICAL_AXIS_GANG("E ", "X ", "Y ", "Z ", "I ", "J ", "K ", "U ", "V ", "W ", "D ")
 
 // Make sure macros aren't borked
 #define TEST1
@@ -327,6 +327,8 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
   #error "Enable only one of ENDSTOPPULLUP_V_MAX or ENDSTOPPULLDOWN_V_MAX."
 #elif ALL(ENDSTOPPULLUP_WMAX, ENDSTOPPULLDOWN_WMAX)
   #error "Enable only one of ENDSTOPPULLUP_W_MAX or ENDSTOPPULLDOWN_W_MAX."
+#elif ALL(ENDSTOPPULLUP_DMAX, ENDSTOPPULLDOWN_DMAX)
+  #error "Enable only one of ENDSTOPPULLUP_D_MAX or ENDSTOPPULLDOWN_D_MAX."
 #elif ALL(ENDSTOPPULLUP_XMIN, ENDSTOPPULLDOWN_XMIN)
   #error "Enable only one of ENDSTOPPULLUP_X_MIN or ENDSTOPPULLDOWN_X_MIN."
 #elif ALL(ENDSTOPPULLUP_YMIN, ENDSTOPPULLDOWN_YMIN)
@@ -345,6 +347,8 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
   #error "Enable only one of ENDSTOPPULLUP_V_MIN or ENDSTOPPULLDOWN_V_MIN."
 #elif ALL(ENDSTOPPULLUP_WMIN, ENDSTOPPULLDOWN_WMIN)
   #error "Enable only one of ENDSTOPPULLUP_W_MIN or ENDSTOPPULLDOWN_W_MIN."
+#elif ALL(ENDSTOPPULLUP_DMIN, ENDSTOPPULLDOWN_DMIN)
+  #error "Enable only one of ENDSTOPPULLUP_D_MIN or ENDSTOPPULLDOWN_D_MIN."
 #endif
 
 /**
@@ -1244,6 +1248,21 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
     #error "INVERT_W_DIR is required for the W stepper."
   #endif
 #endif
+#if HAS_D_AXIS
+  #if AXIS10_NAME == AXIS9_NAME || AXIS10_NAME == AXIS8_NAME || AXIS10_NAME == AXIS7_NAME || AXIS10_NAME == AXIS6_NAME || AXIS10_NAME == AXIS5_NAME || AXIS10_NAME == AXIS4_NAME
+    #error "AXIS10_NAME must be unique."
+  #elif ENABLED(AXIS10_ROTATES) && DISABLED(AXIS9_ROTATES)
+    #error "AXIS10_ROTATES requires AXIS9_ROTATES."
+  #elif !defined(D_MIN_POS) || !defined(D_MAX_POS)
+    #error "D_MIN_POS and D_MAX_POS are required for the D axis."
+  #elif !defined(D_HOME_DIR)
+    #error "D_HOME_DIR is required for the D axis."
+  #elif HAS_D_ENABLE && !defined(D_ENABLE_ON)
+    #error "D_ENABLE_ON is required for the D stepper."
+  #elif !defined(INVERT_D_DIR)
+    #error "INVERT_D_DIR is required for the D stepper."
+  #endif
+#endif
 
 /**
  * Kinematics
@@ -1801,7 +1820,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
     static_assert(hbm[K_AXIS] >= 0, "HOMING_BUMP_MM.K must be greater than or equal to 0."),
     static_assert(hbm[U_AXIS] >= 0, "HOMING_BUMP_MM.U must be greater than or equal to 0."),
     static_assert(hbm[V_AXIS] >= 0, "HOMING_BUMP_MM.V must be greater than or equal to 0."),
-    static_assert(hbm[W_AXIS] >= 0, "HOMING_BUMP_MM.W must be greater than or equal to 0.")
+    static_assert(hbm[W_AXIS] >= 0, "HOMING_BUMP_MM.W must be greater than or equal to 0."),
+    static_assert(hbm[D_AXIS] >= 0, "HOMING_BUMP_MM.D must be greater than or equal to 0.")
   );
   static_assert(COUNT(hbd) == NUM_AXES, "HOMING_BUMP_DIVISOR must have " _NUM_AXES_STR "elements (and no others).");
   NUM_AXIS_CODE(
@@ -1813,7 +1833,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
     static_assert(hbd[K_AXIS] >= 1, "HOMING_BUMP_DIVISOR.K must be greater than or equal to 1."),
     static_assert(hbd[U_AXIS] >= 1, "HOMING_BUMP_DIVISOR.U must be greater than or equal to 1."),
     static_assert(hbd[V_AXIS] >= 1, "HOMING_BUMP_DIVISOR.V must be greater than or equal to 1."),
-    static_assert(hbd[W_AXIS] >= 1, "HOMING_BUMP_DIVISOR.W must be greater than or equal to 1.")
+    static_assert(hbd[W_AXIS] >= 1, "HOMING_BUMP_DIVISOR.W must be greater than or equal to 1."),
+    static_assert(hbd[D_AXIS] >= 1, "HOMING_BUMP_DIVISOR.D must be greater than or equal to 1.")
   );
 #endif
 
@@ -1829,7 +1850,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
     static_assert(hbp[K_AXIS] >= 0, "HOMING_BACKOFF_POST_MM.K must be greater than or equal to 0."),
     static_assert(hbp[U_AXIS] >= 0, "HOMING_BACKOFF_POST_MM.U must be greater than or equal to 0."),
     static_assert(hbp[V_AXIS] >= 0, "HOMING_BACKOFF_POST_MM.V must be greater than or equal to 0."),
-    static_assert(hbp[W_AXIS] >= 0, "HOMING_BACKOFF_POST_MM.W must be greater than or equal to 0.")
+    static_assert(hbp[W_AXIS] >= 0, "HOMING_BACKOFF_POST_MM.W must be greater than or equal to 0."),
+    static_assert(hbp[D_AXIS] >= 0, "HOMING_BACKOFF_POST_MM.D must be greater than or equal to 0.")
   );
 #endif
 
@@ -1851,7 +1873,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
     static_assert(sbm[K_AXIS] >= 0, "SENSORLESS_BACKOFF_MM.K must be greater than or equal to 0."),
     static_assert(sbm[U_AXIS] >= 0, "SENSORLESS_BACKOFF_MM.U must be greater than or equal to 0."),
     static_assert(sbm[V_AXIS] >= 0, "SENSORLESS_BACKOFF_MM.V must be greater than or equal to 0."),
-    static_assert(sbm[W_AXIS] >= 0, "SENSORLESS_BACKOFF_MM.W must be greater than or equal to 0.")
+    static_assert(sbm[W_AXIS] >= 0, "SENSORLESS_BACKOFF_MM.W must be greater than or equal to 0."),
+    static_assert(sbm[D_AXIS] >= 0, "SENSORLESS_BACKOFF_MM.D must be greater than or equal to 0.")
   );
 #endif
 
@@ -1918,6 +1941,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
     #error "If SAFE_BED_LEVELING_START_V is defined, SAFE_BED_LEVELING_START_U must also be defined."
   #elif defined(SAFE_BED_LEVELING_START_W) && !defined(SAFE_BED_LEVELING_START_V)
     #error "If SAFE_BED_LEVELING_START_W is defined, SAFE_BED_LEVELING_START_V must also be defined."
+  #elif defined(SAFE_BED_LEVELING_START_D) && !defined(SAFE_BED_LEVELING_START_W)
+    #error "If SAFE_BED_LEVELING_START_D is defined, SAFE_BED_LEVELING_START_W must also be defined."
   #endif
 #endif
 
@@ -2588,6 +2613,10 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
     #error "W_MIN_PIN, W_STOP_PIN, or W_SPI_SENSORLESS is required for W axis homing."
   #elif W_HOME_TO_MAX && !HAS_W_MAX_STATE
     #error "W_MAX_PIN, W_STOP_PIN, or W_SPI_SENSORLESS is required for W axis homing."
+  #elif D_HOME_TO_MIN && !HAS_D_MIN_STATE
+    #error "D_MIN_PIN, D_STOP_PIN, or D_SPI_SENSORLESS is required for D axis homing."
+  #elif D_HOME_TO_MAX && !HAS_D_MAX_STATE
+    #error "D_MAX_PIN, D_STOP_PIN, or D_SPI_SENSORLESS is required for D axis homing."
   #endif
 #endif
 
@@ -3173,6 +3202,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
   #error "An SPI driven TMC on V requires V_CS_PIN."
 #elif INVALID_TMC_SPI(W)
   #error "An SPI driven TMC on W requires W_CS_PIN."
+#elif INVALID_TMC_SPI(D)
+  #error "An SPI driven TMC on D requires D_CS_PIN."
 #endif
 #undef INVALID_TMC_SPI
 
@@ -3246,6 +3277,9 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
 #if INVALID_TMC_UART(W)
   #error "TMC2208 or TMC2209 on W requires W_HARDWARE_SERIAL or W_SERIAL_(RX|TX)_PIN."
 #endif
+#if INVALID_TMC_UART(D)
+  #error "TMC2208 or TMC2209 on D requires D_HARDWARE_SERIAL or D_SERIAL_(RX|TX)_PIN."
+#endif
 #undef INVALID_TMC_UART
 
 /**
@@ -3280,6 +3314,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
   INVALID_TMC_ADDRESS(V);
 #elif AXIS_DRIVER_TYPE_W(TMC2209)
   INVALID_TMC_ADDRESS(W);
+#elif AXIS_DRIVER_TYPE_D(TMC2209)
+  INVALID_TMC_ADDRESS(D);
 #elif AXIS_DRIVER_TYPE_E0(TMC2209)
   INVALID_TMC_ADDRESS(E0);
 #elif AXIS_DRIVER_TYPE_E1(TMC2209)
@@ -3347,6 +3383,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
   INVALID_TMC_MS(V)
 #elif !TMC_MICROSTEP_IS_VALID(W)
   INVALID_TMC_MS(W)
+#elif !TMC_MICROSTEP_IS_VALID(D)
+  INVALID_TMC_MS(D)
 #endif
 #undef INVALID_TMC_MS
 #undef TMC_MICROSTEP_IS_VALID
@@ -3418,6 +3456,10 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
       #error "SENSORLESS_HOMING requires ENDSTOPPULLUP_WMIN (or ENDSTOPPULLUPS) for W MIN homing."
     #elif W_SENSORLESS && W_HOME_TO_MAX && DISABLED(ENDSTOPPULLUP_WMAX)
       #error "SENSORLESS_HOMING requires ENDSTOPPULLUP_WMAX (or ENDSTOPPULLUPS) for W MAX homing."
+    #elif D_SENSORLESS && D_HOME_TO_MIN && DISABLED(ENDSTOPPULLUP_DMIN)
+      #error "SENSORLESS_HOMING requires ENDSTOPPULLUP_DMIN (or ENDSTOPPULLUPS) for D MIN homing."
+    #elif D_SENSORLESS && D_HOME_TO_MAX && DISABLED(ENDSTOPPULLUP_DMAX)
+      #error "SENSORLESS_HOMING requires ENDSTOPPULLUP_DMAX (or ENDSTOPPULLUPS) for D MAX homing."
     #endif
   #endif
 
@@ -3590,13 +3632,31 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
       #undef _HIT_STATE
     #endif
 
+    #if D_SENSORLESS
+      #define _HIT_STATE (AXIS_DRIVER_TYPE(D,TMC2209) || AXIS_DRIVER_TYPE(D,TMC2240))
+      #if D_HOME_TO_MIN && D_MIN_ENDSTOP_HIT_STATE != _HIT_STATE
+        #if _HIT_STATE
+          #error "SENSORLESS_HOMING requires D_MIN_ENDSTOP_HIT_STATE HIGH for D MIN homing with TMC2209/2240."
+        #else
+          #error "SENSORLESS_HOMING requires D_MIN_ENDSTOP_HIT_STATE LOW for D MIN homing."
+        #endif
+      #elif D_HOME_TO_MAX && D_MAX_ENDSTOP_HIT_STATE != _HIT_STATE
+        #if _HIT_STATE
+          #error "SENSORLESS_HOMING requires D_MAX_ENDSTOP_HIT_STATE HIGH for D MAX homing with TMC2209/2240."
+        #else
+          #error "SENSORLESS_HOMING requires D_MAX_ENDSTOP_HIT_STATE LOW for D MAX homing."
+        #endif
+      #endif
+      #undef _HIT_STATE
+    #endif
+
   #endif // !SPI_ENDSTOPS
 
   #if ENABLED(DELTA) && !ALL(STEALTHCHOP_XY, STEALTHCHOP_Z)
     #error "SENSORLESS_HOMING on DELTA currently requires STEALTHCHOP_XY and STEALTHCHOP_Z."
   #elif ENDSTOP_NOISE_THRESHOLD
     #error "SENSORLESS_HOMING is incompatible with ENDSTOP_NOISE_THRESHOLD."
-  #elif !(X_SENSORLESS || Y_SENSORLESS || Z_SENSORLESS || I_SENSORLESS || J_SENSORLESS || K_SENSORLESS || U_SENSORLESS || V_SENSORLESS || W_SENSORLESS)
+  #elif !(X_SENSORLESS || Y_SENSORLESS || Z_SENSORLESS || I_SENSORLESS || J_SENSORLESS || K_SENSORLESS || U_SENSORLESS || V_SENSORLESS || W_SENSORLESS || D_SENSORLESS)
     #error "SENSORLESS_HOMING requires a TMC stepper driver with StallGuard on X, Y, Z, I, J, K, U, V, or W axes."
   #endif
 
@@ -3658,6 +3718,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
     #error "V_HYBRID_THRESHOLD must be greater than 0."
   #elif defined(W_HYBRID_THRESHOLD) && W_HYBRID_THRESHOLD == 0
     #error "W_HYBRID_THRESHOLD must be greater than 0."
+  #elif defined(D_HYBRID_THRESHOLD) && D_HYBRID_THRESHOLD == 0
+    #error "D_HYBRID_THRESHOLD must be greater than 0."
   #elif defined(E0_HYBRID_THRESHOLD) && E0_HYBRID_THRESHOLD == 0
     #error "E0_HYBRID_THRESHOLD must be greater than 0."
   #elif defined(E1_HYBRID_THRESHOLD) && E1_HYBRID_THRESHOLD == 0
@@ -3690,11 +3752,11 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
  * TMC SPI Chaining
  */
 #define IN_CHAIN(A) A##_CHAIN_POS > 0
-#if  IN_CHAIN(X) || IN_CHAIN(Y) || IN_CHAIN(Z) || IN_CHAIN(I) || IN_CHAIN(J) || IN_CHAIN(K) || IN_CHAIN(U) || IN_CHAIN(V) || IN_CHAIN(W) \
+#if  IN_CHAIN(X) || IN_CHAIN(Y) || IN_CHAIN(Z) || IN_CHAIN(I) || IN_CHAIN(J) || IN_CHAIN(K) || IN_CHAIN(U) || IN_CHAIN(V) || IN_CHAIN(W) || IN_CHAIN(D) \
   || IN_CHAIN(X2) || IN_CHAIN(Y2) || IN_CHAIN(Z2) || IN_CHAIN(Z3) || IN_CHAIN(Z4) \
   || IN_CHAIN(E0) || IN_CHAIN(E1) || IN_CHAIN(E2) || IN_CHAIN(E3) || IN_CHAIN(E4) || IN_CHAIN(E5) || IN_CHAIN(E6) || IN_CHAIN(E7)
   #define BAD_CHAIN(A) (IN_CHAIN(A) && !PIN_EXISTS(A##_CS))
-  #if  BAD_CHAIN(X) || BAD_CHAIN(Y) || BAD_CHAIN(Z) || BAD_CHAIN(I) || BAD_CHAIN(J) || BAD_CHAIN(K) || BAD_CHAIN(U) || BAD_CHAIN(V) || BAD_CHAIN(W) \
+  #if  BAD_CHAIN(X) || BAD_CHAIN(Y) || BAD_CHAIN(Z) || BAD_CHAIN(I) || BAD_CHAIN(J) || BAD_CHAIN(K) || BAD_CHAIN(U) || BAD_CHAIN(V) || BAD_CHAIN(W) || BAD_CHAIN(D) \
     || BAD_CHAIN(X2) || BAD_CHAIN(Y2) || BAD_CHAIN(Z2) || BAD_CHAIN(Z3) || BAD_CHAIN(Z4) \
     || BAD_CHAIN(E0) || BAD_CHAIN(E1) || BAD_CHAIN(E2) || BAD_CHAIN(E3) || BAD_CHAIN(E4) || BAD_CHAIN(E5) || BAD_CHAIN(E6) || BAD_CHAIN(E7)
     #error "All chained TMC drivers need a CS pin."
@@ -3725,6 +3787,8 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
       #define CS_COMPARE V_CS_PIN
     #elif IN_CHAIN(W)
       #define CS_COMPARE W_CS_PIN
+    #elif IN_CHAIN(D)
+      #define CS_COMPARE D_CS_PIN
     #elif IN_CHAIN(E0)
       #define CS_COMPARE E0_CS_PIN
     #elif IN_CHAIN(E1)
@@ -3743,7 +3807,7 @@ static_assert(NUM_SERVOS <= NUM_SERVO_PLUGS, "NUM_SERVOS (or some servo index) i
       #define CS_COMPARE E7_CS_PIN
     #endif
     #define BAD_CS_PIN(A) (IN_CHAIN(A) && A##_CS_PIN != CS_COMPARE)
-    #if  BAD_CS_PIN(X) || BAD_CS_PIN(Y) || BAD_CS_PIN(Z) || BAD_CS_PIN(I) || BAD_CS_PIN(J) || BAD_CS_PIN(K) || BAD_CS_PIN(U) || BAD_CS_PIN(V) || BAD_CS_PIN(W) \
+    #if  BAD_CS_PIN(X) || BAD_CS_PIN(Y) || BAD_CS_PIN(Z) || BAD_CS_PIN(I) || BAD_CS_PIN(J) || BAD_CS_PIN(K) || BAD_CS_PIN(U) || BAD_CS_PIN(V) || BAD_CS_PIN(W) || BAD_CS_PIN(D) \
       || BAD_CS_PIN(X2) || BAD_CS_PIN(Y2) || BAD_CS_PIN(Z2) || BAD_CS_PIN(Z3) || BAD_CS_PIN(Z4) \
       || BAD_CS_PIN(E0) || BAD_CS_PIN(E1) || BAD_CS_PIN(E2) || BAD_CS_PIN(E3) || BAD_CS_PIN(E4) || BAD_CS_PIN(E5) || BAD_CS_PIN(E6) || BAD_CS_PIN(E7)
       #error "All chained TMC drivers must use the same CS pin."
@@ -3821,6 +3885,9 @@ static_assert(_PLUS_TEST(3), "DEFAULT_MAX_ACCELERATION values must be positive."
   );
   static_assert(TERN1(HAS_W_AXIS, sanity_arr_1[W_AXIS] * sanity_arr_2[W_AXIS] <= MAXIMUM_STEPPER_RATE),
     "Slow down! DEFAULT_MAX_FEEDRATE[W] * DEFAULT_AXIS_STEPS_PER_UNIT[W] > MAXIMUM_STEPPER_RATE (" STRINGIFY(MAXIMUM_STEPPER_RATE) ")."
+  );
+  static_assert(TERN1(HAS_D_AXIS, sanity_arr_1[D_AXIS] * sanity_arr_2[D_AXIS] <= MAXIMUM_STEPPER_RATE),
+    "Slow down! DEFAULT_MAX_FEEDRATE[D] * DEFAULT_AXIS_STEPS_PER_UNIT[D] > MAXIMUM_STEPPER_RATE (" STRINGIFY(MAXIMUM_STEPPER_RATE) ")."
   );
   #if ALL(HAS_EXTRUDERS, SANITY_CHECK_E_STEPPER_RATES)
     #if DISABLED(DISTINCT_E_FACTORS)
@@ -4257,6 +4324,9 @@ static_assert(_PLUS_TEST(3), "DEFAULT_MAX_ACCELERATION values must be positive."
   #if AXIS_HAS_DEDGE(W) && STEP_STATE_W != HIGH
     #error "STEP_STATE_W must be HIGH for EDGE_STEPPING."
   #endif
+  #if AXIS_HAS_DEDGE(D) && STEP_STATE_D != HIGH
+    #error "STEP_STATE_D must be HIGH for EDGE_STEPPING."
+  #endif
   #if AXIS_HAS_DEDGE(E0) && STEP_STATE_E != HIGH
     #error "STEP_STATE_E must be HIGH for EDGE_STEPPING."
   #endif
@@ -4391,6 +4461,9 @@ static_assert(_PLUS_TEST(3), "DEFAULT_MAX_ACCELERATION values must be positive."
 #endif
 #if _BAD_DRIVER(W)
   #error "W_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(D)
+  #error "D_DRIVER_TYPE is not recognized."
 #endif
 #if _BAD_DRIVER(X2)
   #error "X2_DRIVER_TYPE is not recognized."

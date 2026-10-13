@@ -86,6 +86,7 @@ void GcodeSuite::M920() {
       OPTCODE(U_HAS_HOME_CURRENT, case U_AXIS: homing_current_mA.U = value; break)
       OPTCODE(V_HAS_HOME_CURRENT, case V_AXIS: homing_current_mA.V = value; break)
       OPTCODE(W_HAS_HOME_CURRENT, case W_AXIS: homing_current_mA.W = value; break)
+      OPTCODE(D_HAS_HOME_CURRENT, case D_AXIS: homing_current_mA.D = value; break)
     }
   }
 
@@ -122,6 +123,7 @@ void GcodeSuite::M920_report(const bool forReplay/*=true*/) {
     TERN_(U_SENSORLESS, SERIAL_ECHOPGM_P(SP_U_STR, homing_current_mA.U));
     TERN_(V_SENSORLESS, SERIAL_ECHOPGM_P(SP_V_STR, homing_current_mA.V));
     TERN_(W_SENSORLESS, SERIAL_ECHOPGM_P(SP_W_STR, homing_current_mA.W));
+    TERN_(D_SENSORLESS, SERIAL_ECHOPGM_P(SP_D_STR, homing_current_mA.D));
     SERIAL_EOL();
   #endif
 

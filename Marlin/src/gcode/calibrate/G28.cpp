@@ -98,7 +98,7 @@
         NUM_AXIS_LIST(
           TERN0(X_SENSORLESS, tmc_enable_stallguard(stepperX)),
           TERN0(Y_SENSORLESS, tmc_enable_stallguard(stepperY)),
-          false, false, false, false, false, false, false
+          false, false, false, false, false, false, false, false
         )
         , TERN0(X2_SENSORLESS, tmc_enable_stallguard(stepperX2))
         , TERN0(Y2_SENSORLESS, tmc_enable_stallguard(stepperY2))
@@ -339,7 +339,7 @@ void GcodeSuite::G28() {
                  NUM_AXIS_LIST_(             // Other axes should be homed before Z safe-homing
                    needX = _UNSAFE(X), needY = _UNSAFE(Y), needZ = false, // UNUSED
                    needI = _UNSAFE(I), needJ = _UNSAFE(J), needK = _UNSAFE(K),
-                   needU = _UNSAFE(U), needV = _UNSAFE(V), needW = _UNSAFE(W)
+                   needU = _UNSAFE(U), needV = _UNSAFE(V), needW = _UNSAFE(W), needD = _UNSAFE(D)
                  )
                  NUM_AXIS_LIST_(             // Home each axis if needed or flagged
                    homeX = needX || parser.seen_test('X'),
@@ -347,17 +347,17 @@ void GcodeSuite::G28() {
                    homeZ = homeZZ,
                    homeI = needI || parser.seen_test(AXIS4_NAME), homeJ = needJ || parser.seen_test(AXIS5_NAME),
                    homeK = needK || parser.seen_test(AXIS6_NAME), homeU = needU || parser.seen_test(AXIS7_NAME),
-                   homeV = needV || parser.seen_test(AXIS8_NAME), homeW = needW || parser.seen_test(AXIS9_NAME)
+                   homeV = needV || parser.seen_test(AXIS8_NAME), homeW = needW || parser.seen_test(AXIS9_NAME), homeD = needD || parser.seen_test(AXIS10_NAME)
                  )
                  home_all = NUM_AXIS_GANG_(  // Home-all if all or none are flagged
                       homeX == homeX, && homeY == homeX, && homeZ == homeX,
                    && homeI == homeX, && homeJ == homeX, && homeK == homeX,
-                   && homeU == homeX, && homeV == homeX, && homeW == homeX
+                   && homeU == homeX, && homeV == homeX, && homeW == homeX, && homeD == homeX
                  )
                  NUM_AXIS_LIST(
                    doX = home_all || homeX, doY = home_all || homeY, doZ = home_all || homeZ,
                    doI = home_all || homeI, doJ = home_all || homeJ, doK = home_all || homeK,
-                   doU = home_all || homeU, doV = home_all || homeV, doW = home_all || homeW
+                   doU = home_all || homeU, doV = home_all || homeV, doW = home_all || homeW, doD = home_all || homeD
                  );
 
       #if !HAS_Y_AXIS
@@ -380,7 +380,7 @@ void GcodeSuite::G28() {
         float z_homing_height = seenR ? parser.value_linear_units() : Z_CLEARANCE_FOR_HOMING;
 
         // Check for any lateral motion that might require clearance
-        const bool may_skate = seenR NUM_AXIS_GANG(|| doX, || doY, || TERN0(Z_SAFE_HOMING, doZ), || doI, || doJ, || doK, || doU, || doV, || doW);
+        const bool may_skate = seenR NUM_AXIS_GANG(|| doX, || doY, || TERN0(Z_SAFE_HOMING, doZ), || doI, || doJ, || doK, || doU, || doV, || doW, || doD);
 
         if (seenR && z_homing_height == 0) {
           if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("R0 = No Z raise");
@@ -497,7 +497,8 @@ void GcodeSuite::G28() {
           if (doK) homeaxis(K_AXIS),
           if (doU) homeaxis(U_AXIS),
           if (doV) homeaxis(V_AXIS),
-          if (doW) homeaxis(W_AXIS)
+          if (doW) homeaxis(W_AXIS),
+          if (doD) homeaxis(D_AXIS)
         );
 
       #endif // HAS_Z_AXIS

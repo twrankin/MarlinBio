@@ -101,6 +101,9 @@
 #if HAS_W_AXIS && !defined(AXIS9_NAME)
   #define AXIS9_NAME 'W'
 #endif
+#if HAS_D_AXIS && !defined(AXIS10_NAME)
+  #define AXIS10_NAME 'D'
+#endif
 
 #if HAS_X_AXIS
   #define X_MAX_LENGTH (X_MAX_POS - (X_MIN_POS))
@@ -131,6 +134,9 @@
 #if HAS_W_AXIS
   #define W_MAX_LENGTH (W_MAX_POS - (W_MIN_POS))
 #endif
+#if HAS_D_AXIS
+  #define D_MAX_LENGTH (D_MAX_POS - (D_MIN_POS))
+#endif
 
 // Defined only if the sanity-check is bypassed
 #if HAS_X_AXIS && !defined(X_BED_SIZE)
@@ -156,6 +162,9 @@
 #endif
 #if HAS_W_AXIS && !defined(W_BED_SIZE)
   #define W_BED_SIZE W_MAX_LENGTH
+#endif
+#if HAS_D_AXIS && !defined(D_BED_SIZE)
+  #define D_BED_SIZE D_MAX_LENGTH
 #endif
 
 // Require 0,0 bed center for Delta, SCARA, and Polargraph
@@ -188,6 +197,9 @@
 #if HAS_W_AXIS
   #define _W_HALF_WMAX ((W_BED_SIZE) / 2)
 #endif
+#if HAS_D_AXIS
+  #define _D_HALF_DMAX ((D_BED_SIZE) / 2)
+#endif
 
 #if HAS_X_AXIS
   #define X_CENTER TERN(BED_CENTER_AT_0_0, 0, _X_HALF_BED)
@@ -213,6 +225,9 @@
 #endif
 #if HAS_W_AXIS
   #define W_CENTER _W_HALF_BED
+#endif
+#if HAS_D_AXIS
+  #define D_CENTER _D_HALF_BED
 #endif
 
 // Get the linear boundaries of the bed
@@ -247,6 +262,10 @@
 #if HAS_W_AXIS
   #define W_MINIM (W_CENTER - _W_HALF_BED_SIZE)
   #define W_MAXIM (W_MINIM + W_BED_SIZE)
+#endif
+#if HAS_D_AXIS
+  #define D_MINIM (D_CENTER - _D_HALF_BED_SIZE)
+  #define D_MAXIM (D_MINIM + D_BED_SIZE)
 #endif
 
 /**
@@ -369,6 +388,13 @@
     #define W_HOME_POS MANUAL_W_HOME_POS
   #else
     #define W_HOME_POS TERN(W_HOME_TO_MIN, W_MIN_POS, W_MAX_POS)
+  #endif
+#endif
+#if HAS_D_AXIS
+  #ifdef MANUAL_D_HOME_POS
+    #define D_HOME_POS MANUAL_D_HOME_POS
+  #else
+    #define D_HOME_POS TERN(D_HOME_TO_MIN, D_MIN_POS, D_MAX_POS)
   #endif
 #endif
 
@@ -1267,6 +1293,21 @@
   #endif
 #endif
 
+#if HAS_D_AXIS
+  #if PIN_EXISTS(D_ENABLE) || ALL(SOFTWARE_DRIVER_ENABLE, D_IS_TRINAMIC)
+    #define HAS_D_ENABLE 1
+  #endif
+  #if PIN_EXISTS(D_DIR)
+    #define HAS_D_DIR 1
+  #endif
+  #if PIN_EXISTS(D_STEP)
+    #define HAS_D_STEP 1
+  #endif
+  #if PIN_EXISTS(D_MS1)
+    #define HAS_D_MS_PINS 1
+  #endif
+#endif
+
 // Extruder steppers and solenoids
 #if HAS_EXTRUDERS
 
@@ -1430,7 +1471,7 @@
 //
 
 #if HAS_TRINAMIC_CONFIG
-  #if ANY(STEALTHCHOP_E, STEALTHCHOP_XY, STEALTHCHOP_Z, STEALTHCHOP_I, STEALTHCHOP_J, STEALTHCHOP_K, STEALTHCHOP_U, STEALTHCHOP_V, STEALTHCHOP_W)
+  #if ANY(STEALTHCHOP_E, STEALTHCHOP_XY, STEALTHCHOP_Z, STEALTHCHOP_I, STEALTHCHOP_J, STEALTHCHOP_K, STEALTHCHOP_U, STEALTHCHOP_V, STEALTHCHOP_W, STEALTHCHOP_D)
     #define STEALTHCHOP_ENABLED 1
   #endif
   #if ANY(SENSORLESS_HOMING, SENSORLESS_PROBING)
@@ -1716,6 +1757,27 @@
     #endif
     #ifndef W_SLAVE_ADDRESS
       #define W_SLAVE_ADDRESS 0
+    #endif
+  #endif
+
+  #if D_IS_TRINAMIC
+    #if defined(D_STALL_SENSITIVITY) && AXIS_HAS_STALLGUARD(D)
+      #define D_SENSORLESS 1
+      #if ENABLED(SPI_ENDSTOPS) && AXIS_HAS_SPI(D)
+        #define D_SPI_SENSORLESS 1
+      #endif
+    #endif
+    #if AXIS_HAS_STEALTHCHOP(D)
+      #define D_HAS_STEALTHCHOP 1
+    #endif
+    #ifndef D_INTERPOLATE
+      #define D_INTERPOLATE INTERPOLATE
+    #endif
+    #ifndef D_HOLD_MULTIPLIER
+      #define D_HOLD_MULTIPLIER HOLD_MULTIPLIER
+    #endif
+    #ifndef D_SLAVE_ADDRESS
+      #define D_SLAVE_ADDRESS 0
     #endif
   #endif
 
@@ -2131,6 +2193,22 @@
   #define HAS_W_STATE 1
 #endif
 
+#if _USE_STOP(D,,MIN,)
+  #define USE_D_MIN 1
+#endif
+#if _USE_STOP(D,,MAX,)
+  #define USE_D_MAX 1
+#endif
+#if _HAS_STATE(D,,MIN)
+  #define HAS_D_MIN_STATE 1
+#endif
+#if _HAS_STATE(D,,MAX)
+  #define HAS_D_MAX_STATE 1
+#endif
+#if HAS_D_MIN_STATE || HAS_D_MAX_STATE
+  #define HAS_D_STATE 1
+#endif
+
 #if ENABLED(X_DUAL_ENDSTOPS)
   #if _USE_STOP(X,2,MIN,)
     #define USE_X2_MIN 1
@@ -2293,6 +2371,12 @@
   #if USE_W_MAX
     #define ENDSTOPPULLUP_WMAX
   #endif
+  #if USE_D_MIN
+    #define ENDSTOPPULLUP_DMIN
+  #endif
+  #if USE_D_MAX
+    #define ENDSTOPPULLUP_DMAX
+  #endif
 #endif
 
 /**
@@ -2352,6 +2436,12 @@
   #endif
   #if USE_W_MAX
     #define ENDSTOPPULLDOWN_WMAX
+  #endif
+  #if USE_D_MIN
+    #define ENDSTOPPULLDOWN_DMIN
+  #endif
+  #if USE_D_MAX
+    #define ENDSTOPPULLDOWN_DMAX
   #endif
 #endif
 
@@ -2427,6 +2517,14 @@
   #undef ENDSTOPPULLUP_WMAX
   #undef ENDSTOPPULLDOWN_WMAX
 #endif
+#if !USE_D_MIN
+  #undef ENDSTOPPULLUP_DMIN
+  #undef ENDSTOPPULLDOWN_DMIN
+#endif
+#if !USE_D_MAX
+  #undef ENDSTOPPULLUP_DMAX
+  #undef ENDSTOPPULLDOWN_DMAX
+#endif
 
 #define PCAT(P) P##_PIN
 #define NEED_HIT_STATE(P) (USE_##P || (PIN_EXISTS(P) && ((defined(X2_STOP_PIN) && X2_STOP_PIN == PCAT(P)) || (defined(Y2_STOP_PIN) && Y2_STOP_PIN == PCAT(P)) || (defined(Z2_STOP_PIN) && Z2_STOP_PIN == PCAT(P)) || (defined(Z3_STOP_PIN) && Z3_STOP_PIN == PCAT(P)) || (defined(Z4_STOP_PIN) && Z4_STOP_PIN == PCAT(P)))))
@@ -2483,6 +2581,12 @@
 #endif
 #if !NEED_HIT_STATE(W_MAX)
   #undef W_MAX_ENDSTOP_HIT_STATE
+#endif
+#if !NEED_HIT_STATE(D_MIN)
+  #undef D_MIN_ENDSTOP_HIT_STATE
+#endif
+#if !NEED_HIT_STATE(D_MAX)
+  #undef D_MAX_ENDSTOP_HIT_STATE
 #endif
 #undef NEED_HIT_STATE
 #undef PCAT
@@ -3035,7 +3139,7 @@
 #if PIN_EXISTS(MOTOR_CURRENT_PWM_Z)
   #define HAS_MOTOR_CURRENT_PWM_Z 1
 #endif
-#if HAS_MOTOR_CURRENT_PWM_Z || HAS_MOTOR_CURRENT_PWM_E || ANY_PIN(MOTOR_CURRENT_PWM_X, MOTOR_CURRENT_PWM_Y, MOTOR_CURRENT_PWM_XY, MOTOR_CURRENT_PWM_I, MOTOR_CURRENT_PWM_J, MOTOR_CURRENT_PWM_K, MOTOR_CURRENT_PWM_U, MOTOR_CURRENT_PWM_V, MOTOR_CURRENT_PWM_W)
+#if HAS_MOTOR_CURRENT_PWM_Z || HAS_MOTOR_CURRENT_PWM_E || ANY_PIN(MOTOR_CURRENT_PWM_X, MOTOR_CURRENT_PWM_Y, MOTOR_CURRENT_PWM_XY, MOTOR_CURRENT_PWM_I, MOTOR_CURRENT_PWM_J, MOTOR_CURRENT_PWM_K, MOTOR_CURRENT_PWM_U, MOTOR_CURRENT_PWM_V, MOTOR_CURRENT_PWM_W, MOTOR_CURRENT_PWM_D)
   #define HAS_MOTOR_CURRENT_PWM 1
 #endif
 

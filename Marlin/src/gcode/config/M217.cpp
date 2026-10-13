@@ -58,6 +58,7 @@
  *  C[linear]     Park U (Requires TOOLCHANGE_PARK and NUM_AXES >= 7)
  *  H[linear]     Park V (Requires TOOLCHANGE_PARK and NUM_AXES >= 8)
  *  O[linear]     Park W (Requires TOOLCHANGE_PARK and NUM_AXES >= 9)
+ *  N[linear]     Park D (Requires TOOLCHANGE_PARK and NUM_AXES >= 10)
  *  Z[linear]     Z Raise
  *  F[speed]      Fan Speed 0-255
  *  D[seconds]    Fan time
@@ -119,6 +120,9 @@ void GcodeSuite::M217() {
     #endif
     #if HAS_W_AXIS
       if (parser.seenval('O')) { const int16_t v = parser.TERN(AXIS9_ROTATES, value_int, value_linear_units)(); toolchange_settings.change_point.w = constrain(v, W_MIN_POS, W_MAX_POS); }
+    #endif
+    #if HAS_D_AXIS
+      if (parser.seenval('N')) { const int16_t v = parser.TERN(AXIS10_ROTATES, value_int, value_linear_units)(); toolchange_settings.change_point.d = constrain(v, D_MIN_POS, D_MAX_POS); }
     #endif
   #endif
 
@@ -204,6 +208,7 @@ void GcodeSuite::M217_report(const bool forReplay/*=true*/) {
                 , SP_C_STR,   U_AXIS_UNIT(toolchange_settings.change_point.u)
                 , PSTR(" H"), V_AXIS_UNIT(toolchange_settings.change_point.v)
                 , PSTR(" O"), W_AXIS_UNIT(toolchange_settings.change_point.w)
+                , PSTR(" N"), D_AXIS_UNIT(toolchange_settings.change_point.d)
               )
           #endif
         );

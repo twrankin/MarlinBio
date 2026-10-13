@@ -162,6 +162,9 @@ void GcodeSuite::M919() {
       #if W_IS_TRINAMIC
         case W_AXIS: TMC_SET_CHOPPER_TIME(W); break;
       #endif
+      #if D_IS_TRINAMIC
+        case D_AXIS: TMC_SET_CHOPPER_TIME(D); break;
+      #endif
 
       #if HAS_E_CHOPPER
         case E_AXIS: {

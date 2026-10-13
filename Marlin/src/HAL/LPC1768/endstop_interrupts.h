@@ -218,4 +218,15 @@ void setup_endstop_interrupts() {
     #endif
     _ATTACH(W_MIN_PIN);
   #endif
+  #if USE_D_MAX
+    #if !LPC1768_PIN_INTERRUPT_M(D_MAX_PIN)
+      #error "D_MAX_PIN is not INTERRUPT-capable. Disable ENDSTOP_INTERRUPTS_FEATURE to continue."
+    #endif
+    _ATTACH(D_MAX_PIN);
+  #elif USE_D_MIN
+    #if !LPC1768_PIN_INTERRUPT_M(D_MIN_PIN)
+      #error "D_MIN_PIN is not INTERRUPT-capable. Disable ENDSTOP_INTERRUPTS_FEATURE to continue."
+    #endif
+    _ATTACH(D_MIN_PIN);
+  #endif
 }

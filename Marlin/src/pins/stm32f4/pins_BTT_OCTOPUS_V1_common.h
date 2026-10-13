@@ -62,6 +62,30 @@
 #define E2_DIAG_PIN                         PG14  // E2DET
 #define E3_DIAG_PIN                         PG15  // E3DET
 
+/// MarlinBio: With EXTRUDERS 0 the motors on ports 3-7 are the independent axes
+/// A, B, C, U, V (Marlin I, J, K, U, V). Each uses its own motor's DIAG line
+/// (routed to the matching endstop connector) for sensorless homing.
+#if HAS_I_AXIS
+  #define I_DIAG_PIN                        PG11  // MOTOR 3, Z2-STOP
+  #define I_STOP_PIN                  I_DIAG_PIN
+#endif
+#if HAS_J_AXIS
+  #define J_DIAG_PIN                        PG12  // MOTOR 4, E0DET
+  #define J_STOP_PIN                  J_DIAG_PIN
+#endif
+#if HAS_K_AXIS
+  #define K_DIAG_PIN                        PG13  // MOTOR 5, E1DET
+  #define K_STOP_PIN                  K_DIAG_PIN
+#endif
+#if HAS_U_AXIS
+  #define U_DIAG_PIN                        PG14  // MOTOR 6, E2DET
+  #define U_STOP_PIN                  U_DIAG_PIN
+#endif
+#if HAS_V_AXIS
+  #define V_DIAG_PIN                        PG15  // MOTOR 7, E3DET
+  #define V_STOP_PIN                  V_DIAG_PIN
+#endif
+
 //
 // Limit Switches
 //
@@ -137,41 +161,83 @@
   #define Z_CS_PIN                          PC6
 #endif
 
-#define Z2_STEP_PIN                         PG4   // MOTOR 3
-#define Z2_DIR_PIN                          PC1
-#define Z2_ENABLE_PIN                       PA0
-#ifndef Z2_CS_PIN
-  #define Z2_CS_PIN                         PC7
-#endif
+#if HAS_I_AXIS
 
-#define Z3_STEP_PIN                         PF9   // MOTOR 4
-#define Z3_DIR_PIN                          PF10
-#define Z3_ENABLE_PIN                       PG2
-#ifndef Z3_CS_PIN
-  #define Z3_CS_PIN                         PF2
-#endif
+  /// MarlinBio: Independent axes (EXTRUDERS 0). Motors 3-7 are A, B, C, U, V (Marlin I, J, K, U, V).
+  #define I_STEP_PIN                        PG4   // MOTOR 3
+  #define I_DIR_PIN                         PC1
+  #define I_ENABLE_PIN                      PA0
+  #ifndef I_CS_PIN
+    #define I_CS_PIN                        PC7
+  #endif
 
-#define E0_STEP_PIN                         PC13  // MOTOR 5
-#define E0_DIR_PIN                          PF0
-#define E0_ENABLE_PIN                       PF1
-#ifndef E0_CS_PIN
-  #define E0_CS_PIN                         PE4
-#endif
+  #define J_STEP_PIN                        PF9   // MOTOR 4
+  #define J_DIR_PIN                         PF10
+  #define J_ENABLE_PIN                      PG2
+  #ifndef J_CS_PIN
+    #define J_CS_PIN                        PF2
+  #endif
 
-#define E1_STEP_PIN                         PE2   // MOTOR 6
-#define E1_DIR_PIN                          PE3
-#define E1_ENABLE_PIN                       PD4
-#ifndef E1_CS_PIN
+  #define K_STEP_PIN                        PC13  // MOTOR 5
+  #define K_DIR_PIN                         PF0
+  #define K_ENABLE_PIN                      PF1
+  #ifndef K_CS_PIN
+    #define K_CS_PIN                        PE4
+  #endif
 
-  #define E1_CS_PIN                         PE1
-#endif
+  #define U_STEP_PIN                        PE2   // MOTOR 6
+  #define U_DIR_PIN                         PE3
+  #define U_ENABLE_PIN                      PD4
+  #ifndef U_CS_PIN
+    #define U_CS_PIN                        PE1
+  #endif
 
-#define E2_STEP_PIN                         PE6   // MOTOR 7
-#define E2_DIR_PIN                          PA14
-#define E2_ENABLE_PIN                       PE0
-#ifndef E2_CS_PIN
-  #define E2_CS_PIN                         PD3
-#endif
+  #define V_STEP_PIN                        PE6   // MOTOR 7
+  #define V_DIR_PIN                         PA14
+  #define V_ENABLE_PIN                      PE0
+  #ifndef V_CS_PIN
+    #define V_CS_PIN                        PD3
+  #endif
+
+#else
+
+  /// MarlinBio: Tool system (EXTRUDERS 1-3). Motors 3-7 are Z2, Z3, E0, E1, E2.
+  #define Z2_STEP_PIN                       PG4   // MOTOR 3
+  #define Z2_DIR_PIN                        PC1
+  #define Z2_ENABLE_PIN                     PA0
+  #ifndef Z2_CS_PIN
+    #define Z2_CS_PIN                       PC7
+  #endif
+
+  #define Z3_STEP_PIN                       PF9   // MOTOR 4
+  #define Z3_DIR_PIN                        PF10
+  #define Z3_ENABLE_PIN                     PG2
+  #ifndef Z3_CS_PIN
+    #define Z3_CS_PIN                       PF2
+  #endif
+
+  #define E0_STEP_PIN                       PC13  // MOTOR 5
+  #define E0_DIR_PIN                        PF0
+  #define E0_ENABLE_PIN                     PF1
+  #ifndef E0_CS_PIN
+    #define E0_CS_PIN                       PE4
+  #endif
+
+  #define E1_STEP_PIN                       PE2   // MOTOR 6
+  #define E1_DIR_PIN                        PE3
+  #define E1_ENABLE_PIN                     PD4
+  #ifndef E1_CS_PIN
+    #define E1_CS_PIN                       PE1
+  #endif
+
+  #define E2_STEP_PIN                       PE6   // MOTOR 7
+  #define E2_DIR_PIN                        PA14
+  #define E2_ENABLE_PIN                     PE0
+  #ifndef E2_CS_PIN
+    #define E2_CS_PIN                       PD3
+  #endif
+
+#endif // HAS_I_AXIS
 
 //Here lies the original pin setup for E1, E2, and E3 which has been commented out in favor of the new pin assignments above.
 
@@ -276,11 +342,19 @@
   #define X_SERIAL_TX_PIN                   PC4
   #define Y_SERIAL_TX_PIN                   PD11
   #define Z_SERIAL_TX_PIN                   PC6
-  #define Z2_SERIAL_TX_PIN                  PC7
-  #define Z3_SERIAL_TX_PIN                  PF2   // MOTOR 4
-  #define E0_SERIAL_TX_PIN                  PE4   // MOTOR 5
-  #define E1_SERIAL_TX_PIN                  PE1   // MOTOR 6
-  #define E2_SERIAL_TX_PIN                  PD3   // MOTOR 7
+  #if HAS_I_AXIS
+    #define I_SERIAL_TX_PIN                 PC7   // MOTOR 3
+    #define J_SERIAL_TX_PIN                 PF2   // MOTOR 4
+    #define K_SERIAL_TX_PIN                 PE4   // MOTOR 5
+    #define U_SERIAL_TX_PIN                 PE1   // MOTOR 6
+    #define V_SERIAL_TX_PIN                 PD3   // MOTOR 7
+  #else
+    #define Z2_SERIAL_TX_PIN                PC7   // MOTOR 3
+    #define Z3_SERIAL_TX_PIN                PF2   // MOTOR 4
+    #define E0_SERIAL_TX_PIN                PE4   // MOTOR 5
+    #define E1_SERIAL_TX_PIN                PE1   // MOTOR 6
+    #define E2_SERIAL_TX_PIN                PD3   // MOTOR 7
+  #endif
 
   // Reduce baud rate to improve software serial reliability
   #ifndef TMC_BAUD_RATE
@@ -353,13 +427,26 @@
    */
 
   // M1 on Driver Expansion Module
-  #define E4_STEP_PIN                EXP2_06_PIN
-  #define E4_DIR_PIN                 EXP2_05_PIN
-  #define E4_ENABLE_PIN              EXP2_07_PIN
-  #define E4_DIAG_PIN                EXP1_05_PIN
-  #define E4_CS_PIN                  EXP1_06_PIN
-  #if HAS_TMC_UART
-    #define E4_SERIAL_TX_PIN         EXP1_06_PIN
+  #if HAS_W_AXIS
+    /// MarlinBio: The W axis (EXTRUDERS 0) uses the first expansion slot.
+    #define W_STEP_PIN               EXP2_06_PIN
+    #define W_DIR_PIN                EXP2_05_PIN
+    #define W_ENABLE_PIN             EXP2_07_PIN
+    #define W_DIAG_PIN               EXP1_05_PIN
+    #define W_STOP_PIN                W_DIAG_PIN
+    #define W_CS_PIN                 EXP1_06_PIN
+    #if HAS_TMC_UART
+      #define W_SERIAL_TX_PIN        EXP1_06_PIN
+    #endif
+  #else
+    #define E4_STEP_PIN              EXP2_06_PIN
+    #define E4_DIR_PIN               EXP2_05_PIN
+    #define E4_ENABLE_PIN            EXP2_07_PIN
+    #define E4_DIAG_PIN              EXP1_05_PIN
+    #define E4_CS_PIN                EXP1_06_PIN
+    #if HAS_TMC_UART
+      #define E4_SERIAL_TX_PIN       EXP1_06_PIN
+    #endif
   #endif
 
   // M2 on Driver Expansion Module

@@ -120,7 +120,7 @@
  *  T<index> : Extruder index to set
  *
  * With XY_FREQUENCY_LIMIT:
- *  F<Hz>      : Frequency limit for XY...IJKUVW
+ *  F<Hz>      : Frequency limit for XY...IJKUVWD
  *  S<percent> : Speed factor percentage.
  */
 void GcodeSuite::M201() {
@@ -166,7 +166,7 @@ void GcodeSuite::M201_report(const bool forReplay/*=true*/) {
       SP_K_STR, K_AXIS_UNIT(planner.settings.max_acceleration_mm_per_s2[K_AXIS]),
       SP_U_STR, U_AXIS_UNIT(planner.settings.max_acceleration_mm_per_s2[U_AXIS]),
       SP_V_STR, V_AXIS_UNIT(planner.settings.max_acceleration_mm_per_s2[V_AXIS]),
-      SP_W_STR, W_AXIS_UNIT(planner.settings.max_acceleration_mm_per_s2[W_AXIS])
+      SP_W_STR, W_AXIS_UNIT(planner.settings.max_acceleration_mm_per_s2[W_AXIS]), SP_D_STR, D_AXIS_UNIT(planner.settings.max_acceleration_mm_per_s2[D_AXIS])
     ));
   #endif
 
@@ -231,7 +231,7 @@ void GcodeSuite::M203_report(const bool forReplay/*=true*/) {
       SP_K_STR, LINEAR_UNIT(planner.settings.max_feedrate_mm_s[K_AXIS]),
       SP_U_STR, LINEAR_UNIT(planner.settings.max_feedrate_mm_s[U_AXIS]),
       SP_V_STR, LINEAR_UNIT(planner.settings.max_feedrate_mm_s[V_AXIS]),
-      SP_W_STR, LINEAR_UNIT(planner.settings.max_feedrate_mm_s[W_AXIS])
+      SP_W_STR, LINEAR_UNIT(planner.settings.max_feedrate_mm_s[W_AXIS]), SP_D_STR, LINEAR_UNIT(planner.settings.max_feedrate_mm_s[D_AXIS])
     ));
   #endif
 
@@ -284,7 +284,11 @@ void GcodeSuite::M204_report(const bool forReplay/*=true*/) {
   );
 }
 
-#if AXIS_COLLISION('B')
+#if AXIS_COLLISION('B') && AXIS_COLLISION('D')
+  #define M205_MIN_SEG_TIME_PARAM 'L'
+  #define M205_MIN_SEG_TIME_STR "L"
+  #warning "Use 'M205 L' for Minimum Segment Time."
+#elif AXIS_COLLISION('B')
   #define M205_MIN_SEG_TIME_PARAM 'D'
   #define M205_MIN_SEG_TIME_STR "D"
   #warning "Use 'M205 D' for Minimum Segment Time."
@@ -340,7 +344,8 @@ void GcodeSuite::M205() {
       if (parser.seenval(AXIS6_NAME)) planner.set_max_jerk(K_AXIS, parser.TERN(AXIS6_ROTATES, value_float, value_linear_units)()),
       if (parser.seenval(AXIS7_NAME)) planner.set_max_jerk(U_AXIS, parser.TERN(AXIS7_ROTATES, value_float, value_linear_units)()),
       if (parser.seenval(AXIS8_NAME)) planner.set_max_jerk(V_AXIS, parser.TERN(AXIS8_ROTATES, value_float, value_linear_units)()),
-      if (parser.seenval(AXIS9_NAME)) planner.set_max_jerk(W_AXIS, parser.TERN(AXIS9_ROTATES, value_float, value_linear_units)())
+      if (parser.seenval(AXIS9_NAME)) planner.set_max_jerk(W_AXIS, parser.TERN(AXIS9_ROTATES, value_float, value_linear_units)()),
+      if (parser.seenval(AXIS10_NAME)) planner.set_max_jerk(D_AXIS, parser.TERN(AXIS10_ROTATES, value_float, value_linear_units)())
     );
     #if HAS_MESH && DISABLED(LIMITED_JERK_EDITING)
       if (seenZ && planner.max_jerk.z <= 0.1f)
@@ -359,7 +364,7 @@ void GcodeSuite::M205_report(const bool forReplay/*=true*/) {
       NUM_AXIS_GANG(
         " X<max_jerk>", " Y<max_jerk>", " Z<max_jerk>",
         " " STR_I "<max_jerk>", " " STR_J "<max_jerk>", " " STR_K "<max_jerk>",
-        " " STR_U "<max_jerk>", " " STR_V "<max_jerk>", " " STR_W "<max_jerk>"
+        " " STR_U "<max_jerk>", " " STR_V "<max_jerk>", " " STR_W "<max_jerk>", " " STR_D "<max_jerk>"
       )
     #endif
     TERN_(HAS_CLASSIC_E_JERK, " E<max_jerk>")
@@ -382,7 +387,7 @@ void GcodeSuite::M205_report(const bool forReplay/*=true*/) {
         SP_K_STR, K_AXIS_UNIT(planner.max_jerk.k),
         SP_U_STR, U_AXIS_UNIT(planner.max_jerk.u),
         SP_V_STR, V_AXIS_UNIT(planner.max_jerk.v),
-        SP_W_STR, W_AXIS_UNIT(planner.max_jerk.w)
+        SP_W_STR, W_AXIS_UNIT(planner.max_jerk.w), SP_D_STR, D_AXIS_UNIT(planner.max_jerk.d)
       )
       #if HAS_CLASSIC_E_JERK
         , SP_E_STR, LINEAR_UNIT(planner.max_jerk.e)

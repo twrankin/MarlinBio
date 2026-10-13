@@ -61,7 +61,7 @@ enum EndstopEnum : int8_t {
   // Common XYZ (ABC) endstops.
   ES_MINMAX(X) ES_MINMAX(Y) ES_MINMAX(Z)
   ES_MINMAX(I) ES_MINMAX(J) ES_MINMAX(K)
-  ES_MINMAX(U) ES_MINMAX(V) ES_MINMAX(W)
+  ES_MINMAX(U) ES_MINMAX(V) ES_MINMAX(W) ES_MINMAX(D)
 
   // Extra Endstops for XYZ
   ES_MINMAX(X2) ES_MINMAX(Y2) ES_MINMAX(Z2) ES_MINMAX(Z3) ES_MINMAX(Z4)
@@ -125,6 +125,9 @@ enum EndstopEnum : int8_t {
   #endif
   #if HAS_W_STATE
     , W_ENDSTOP = TERN(W_HOME_TO_MAX, W_MAX, W_MIN)
+  #endif
+  #if HAS_D_STATE
+    , D_ENDSTOP = TERN(D_HOME_TO_MAX, D_MAX, D_MIN)
   #endif
 };
 
@@ -284,7 +287,7 @@ class Endstops {
       typedef struct {
         union {
           bool any;
-          struct { bool NUM_AXIS_LIST(x:1, y:1, z:1, i:1, j:1, k:1); };
+          struct { bool NUM_AXIS_LIST(x:1, y:1, z:1, i:1, j:1, k:1, u:1, v:1, w:1, d:1); };
         };
       } tmc_spi_homing_t;
       static tmc_spi_homing_t tmc_spi_homing;

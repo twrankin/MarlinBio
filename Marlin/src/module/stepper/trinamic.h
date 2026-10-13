@@ -53,6 +53,7 @@
 #define TMC_U_LABEL 'U', '0'
 #define TMC_V_LABEL 'V', '0'
 #define TMC_W_LABEL 'W', '0'
+#define TMC_D_LABEL 'D', '0'
 
 #define TMC_X2_LABEL 'X', '2'
 #define TMC_Y2_LABEL 'Y', '2'
@@ -104,6 +105,9 @@
 #endif
 #if HAS_W_AXIS && !defined(CHOPPER_TIMING_W)
   #define CHOPPER_TIMING_W CHOPPER_TIMING
+#endif
+#if HAS_D_AXIS && !defined(CHOPPER_TIMING_D)
+  #define CHOPPER_TIMING_D CHOPPER_TIMING
 #endif
 #if HAS_EXTRUDERS && !defined(CHOPPER_TIMING_E)
   #define CHOPPER_TIMING_E CHOPPER_TIMING
@@ -328,6 +332,20 @@ void reset_trinamic_drivers();
   #endif
   #if AXIS_HAS_DEDGE(W)
     #define W_STEP_WRITE(STATE) do{ if (STATE) TOGGLE(W_STEP_PIN); }while(0)
+  #endif
+#endif
+
+// D Stepper
+#if D_IS_TRINAMIC
+  extern TMC_CLASS(D, D) stepperD;
+  static constexpr chopper_timing_t chopper_timing_D = CHOPPER_TIMING_D;
+  #if ENABLED(SOFTWARE_DRIVER_ENABLE)
+    #define D_ENABLE_INIT() NOOP
+    #define D_ENABLE_WRITE(STATE) stepperD.toff((STATE)==D_ENABLE_ON ? chopper_timing_D.toff : 0)
+    #define D_ENABLE_READ() stepperD.isEnabled()
+  #endif
+  #if AXIS_HAS_DEDGE(D)
+    #define D_STEP_WRITE(STATE) do{ if (STATE) TOGGLE(D_STEP_PIN); }while(0)
   #endif
 #endif
 

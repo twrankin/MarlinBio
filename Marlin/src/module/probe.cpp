@@ -994,7 +994,7 @@ float Probe::probe_at_point(
   xyz_pos_t npos = NUM_AXIS_ARRAY(
     rx, ry, TERN(DELTA, _MIN(delta_clip_start_height, safe_z), safe_z),
     current_position.i, current_position.j, current_position.k,
-    current_position.u, current_position.v, current_position.w
+    current_position.u, current_position.v, current_position.w, current_position.d
   );
   if (!can_reach(npos, probe_relative)) {
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("Not Reachable");

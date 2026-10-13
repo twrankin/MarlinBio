@@ -225,6 +225,15 @@
   #undef STEP_STATE_W
 #endif
 
+#if !HAS_D_AXIS
+  #undef CALIBRATION_MEASURE_DMAX
+  #undef CALIBRATION_MEASURE_DMIN
+  #undef DISABLE_IDLE_D
+  #undef SAFE_BED_LEVELING_START_D
+  #undef STEALTHCHOP_D
+  #undef STEP_STATE_D
+#endif
+
 // Disallowed with no extruders
 #if !HAS_EXTRUDERS
   #define NO_VOLUMETRICS
@@ -282,7 +291,7 @@
 #endif
 
 #define _OR_HAS_DI(A) || ALL(HAS_##A##_AXIS, DISABLE_IDLE_##A)
-#if ALL(HAS_EXTRUDERS, DISABLE_IDLE_E) MAP(_OR_HAS_DI, X, Y, Z, I, J, K, U, V, W)
+#if ALL(HAS_EXTRUDERS, DISABLE_IDLE_E) MAP(_OR_HAS_DI, X, Y, Z, I, J, K, U, V, W, D)
   #define HAS_DISABLE_IDLE_AXES 1
 #endif
 #undef _OR_HAS_DI
@@ -1370,6 +1379,9 @@
 #endif
 #if AXIS_IS_TMC(W)
   #define W_IS_TRINAMIC 1
+#endif
+#if AXIS_IS_TMC(D)
+  #define D_IS_TRINAMIC 1
 #endif
 #if AXIS_IS_TMC(X2)
   #define X2_IS_TRINAMIC 1

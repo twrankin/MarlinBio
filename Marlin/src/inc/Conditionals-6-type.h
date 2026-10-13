@@ -66,6 +66,9 @@
 #if HAS_HOME_CURRENT(W)
   #define W_HAS_HOME_CURRENT 1
 #endif
+#if HAS_HOME_CURRENT(D)
+  #define D_HAS_HOME_CURRENT 1
+#endif
 #if HAS_HOME_CURRENT(X2)
   #define X2_HAS_HOME_CURRENT 1
 #endif

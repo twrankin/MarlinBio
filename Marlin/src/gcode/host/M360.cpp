@@ -125,6 +125,9 @@ void GcodeSuite::M360() {
   #if W_HOME_DIR
     config_line(H_DIR_STR, W_HOME_DIR, W_STR);
   #endif
+  #if D_HOME_DIR
+    config_line(H_DIR_STR, D_HOME_DIR, D_STR);
+  #endif
 
   #if ANY(CLASSIC_JERK, HAS_LINEAR_E_JERK)
     PGMSTR(JERK_STR, "Jerk");
@@ -168,8 +171,8 @@ void GcodeSuite::M360() {
   //
   // Workspace boundaries
   //
-  const xyz_pos_t dmin = NUM_AXIS_ARRAY(X_MIN_POS, Y_MIN_POS, Z_MIN_POS, I_MIN_POS, J_MIN_POS, K_MIN_POS, U_MIN_POS, V_MIN_POS, W_MIN_POS),
-                  dmax = NUM_AXIS_ARRAY(X_MAX_POS, Y_MAX_POS, Z_MAX_POS, I_MAX_POS, J_MAX_POS, K_MAX_POS, U_MAX_POS, V_MAX_POS, W_MAX_POS);
+  const xyz_pos_t dmin = NUM_AXIS_ARRAY(X_MIN_POS, Y_MIN_POS, Z_MIN_POS, I_MIN_POS, J_MIN_POS, K_MIN_POS, U_MIN_POS, V_MIN_POS, W_MIN_POS, D_MIN_POS),
+                  dmax = NUM_AXIS_ARRAY(X_MAX_POS, Y_MAX_POS, Z_MAX_POS, I_MAX_POS, J_MAX_POS, K_MAX_POS, U_MAX_POS, V_MAX_POS, W_MAX_POS, D_MAX_POS);
   xyz_pos_t cmin = dmin, cmax = dmax;
   apply_motion_limits(cmin);
   apply_motion_limits(cmax);

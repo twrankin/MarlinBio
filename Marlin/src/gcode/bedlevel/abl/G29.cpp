@@ -492,6 +492,9 @@ G29_TYPE GcodeSuite::G29() {
       #ifdef SAFE_BED_LEVELING_START_W
         safe_position.w = SAFE_BED_LEVELING_START_W;
       #endif
+      #ifdef SAFE_BED_LEVELING_START_D
+        safe_position.d = SAFE_BED_LEVELING_START_D;
+      #endif
 
       do_blocking_move_to(safe_position);
     #endif // HAS_SAFE_BED_LEVELING

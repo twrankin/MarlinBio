@@ -100,7 +100,8 @@ FORCE_INLINE feedRate_t homing_feedrate(const AxisEnum a) {
       else if (a == K_AXIS) v = homing_feedrate_mm_m.k,
       else if (a == U_AXIS) v = homing_feedrate_mm_m.u,
       else if (a == V_AXIS) v = homing_feedrate_mm_m.v,
-      else if (a == W_AXIS) v = homing_feedrate_mm_m.w
+      else if (a == W_AXIS) v = homing_feedrate_mm_m.w,
+      else if (a == D_AXIS) v = homing_feedrate_mm_m.d
     );
   #endif
   return MMM_TO_MMS(v);
@@ -141,7 +142,7 @@ inline int8_t pgm_read_any(const int8_t *p) { return TERN(__IMXRT1062__, *p, pgm
 
 #define XYZ_DEFS(T, NAME, OPT) \
   inline T NAME(const AxisEnum axis) { \
-    static const XYZval<T> NAME##_P DEFS_PROGMEM = NUM_AXIS_ARRAY(X_##OPT, Y_##OPT, Z_##OPT, I_##OPT, J_##OPT, K_##OPT, U_##OPT, V_##OPT, W_##OPT); \
+    static const XYZval<T> NAME##_P DEFS_PROGMEM = NUM_AXIS_ARRAY(X_##OPT, Y_##OPT, Z_##OPT, I_##OPT, J_##OPT, K_##OPT, U_##OPT, V_##OPT, W_##OPT, D_##OPT); \
     return pgm_read_any(&NAME##_P[axis]); \
   }
 XYZ_DEFS(float,  base_min_pos,  MIN_POS);     // base_min_pos(axis)
@@ -154,7 +155,7 @@ XYZ_DEFS(int8_t, home_dir,      HOME_DIR);    // home_dir(axis)
 constexpr AxisFlags rotational{0 LOGICAL_AXIS_GANG(
     | 0, | 0, | 0, | 0,
     | (ENABLED(AXIS4_ROTATES)<<I_AXIS), | (ENABLED(AXIS5_ROTATES)<<J_AXIS), | (ENABLED(AXIS6_ROTATES)<<K_AXIS),
-    | (ENABLED(AXIS7_ROTATES)<<U_AXIS), | (ENABLED(AXIS8_ROTATES)<<V_AXIS), | (ENABLED(AXIS9_ROTATES)<<W_AXIS))
+    | (ENABLED(AXIS7_ROTATES)<<U_AXIS), | (ENABLED(AXIS8_ROTATES)<<V_AXIS), | (ENABLED(AXIS9_ROTATES)<<W_AXIS), | (ENABLED(AXIS10_ROTATES)<<D_AXIS))
 };
 
 inline float home_bump_mm(const AxisEnum axis) {
@@ -230,6 +231,12 @@ inline float home_bump_mm(const AxisEnum axis) {
             case W_AXIS:
               TERN_(MIN_SOFTWARE_ENDSTOP_W, amin = min.w);
               TERN_(MIN_SOFTWARE_ENDSTOP_W, amax = max.w);
+              break;
+          #endif
+          #if HAS_D_AXIS
+            case D_AXIS:
+              TERN_(MIN_SOFTWARE_ENDSTOP_D, amin = min.d);
+              TERN_(MIN_SOFTWARE_ENDSTOP_D, amax = max.d);
               break;
           #endif
           default: break;
@@ -397,6 +404,10 @@ void do_blocking_move_to(const xyze_pos_t &raw, const_feedRate_t fr_mm_s=0.0f);
   void do_blocking_move_to_w(const_float_t rw, const_feedRate_t fr_mm_s=0.0f);
   void do_blocking_move_to_xyzijkuv_w(const xyze_pos_t &raw, const_float_t w, const_feedRate_t fr_mm_s=0.0f);
 #endif
+#if HAS_D_AXIS
+  void do_blocking_move_to_d(const_float_t rd, const_feedRate_t fr_mm_s=0.0f);
+  void do_blocking_move_to_xyzijkuvw_d(const xyze_pos_t &raw, const_float_t d, const_feedRate_t fr_mm_s=0.0f);
+#endif
 
 #if HAS_Y_AXIS
   void do_blocking_move_to_xy(const_float_t rx, const_float_t ry, const_feedRate_t fr_mm_s=0.0f);
@@ -553,6 +564,10 @@ void home_if_needed(const bool keeplev=false);
 #if HAS_W_AXIS
   #define LOGICAL_W_POSITION(POS) NATIVE_TO_LOGICAL(POS, W_AXIS)
   #define RAW_W_POSITION(POS)     LOGICAL_TO_NATIVE(POS, W_AXIS)
+#endif
+#if HAS_D_AXIS
+  #define LOGICAL_D_POSITION(POS) NATIVE_TO_LOGICAL(POS, D_AXIS)
+  #define RAW_D_POSITION(POS)     LOGICAL_TO_NATIVE(POS, D_AXIS)
 #endif
 
 /**

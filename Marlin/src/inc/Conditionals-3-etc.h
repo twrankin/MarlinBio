@@ -418,6 +418,13 @@
     #define W_HOME_TO_MIN 1
   #endif
 #endif
+#if HAS_D_AXIS
+  #if D_HOME_DIR > 0
+    #define D_HOME_TO_MAX 1
+  #elif D_HOME_DIR < 0
+    #define D_HOME_TO_MIN 1
+  #endif
+#endif
 
 /**
  * Conditionals based on the type of Bed Probe

@@ -52,11 +52,8 @@
 #else
   #undef EXTRUDERS
   #define EXTRUDERS 0
-  #undef TEMP_SENSOR_0
-  #undef TEMP_SENSOR_1
-  #undef TEMP_SENSOR_2
-  #undef TEMP_SENSOR_3
-  #undef TEMP_SENSOR_4
+  /// MarlinBio: The temperature modules (HOTENDS) are independent of the extruder count,
+  /// so TEMP_SENSOR_0-4 and TEMPERATURE_OVERSHOOT are kept when EXTRUDERS is 0.
   #undef TEMP_SENSOR_5
   #undef TEMP_SENSOR_6
   #undef TEMP_SENSOR_7
@@ -67,7 +64,6 @@
   #undef MECHANICAL_SWITCHING_NOZZLE
   #undef MIXING_EXTRUDER
   #undef HOTEND_IDLE_TIMEOUT
-  #undef TEMPERATURE_OVERSHOOT
   #undef DISABLE_E
   #undef PREVENT_LENGTHY_EXTRUDE
   #undef FILAMENT_RUNOUT_SENSOR
@@ -231,7 +227,9 @@
   #define NUM_AXES_WARNING 1
 #endif
 
-#ifdef W_DRIVER_TYPE
+#ifdef D_DRIVER_TYPE
+  #define NUM_AXES 10
+#elif defined(W_DRIVER_TYPE)
   #define NUM_AXES 9
 #elif defined(V_DRIVER_TYPE)
   #define NUM_AXES 8
@@ -273,6 +271,9 @@
                 #define HAS_V_AXIS 1
                 #if NUM_AXES >= 9
                   #define HAS_W_AXIS 1
+                  #if NUM_AXES >= 10
+                    #define HAS_D_AXIS 1
+                  #endif
                 #endif
               #endif
             #endif
@@ -413,6 +414,18 @@
   #undef MAX_SOFTWARE_ENDSTOP_W
 #endif
 
+#if !HAS_D_AXIS
+  #undef D_ENABLE_ON
+  #undef DISABLE_D
+  #undef INVERT_D_DIR
+  #undef D_HOME_DIR
+  #undef D_MIN_POS
+  #undef D_MAX_POS
+  #undef MANUAL_D_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOP_D
+  #undef MAX_SOFTWARE_ENDSTOP_D
+#endif
+
 // Clean up E-stepper-based settings...
 #if E_STEPPERS <= 7
   #undef INVERT_E7_DIR
@@ -484,7 +497,9 @@
  * All axes for which AXIS*_ROTATES is defined.
  * For these axes, positions are specified in angular degrees.
  */
-#if ENABLED(AXIS9_ROTATES)
+#if ENABLED(AXIS10_ROTATES)
+  #define ROTATIONAL_AXES 7
+#elif ENABLED(AXIS9_ROTATES)
   #define ROTATIONAL_AXES 6
 #elif ENABLED(AXIS8_ROTATES)
   #define ROTATIONAL_AXES 5

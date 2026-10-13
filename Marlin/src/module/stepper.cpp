@@ -505,6 +505,10 @@ xyze_int8_t Stepper::count_direction{0};
   #define W_APPLY_DIR(FWD,Q) W_DIR_WRITE(FWD)
   #define W_APPLY_STEP(STATE,Q) W_STEP_WRITE(STATE)
 #endif
+#if HAS_D_AXIS
+  #define D_APPLY_DIR(FWD,Q) D_DIR_WRITE(FWD)
+  #define D_APPLY_STEP(STATE,Q) D_STEP_WRITE(STATE)
+#endif
 
 //#define E0_APPLY_DIR(FWD) do{ (FWD) ? FWD_E_DIR(0) : REV_E_DIR(0); }while(0)
 //#define E1_APPLY_DIR(FWD) do{ (FWD) ? FWD_E_DIR(1) : REV_E_DIR(1); }while(0)
@@ -635,7 +639,7 @@ void Stepper::enable_all_steppers() {
   NUM_AXIS_CODE(
     enable_axis(X_AXIS), enable_axis(Y_AXIS), enable_axis(Z_AXIS),
     enable_axis(I_AXIS), enable_axis(J_AXIS), enable_axis(K_AXIS),
-    enable_axis(U_AXIS), enable_axis(V_AXIS), enable_axis(W_AXIS)
+    enable_axis(U_AXIS), enable_axis(V_AXIS), enable_axis(W_AXIS), enable_axis(D_AXIS)
   );
   enable_e_steppers();
 
@@ -646,7 +650,7 @@ void Stepper::disable_all_steppers() {
   NUM_AXIS_CODE(
     disable_axis(X_AXIS), disable_axis(Y_AXIS), disable_axis(Z_AXIS),
     disable_axis(I_AXIS), disable_axis(J_AXIS), disable_axis(K_AXIS),
-    disable_axis(U_AXIS), disable_axis(V_AXIS), disable_axis(W_AXIS)
+    disable_axis(U_AXIS), disable_axis(V_AXIS), disable_axis(W_AXIS), disable_axis(D_AXIS)
   );
   disable_e_steppers();
 
@@ -680,7 +684,7 @@ void Stepper::apply_directions() {
     SET_STEP_DIR(E),
     SET_STEP_DIR(X), SET_STEP_DIR(Y), SET_STEP_DIR(Z), // ABC
     SET_STEP_DIR(I), SET_STEP_DIR(J), SET_STEP_DIR(K),
-    SET_STEP_DIR(U), SET_STEP_DIR(V), SET_STEP_DIR(W)
+    SET_STEP_DIR(U), SET_STEP_DIR(V), SET_STEP_DIR(W), SET_STEP_DIR(D)
   );
 
   TERN_(FT_MOTION, last_set_direction = last_direction_bits);
@@ -2049,6 +2053,9 @@ void Stepper::pulse_phase_isr() {
       #if HAS_W_STEP
         PULSE_PREP(W);
       #endif
+      #if HAS_D_STEP
+        PULSE_PREP(D);
+      #endif
 
       #if ENABLED(MIXING_EXTRUDER)
         REPEAT(EXTRUDERS, PULSE_PREP_E)
@@ -2127,6 +2134,9 @@ void Stepper::pulse_phase_isr() {
     #if HAS_W_STEP
       PULSE_START(W);
     #endif
+    #if HAS_D_STEP
+      PULSE_START(D);
+    #endif
 
     #if ENABLED(MIXING_EXTRUDER)
       bool stepped = false;
@@ -2173,6 +2183,9 @@ void Stepper::pulse_phase_isr() {
     #endif
     #if HAS_W_STEP
       PULSE_STOP(W);
+    #endif
+    #if HAS_D_STEP
+      PULSE_STOP(D);
     #endif
 
     #if ENABLED(MIXING_EXTRUDER)
@@ -2437,7 +2450,8 @@ void Stepper::set_axis_moved_for_current_block() {
     if (!!current_block->steps.k) didmove.k = true,
     if (!!current_block->steps.u) didmove.u = true,
     if (!!current_block->steps.v) didmove.v = true,
-    if (!!current_block->steps.w) didmove.w = true
+    if (!!current_block->steps.w) didmove.w = true,
+    if (!!current_block->steps.d) didmove.d = true
   );
   axis_did_move = didmove;
 }
@@ -3229,6 +3243,7 @@ void Stepper::init() {
   TERN_(HAS_U_DIR,  U_DIR_INIT());
   TERN_(HAS_V_DIR,  V_DIR_INIT());
   TERN_(HAS_W_DIR,  W_DIR_INIT());
+  TERN_(HAS_D_DIR,  D_DIR_INIT());
   TERN_(HAS_E0_DIR, E0_DIR_INIT());
   TERN_(HAS_E1_DIR, E1_DIR_INIT());
   TERN_(HAS_E2_DIR, E2_DIR_INIT());
@@ -3254,6 +3269,7 @@ void Stepper::init() {
   TERN_(HAS_U_ENABLE,  _INIT_CONFIG_ENABLE(U));
   TERN_(HAS_V_ENABLE,  _INIT_CONFIG_ENABLE(V));
   TERN_(HAS_W_ENABLE,  _INIT_CONFIG_ENABLE(W));
+  TERN_(HAS_D_ENABLE,  _INIT_CONFIG_ENABLE(D));
   TERN_(HAS_E0_ENABLE, _INIT_CONFIG_ENABLE(E0));
   TERN_(HAS_E1_ENABLE, _INIT_CONFIG_ENABLE(E1));
   TERN_(HAS_E2_ENABLE, _INIT_CONFIG_ENABLE(E2));
@@ -3312,6 +3328,7 @@ void Stepper::init() {
   TERN_(HAS_U_STEP, AXIS_INIT(U, U));
   TERN_(HAS_V_STEP, AXIS_INIT(V, V));
   TERN_(HAS_W_STEP, AXIS_INIT(W, W));
+  TERN_(HAS_D_STEP, AXIS_INIT(D, D));
 
   TERN_(HAS_E0_STEP, E_AXIS_INIT(0));
   TERN_(HAS_E1_STEP, E_AXIS_INIT(1));
@@ -3446,7 +3463,8 @@ void Stepper::_set_position(const abce_long_t &spos) {
       count_position.k = spos.k,
       count_position.u = spos.u,
       count_position.v = spos.v,
-      count_position.w = spos.w
+      count_position.w = spos.w,
+      count_position.d = spos.d
     );
     TERN_(HAS_EXTRUDERS, count_position.e = spos.e);
   #else
@@ -3606,7 +3624,7 @@ void Stepper::report_a_position(const xyz_long_t &pos) {
       TERN(SAYS_B, PSTR("B:"), SP_Y_LBL), pos.y,
       TERN(SAYS_C, PSTR("C:"), SP_Z_LBL), pos.z,
       SP_I_LBL, pos.i, SP_J_LBL, pos.j, SP_K_LBL, pos.k,
-      SP_U_LBL, pos.u, SP_V_LBL, pos.v, SP_W_LBL, pos.w
+      SP_U_LBL, pos.u, SP_V_LBL, pos.v, SP_W_LBL, pos.w, SP_D_LBL, pos.d
     ));
   #endif
 }
@@ -3735,7 +3753,7 @@ void Stepper::report_positions() {
       || (!e_axis_has_dedge  && _FTM_STEP(E)),
       || (!AXIS_HAS_DEDGE(X) && _FTM_STEP(X)), || (!AXIS_HAS_DEDGE(Y) && _FTM_STEP(Y)), || (!AXIS_HAS_DEDGE(Z) && _FTM_STEP(Z)),
       || (!AXIS_HAS_DEDGE(I) && _FTM_STEP(I)), || (!AXIS_HAS_DEDGE(J) && _FTM_STEP(J)), || (!AXIS_HAS_DEDGE(K) && _FTM_STEP(K)),
-      || (!AXIS_HAS_DEDGE(U) && _FTM_STEP(U)), || (!AXIS_HAS_DEDGE(V) && _FTM_STEP(V)), || (!AXIS_HAS_DEDGE(W) && _FTM_STEP(W))
+      || (!AXIS_HAS_DEDGE(U) && _FTM_STEP(U)), || (!AXIS_HAS_DEDGE(V) && _FTM_STEP(V)), || (!AXIS_HAS_DEDGE(W) && _FTM_STEP(W)), || (!AXIS_HAS_DEDGE(D) && _FTM_STEP(D))
     );
 
     // Allow pulses to be registered by stepper drivers

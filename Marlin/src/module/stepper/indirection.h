@@ -45,7 +45,7 @@
  *  - E_DUAL_STEPPER_DRIVERS: Two steppers always move in sync, possibly with opposite DIR states.
  *
  * Direct Stepper Control
- *  Where "Q" represents X Y Z I J K U V W / X2 Y2 Z2 Z3 Z4 / E0 E1 E2 E3 E4 E5 E6 E7
+ *  Where "Q" represents X Y Z I J K U V W D / X2 Y2 Z2 Z3 Z4 / E0 E1 E2 E3 E4 E5 E6 E7
  *  Here each E index corresponds to a single E stepper driver.
  *
  *    Q_ENABLE_INIT()   Q_ENABLE_WRITE(S)   Q_ENABLE_READ()
@@ -56,7 +56,7 @@
  *  beyond a single pin (SOFTWARE_DRIVER_ENABLE) so these can be overriden:
  *    ENABLE_STEPPER_Q() DISABLE_STEPPER_Q()
  *
- * Axis Stepper Control (X Y Z I J K U V W)
+ * Axis Stepper Control (X Y Z I J K U V W D)
  *  SOFTWARE_DRIVER_ENABLE gives all axes a status flag, so these macros will
  *  skip sending commands to steppers that are already in the desired state:
  *   ENABLE_AXIS_Q()  DISABLE_AXIS_Q()
@@ -392,6 +392,28 @@ void reset_stepper_drivers();    // Called by settings.load / settings.reset
     #define W_STEP_WRITE(STATE) WRITE(W_STEP_PIN,STATE)
   #endif
   #define W_STEP_READ() bool(READ(W_STEP_PIN))
+#endif
+
+// D Stepper
+#if HAS_D_AXIS
+  #ifndef D_ENABLE_INIT_STATE
+    #define D_ENABLE_INIT_STATE !D_ENABLE_ON
+  #endif
+  #ifndef D_ENABLE_INIT
+    #define D_ENABLE_INIT() SET_OUTPUT(D_ENABLE_PIN)
+    #define D_ENABLE_WRITE(STATE) WRITE(D_ENABLE_PIN,STATE)
+    #define D_ENABLE_READ() bool(READ(D_ENABLE_PIN))
+  #endif
+  #ifndef D_DIR_INIT
+    #define D_DIR_INIT() SET_OUTPUT(D_DIR_PIN)
+    #define D_DIR_WRITE(STATE) WRITE(D_DIR_PIN,INVERT_DIR(D, STATE))
+    #define D_DIR_READ() INVERT_DIR(D, bool(READ(D_DIR_PIN)))
+  #endif
+  #define D_STEP_INIT() SET_OUTPUT(D_STEP_PIN)
+  #ifndef D_STEP_WRITE
+    #define D_STEP_WRITE(STATE) WRITE(D_STEP_PIN,STATE)
+  #endif
+  #define D_STEP_READ() bool(READ(D_STEP_PIN))
 #endif
 
 // E0 Stepper
@@ -915,6 +937,13 @@ void reset_stepper_drivers();    // Called by settings.load / settings.reset
   #define DISABLE_STEPPER_W() TERN(HAS_W_ENABLE, W_ENABLE_WRITE(!W_ENABLE_ON), NOOP)
 #endif
 
+#ifndef ENABLE_STEPPER_D
+  #define  ENABLE_STEPPER_D() TERN(HAS_D_ENABLE, D_ENABLE_WRITE( D_ENABLE_ON), NOOP)
+#endif
+#ifndef DISABLE_STEPPER_D
+  #define DISABLE_STEPPER_D() TERN(HAS_D_ENABLE, D_ENABLE_WRITE(!D_ENABLE_ON), NOOP)
+#endif
+
 #ifndef ENABLE_STEPPER_E0
   #define  ENABLE_STEPPER_E0() TERN(HAS_E0_ENABLE, E0_ENABLE_WRITE( E_ENABLE_ON), NOOP)
 #endif
@@ -1066,6 +1095,13 @@ void reset_stepper_drivers();    // Called by settings.load / settings.reset
 #else
   #define  ENABLE_AXIS_W() NOOP
   #define DISABLE_AXIS_W() NOOP
+#endif
+#if HAS_D_AXIS
+  #define  ENABLE_AXIS_D() if (SHOULD_ENABLE(d))  {  ENABLE_STEPPER_D(); AFTER_CHANGE(d, true); }
+  #define DISABLE_AXIS_D() if (SHOULD_DISABLE(d)) { DISABLE_STEPPER_D(); AFTER_CHANGE(d, false); set_axis_untrusted(D_AXIS); }
+#else
+  #define  ENABLE_AXIS_D() NOOP
+  #define DISABLE_AXIS_D() NOOP
 #endif
 
 //

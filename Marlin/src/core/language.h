@@ -527,6 +527,35 @@
   #define STR_W   ""
 #endif
 
+/// MarlinBio: 10th axis (internally D). Letters that don't clash with G0/G1/G28 parameters.
+#if HAS_D_AXIS
+  #if AXIS10_NAME == 'D'
+    #define STR_D "D"
+    #define STR_D_MIN "d_min"
+    #define STR_D_MAX "d_max"
+  #elif AXIS10_NAME == 'H'
+    #define STR_D "H"
+    #define STR_D_MIN "h_min"
+    #define STR_D_MAX "h_max"
+  #elif AXIS10_NAME == 'L'
+    #define STR_D "L"
+    #define STR_D_MIN "l_min"
+    #define STR_D_MAX "l_max"
+  #elif AXIS10_NAME == 'O'
+    #define STR_D "O"
+    #define STR_D_MIN "o_min"
+    #define STR_D_MAX "o_max"
+  #elif AXIS10_NAME == 'Q'
+    #define STR_D "Q"
+    #define STR_D_MIN "q_min"
+    #define STR_D_MAX "q_max"
+  #else
+    #error "AXIS10_NAME can only be one of 'D', 'H', 'L', 'O', or 'Q'."
+  #endif
+#else
+  #define STR_D   ""
+#endif
+
 #if ANY(HAS_MARLINUI_HD44780, IS_TFTGLCD_PANEL)
 
   // Custom characters defined in the first 8 characters of the LCD

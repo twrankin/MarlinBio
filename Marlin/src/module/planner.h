@@ -1050,7 +1050,7 @@ class Planner {
         get_axis_position_mm(E_AXIS),
         get_axis_position_mm(A_AXIS), get_axis_position_mm(B_AXIS), get_axis_position_mm(C_AXIS),
         get_axis_position_mm(I_AXIS), get_axis_position_mm(J_AXIS), get_axis_position_mm(K_AXIS),
-        get_axis_position_mm(U_AXIS), get_axis_position_mm(V_AXIS), get_axis_position_mm(W_AXIS)
+        get_axis_position_mm(U_AXIS), get_axis_position_mm(V_AXIS), get_axis_position_mm(W_AXIS), get_axis_position_mm(D_AXIS)
       );
       return out;
     }
@@ -1226,6 +1226,6 @@ class Planner {
   (false NUM_AXIS_GANG(        \
   || BLOCK->steps.a, || BLOCK->steps.b, || BLOCK->steps.c, \
   || BLOCK->steps.i, || BLOCK->steps.j, || BLOCK->steps.k, \
-  || BLOCK->steps.u, || BLOCK->steps.v, || BLOCK->steps.w))
+  || BLOCK->steps.u, || BLOCK->steps.v, || BLOCK->steps.w, || BLOCK->steps.d))
 
 extern Planner planner;

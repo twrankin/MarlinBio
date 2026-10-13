@@ -81,7 +81,7 @@ void GcodeSuite::M907() {
 
   #elif HAS_MOTOR_CURRENT_PWM
 
-    #if ANY_PIN(MOTOR_CURRENT_PWM_X, MOTOR_CURRENT_PWM_Y, MOTOR_CURRENT_PWM_XY, MOTOR_CURRENT_PWM_I, MOTOR_CURRENT_PWM_J, MOTOR_CURRENT_PWM_K, MOTOR_CURRENT_PWM_U, MOTOR_CURRENT_PWM_V, MOTOR_CURRENT_PWM_W)
+    #if ANY_PIN(MOTOR_CURRENT_PWM_X, MOTOR_CURRENT_PWM_Y, MOTOR_CURRENT_PWM_XY, MOTOR_CURRENT_PWM_I, MOTOR_CURRENT_PWM_J, MOTOR_CURRENT_PWM_K, MOTOR_CURRENT_PWM_U, MOTOR_CURRENT_PWM_V, MOTOR_CURRENT_PWM_W, MOTOR_CURRENT_PWM_D)
       #define HAS_X_Y_XY_I_J_K_U_V_W 1
     #endif
 
@@ -89,7 +89,7 @@ void GcodeSuite::M907() {
 
       if (!parser.seen("S"
         #if HAS_X_Y_XY_I_J_K_U_V_W
-          NUM_AXIS_GANG("X", "Y",, "I", "J", "K", "U", "V", "W")
+          NUM_AXIS_GANG("X", "Y",, "I", "J", "K", "U", "V", "W", "D")
         #endif
         TERN_(HAS_MOTOR_CURRENT_PWM_Z, "Z")
         TERN_(HAS_MOTOR_CURRENT_PWM_E, "E")
@@ -107,7 +107,7 @@ void GcodeSuite::M907() {
       if (ENABLED(HAS_X_Y_XY_I_J_K_U_V_W) && (NUM_AXIS_GANG(
              parser.seenval('X'), || parser.seenval('Y'), || false,
           || parser.seenval('I'), || parser.seenval('J'), || parser.seenval('K'),
-          || parser.seenval('U'), || parser.seenval('V'), || parser.seenval('W')
+          || parser.seenval('U'), || parser.seenval('V'), || parser.seenval('W'), || parser.seenval('D')
       )))
         stepper.set_digipot_current(0, parser.value_int());
 

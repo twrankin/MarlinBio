@@ -72,6 +72,8 @@
 #define MATCH_V_MIN_EILINE(P)  TERN0(USE_V_MIN,  DEFER4(MATCH_EILINE)(P, V_MIN_PIN))
 #define MATCH_W_MAX_EILINE(P)  TERN0(USE_W_MAX,  DEFER4(MATCH_EILINE)(P, W_MAX_PIN))
 #define MATCH_W_MIN_EILINE(P)  TERN0(USE_W_MIN,  DEFER4(MATCH_EILINE)(P, W_MIN_PIN))
+#define MATCH_D_MAX_EILINE(P)  TERN0(USE_D_MAX,  DEFER4(MATCH_EILINE)(P, D_MAX_PIN))
+#define MATCH_D_MIN_EILINE(P)  TERN0(USE_D_MIN,  DEFER4(MATCH_EILINE)(P, D_MIN_PIN))
 #define MATCH_X2_MAX_EILINE(P) TERN0(USE_X2_MAX, DEFER4(MATCH_EILINE)(P, X2_MAX_PIN))
 #define MATCH_X2_MIN_EILINE(P) TERN0(USE_X2_MIN, DEFER4(MATCH_EILINE)(P, X2_MIN_PIN))
 #define MATCH_Y2_MAX_EILINE(P) TERN0(USE_Y2_MAX, DEFER4(MATCH_EILINE)(P, Y2_MAX_PIN))
@@ -95,6 +97,7 @@
   && !MATCH_U_MAX_EILINE(P) && !MATCH_U_MIN_EILINE(P)   \
   && !MATCH_V_MAX_EILINE(P) && !MATCH_V_MIN_EILINE(P)   \
   && !MATCH_W_MAX_EILINE(P) && !MATCH_W_MIN_EILINE(P)   \
+  && !MATCH_D_MAX_EILINE(P) && !MATCH_D_MIN_EILINE(P)   \
   && !MATCH_X2_MAX_EILINE(P) && !MATCH_X2_MIN_EILINE(P) \
   && !MATCH_Y2_MAX_EILINE(P) && !MATCH_Y2_MIN_EILINE(P) \
   && !MATCH_Z2_MAX_EILINE(P) && !MATCH_Z2_MIN_EILINE(P) \
@@ -287,5 +290,17 @@ void setup_endstop_interrupts() {
       #error "W_MIN_PIN has no EXTINT line available. Disable ENDSTOP_INTERRUPTS_FEATURE to continue."
     #endif
     attachInterrupt(W_MIN_PIN, endstop_ISR, CHANGE);
+  #endif
+  #if USE_D_MAX
+    #if !AVAILABLE_EILINE(D_MAX_PIN)
+      #error "D_MAX_PIN has no EXTINT line available. Disable ENDSTOP_INTERRUPTS_FEATURE to continue."
+    #endif
+    attachInterrupt(D_MAX_PIN, endstop_ISR, CHANGE);
+  #endif
+  #if USE_D_MIN
+    #if !AVAILABLE_EILINE(D_MIN_PIN)
+      #error "D_MIN_PIN has no EXTINT line available. Disable ENDSTOP_INTERRUPTS_FEATURE to continue."
+    #endif
+    attachInterrupt(D_MIN_PIN, endstop_ISR, CHANGE);
   #endif
 }

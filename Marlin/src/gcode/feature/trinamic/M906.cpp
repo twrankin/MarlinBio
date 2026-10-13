@@ -49,6 +49,7 @@ static void tmc_print_current(TMC &st) {
  *   U[current]  - Set mA current for U driver(s) (Requires AXIS*_NAME 'U')
  *   V[current]  - Set mA current for V driver(s) (Requires AXIS*_NAME 'V')
  *   W[current]  - Set mA current for W driver(s) (Requires AXIS*_NAME 'W')
+ *   D[current]  - Set mA current for D driver(s) (Requires AXIS*_NAME 'D')
  *   E[current]  - Set mA current for E driver(s)
  *
  *   I[index]    - Axis sub-index (Omit or 0 for X, Y, Z; 1 for X2, Y2, Z2; 2 for Z3; 3 for Z4.)
@@ -117,6 +118,9 @@ void GcodeSuite::M906() {
       #if W_IS_TRINAMIC
         case W_AXIS: TMC_SET_CURRENT(W); break;
       #endif
+      #if D_IS_TRINAMIC
+        case D_AXIS: TMC_SET_CURRENT(D); break;
+      #endif
 
       #if ANY(E0_IS_TRINAMIC, E1_IS_TRINAMIC, E2_IS_TRINAMIC, E3_IS_TRINAMIC, E4_IS_TRINAMIC, E5_IS_TRINAMIC, E6_IS_TRINAMIC, E7_IS_TRINAMIC)
         case E_AXIS: {
@@ -149,6 +153,7 @@ void GcodeSuite::M906() {
     TERN_(U_IS_TRINAMIC,  TMC_SAY_CURRENT(U));
     TERN_(V_IS_TRINAMIC,  TMC_SAY_CURRENT(V));
     TERN_(W_IS_TRINAMIC,  TMC_SAY_CURRENT(W));
+    TERN_(D_IS_TRINAMIC,  TMC_SAY_CURRENT(D));
     TERN_(E0_IS_TRINAMIC, TMC_SAY_CURRENT(E0));
     TERN_(E1_IS_TRINAMIC, TMC_SAY_CURRENT(E1));
     TERN_(E2_IS_TRINAMIC, TMC_SAY_CURRENT(E2));
@@ -170,7 +175,7 @@ void GcodeSuite::M906_report(const bool forReplay/*=true*/) {
     SERIAL_ECHOPGM("  M906");
   };
 
-  #if ANY(X_IS_TRINAMIC, Y_IS_TRINAMIC, Z_IS_TRINAMIC, I_IS_TRINAMIC, J_IS_TRINAMIC, K_IS_TRINAMIC, U_IS_TRINAMIC, V_IS_TRINAMIC, W_IS_TRINAMIC)
+  #if ANY(X_IS_TRINAMIC, Y_IS_TRINAMIC, Z_IS_TRINAMIC, I_IS_TRINAMIC, J_IS_TRINAMIC, K_IS_TRINAMIC, U_IS_TRINAMIC, V_IS_TRINAMIC, W_IS_TRINAMIC, D_IS_TRINAMIC)
     say_M906(forReplay);
     TERN_(X_IS_TRINAMIC, SERIAL_ECHOPGM_P(SP_X_STR, stepperX.getMilliamps()));
     TERN_(Y_IS_TRINAMIC, SERIAL_ECHOPGM_P(SP_Y_STR, stepperY.getMilliamps()));
@@ -181,6 +186,7 @@ void GcodeSuite::M906_report(const bool forReplay/*=true*/) {
     TERN_(U_IS_TRINAMIC, SERIAL_ECHOPGM_P(SP_U_STR, stepperU.getMilliamps()));
     TERN_(V_IS_TRINAMIC, SERIAL_ECHOPGM_P(SP_V_STR, stepperV.getMilliamps()));
     TERN_(W_IS_TRINAMIC, SERIAL_ECHOPGM_P(SP_W_STR, stepperW.getMilliamps()));
+    TERN_(D_IS_TRINAMIC, SERIAL_ECHOPGM_P(SP_D_STR, stepperD.getMilliamps()));
     SERIAL_EOL();
   #endif
 

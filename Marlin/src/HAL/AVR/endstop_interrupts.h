@@ -257,6 +257,21 @@ void setup_endstop_interrupts() {
       pciSetup(W_MIN_PIN);
     #endif
   #endif
+  #if USE_D_MAX
+    #if (digitalPinToInterrupt(D_MAX_PIN) != NOT_AN_INTERRUPT)
+      _ATTACH(D_MAX_PIN);
+    #else
+      static_assert(digitalPinHasPCICR(D_MAX_PIN), "D_MAX_PIN is not interrupt-capable. Disable ENDSTOP_INTERRUPTS_FEATURE to continue.");
+      pciSetup(D_MAX_PIN);
+    #endif
+  #elif USE_D_MIN
+    #if (digitalPinToInterrupt(D_MIN_PIN) != NOT_AN_INTERRUPT)
+      _ATTACH(D_MIN_PIN);
+    #else
+      static_assert(digitalPinHasPCICR(D_MIN_PIN), "D_MIN_PIN is not interrupt-capable. Disable ENDSTOP_INTERRUPTS_FEATURE to continue.");
+      pciSetup(D_MIN_PIN);
+    #endif
+  #endif
   #if USE_X2_MAX
     #if (digitalPinToInterrupt(X2_MAX_PIN) != NOT_AN_INTERRUPT)
       _ATTACH(X2_MAX_PIN);

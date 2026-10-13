@@ -238,6 +238,27 @@ constexpr pin_t sensitive_dio[] PROGMEM = {
     #endif
   #endif
 
+  #if HAS_D_AXIS
+    #if PIN_EXISTS(D_MIN)
+      D_MIN_PIN,
+    #endif
+    #if PIN_EXISTS(D_MAX)
+      D_MAX_PIN,
+    #endif
+    #if PIN_EXISTS(D_CS) && AXIS_HAS_SPI(D)
+      D_CS_PIN,
+    #endif
+    #if PIN_EXISTS(D_MS1)
+      D_MS1_PIN,
+    #endif
+    #if PIN_EXISTS(D_MS2)
+      D_MS2_PIN,
+    #endif
+    #if PIN_EXISTS(D_MS3)
+      D_MS3_PIN,
+    #endif
+  #endif
+
   //
   // Extruder Chip Select, Digital Micro-steps
   //

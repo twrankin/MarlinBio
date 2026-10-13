@@ -39,7 +39,7 @@ bool report_stored_position(const uint8_t slot) {
       SP_E_LBL, pos.e,
       SP_X_LBL, pos.x, SP_Y_LBL, pos.y, SP_Z_LBL, pos.z,
       SP_I_LBL, pos.i, SP_J_LBL, pos.j, SP_K_LBL, pos.k,
-      SP_U_LBL, pos.u, SP_V_LBL, pos.v, SP_W_LBL, pos.w
+      SP_U_LBL, pos.u, SP_V_LBL, pos.v, SP_W_LBL, pos.w, SP_D_LBL, pos.d
     ));
   #endif
   SERIAL_EOL();

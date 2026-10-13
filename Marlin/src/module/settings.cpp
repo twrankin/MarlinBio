@@ -36,7 +36,7 @@
  */
 
 // Change EEPROM version if the structure changes
-#define EEPROM_VERSION "V90"
+#define EEPROM_VERSION "V91"
 #define EEPROM_OFFSET 100
 
 // Check the integrity of data offsets.
@@ -196,7 +196,7 @@
 typedef struct { uint16_t MAIN_AXIS_NAMES_ X2, Y2, Z2, Z3, Z4 REPEAT(E_STEPPERS, _EN_ITEM); } per_stepper_uint16_t;
 typedef struct { uint32_t MAIN_AXIS_NAMES_ X2, Y2, Z2, Z3, Z4 REPEAT(E_STEPPERS, _EN_ITEM); } per_stepper_uint32_t;
 typedef struct {  int16_t MAIN_AXIS_NAMES_ X2, Y2, Z2, Z3, Z4;                              } mot_stepper_int16_t;
-typedef struct {     bool NUM_AXIS_LIST_(X:1, Y:1, Z:1, I:1, J:1, K:1, U:1, V:1, W:1) X2:1, Y2:1, Z2:1, Z3:1, Z4:1 REPEAT(E_STEPPERS, _EN1_ITEM); } per_stepper_bool_t;
+typedef struct {     bool NUM_AXIS_LIST_(X:1, Y:1, Z:1, I:1, J:1, K:1, U:1, V:1, W:1, D:1) X2:1, Y2:1, Z2:1, Z3:1, Z4:1 REPEAT(E_STEPPERS, _EN1_ITEM); } per_stepper_bool_t;
 
 #undef _EN_ITEM
 
@@ -470,7 +470,7 @@ typedef struct SettingsDataStruct {
   // EDITABLE_HOMING_FEEDRATE
   //
   #if ENABLED(EDITABLE_HOMING_FEEDRATE)
-    xyz_feedrate_t homing_feedrate_mm_m;                // M210 X Y Z I J K U V W
+    xyz_feedrate_t homing_feedrate_mm_m;                // M210 X Y Z I J K U V W D
   #endif
 
   //
@@ -923,7 +923,7 @@ void MarlinSettings::postprocess() {
           EEPROM_WRITE(dummyf);
         #endif
       #else
-        const xyze_pos_t planner_max_jerk = LOGICAL_AXIS_ARRAY(5, 10, 10, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4);
+        const xyze_pos_t planner_max_jerk = LOGICAL_AXIS_ARRAY(5, 10, 10, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4);
         EEPROM_WRITE(planner_max_jerk);
       #endif
 
@@ -1443,6 +1443,7 @@ void MarlinSettings::postprocess() {
         TERN_(U_IS_TRINAMIC,  tmc_stepper_current.U =  stepperU.getMilliamps());
         TERN_(V_IS_TRINAMIC,  tmc_stepper_current.V =  stepperV.getMilliamps());
         TERN_(W_IS_TRINAMIC,  tmc_stepper_current.W =  stepperW.getMilliamps());
+        TERN_(D_IS_TRINAMIC,  tmc_stepper_current.D =  stepperD.getMilliamps());
         TERN_(X2_IS_TRINAMIC, tmc_stepper_current.X2 = stepperX2.getMilliamps());
         TERN_(Y2_IS_TRINAMIC, tmc_stepper_current.Y2 = stepperY2.getMilliamps());
         TERN_(Z2_IS_TRINAMIC, tmc_stepper_current.Z2 = stepperZ2.getMilliamps());
@@ -1477,6 +1478,7 @@ void MarlinSettings::postprocess() {
         TERN_(U_HAS_STEALTHCHOP,  tmc_hybrid_threshold.U =  stepperU.get_pwm_thrs());
         TERN_(V_HAS_STEALTHCHOP,  tmc_hybrid_threshold.V =  stepperV.get_pwm_thrs());
         TERN_(W_HAS_STEALTHCHOP,  tmc_hybrid_threshold.W =  stepperW.get_pwm_thrs());
+        TERN_(D_HAS_STEALTHCHOP,  tmc_hybrid_threshold.D =  stepperD.get_pwm_thrs());
         TERN_(X2_HAS_STEALTHCHOP, tmc_hybrid_threshold.X2 = stepperX2.get_pwm_thrs());
         TERN_(Y2_HAS_STEALTHCHOP, tmc_hybrid_threshold.Y2 = stepperY2.get_pwm_thrs());
         TERN_(Z2_HAS_STEALTHCHOP, tmc_hybrid_threshold.Z2 = stepperZ2.get_pwm_thrs());
@@ -1493,7 +1495,7 @@ void MarlinSettings::postprocess() {
       #else
         #define _EN_ITEM(N) , .E##N =  30
         const per_stepper_uint32_t tmc_hybrid_threshold = {
-          NUM_AXIS_LIST_(.X = 100, .Y = 100, .Z = 3, .I = 3, .J = 3, .K = 3, .U = 3, .V = 3, .W = 3)
+          NUM_AXIS_LIST_(.X = 100, .Y = 100, .Z = 3, .I = 3, .J = 3, .K = 3, .U = 3, .V = 3, .W = 3, .D = 3)
           .X2 = 100, .Y2 = 100, .Z2 = 3, .Z3 = 3, .Z4 = 3
           REPEAT(E_STEPPERS, _EN_ITEM)
         };
@@ -1517,7 +1519,8 @@ void MarlinSettings::postprocess() {
           TERN_(K_SENSORLESS, tmc_sgt.K = stepperK.homing_threshold()),
           TERN_(U_SENSORLESS, tmc_sgt.U = stepperU.homing_threshold()),
           TERN_(V_SENSORLESS, tmc_sgt.V = stepperV.homing_threshold()),
-          TERN_(W_SENSORLESS, tmc_sgt.W = stepperW.homing_threshold())
+          TERN_(W_SENSORLESS, tmc_sgt.W = stepperW.homing_threshold()),
+          TERN_(D_SENSORLESS, tmc_sgt.D = stepperD.homing_threshold())
         );
         TERN_(X2_SENSORLESS, tmc_sgt.X2 = stepperX2.homing_threshold());
         TERN_(Y2_SENSORLESS, tmc_sgt.Y2 = stepperY2.homing_threshold());
@@ -1544,6 +1547,7 @@ void MarlinSettings::postprocess() {
       TERN_(U_HAS_STEALTHCHOP,  tmc_stealth_enabled.U  = stepperU.get_stored_stealthChop());
       TERN_(V_HAS_STEALTHCHOP,  tmc_stealth_enabled.V  = stepperV.get_stored_stealthChop());
       TERN_(W_HAS_STEALTHCHOP,  tmc_stealth_enabled.W  = stepperW.get_stored_stealthChop());
+      TERN_(D_HAS_STEALTHCHOP,  tmc_stealth_enabled.D  = stepperD.get_stored_stealthChop());
       TERN_(X2_HAS_STEALTHCHOP, tmc_stealth_enabled.X2 = stepperX2.get_stored_stealthChop());
       TERN_(Y2_HAS_STEALTHCHOP, tmc_stealth_enabled.Y2 = stepperY2.get_stored_stealthChop());
       TERN_(Z2_HAS_STEALTHCHOP, tmc_stealth_enabled.Z2 = stepperZ2.get_stored_stealthChop());
@@ -2529,6 +2533,7 @@ void MarlinSettings::postprocess() {
             TERN_(U_IS_TRINAMIC,  SET_CURR(U));
             TERN_(V_IS_TRINAMIC,  SET_CURR(V));
             TERN_(W_IS_TRINAMIC,  SET_CURR(W));
+            TERN_(D_IS_TRINAMIC,  SET_CURR(D));
             TERN_(X2_IS_TRINAMIC, SET_CURR(X2));
             TERN_(Y2_IS_TRINAMIC, SET_CURR(Y2));
             TERN_(Z2_IS_TRINAMIC, SET_CURR(Z2));
@@ -2568,6 +2573,7 @@ void MarlinSettings::postprocess() {
             TERN_(U_HAS_STEALTHCHOP,  stepperU.set_pwm_thrs(tmc_hybrid_threshold.U));
             TERN_(V_HAS_STEALTHCHOP,  stepperV.set_pwm_thrs(tmc_hybrid_threshold.V));
             TERN_(W_HAS_STEALTHCHOP,  stepperW.set_pwm_thrs(tmc_hybrid_threshold.W));
+            TERN_(D_HAS_STEALTHCHOP,  stepperD.set_pwm_thrs(tmc_hybrid_threshold.D));
             TERN_(E0_HAS_STEALTHCHOP, stepperE0.set_pwm_thrs(tmc_hybrid_threshold.E0));
             TERN_(E1_HAS_STEALTHCHOP, stepperE1.set_pwm_thrs(tmc_hybrid_threshold.E1));
             TERN_(E2_HAS_STEALTHCHOP, stepperE2.set_pwm_thrs(tmc_hybrid_threshold.E2));
@@ -2598,7 +2604,8 @@ void MarlinSettings::postprocess() {
               TERN_(K_SENSORLESS, stepperK.homing_threshold(tmc_sgt.K)),
               TERN_(U_SENSORLESS, stepperU.homing_threshold(tmc_sgt.U)),
               TERN_(V_SENSORLESS, stepperV.homing_threshold(tmc_sgt.V)),
-              TERN_(W_SENSORLESS, stepperW.homing_threshold(tmc_sgt.W))
+              TERN_(W_SENSORLESS, stepperW.homing_threshold(tmc_sgt.W)),
+              TERN_(D_SENSORLESS, stepperD.homing_threshold(tmc_sgt.D))
             );
             TERN_(X2_SENSORLESS, stepperX2.homing_threshold(tmc_sgt.X2));
             TERN_(Y2_SENSORLESS, stepperY2.homing_threshold(tmc_sgt.Y2));
@@ -2629,6 +2636,7 @@ void MarlinSettings::postprocess() {
             TERN_(U_HAS_STEALTHCHOP,  SET_STEPPING_MODE(U));
             TERN_(V_HAS_STEALTHCHOP,  SET_STEPPING_MODE(V));
             TERN_(W_HAS_STEALTHCHOP,  SET_STEPPING_MODE(W));
+            TERN_(D_HAS_STEALTHCHOP,  SET_STEPPING_MODE(D));
             TERN_(X2_HAS_STEALTHCHOP, SET_STEPPING_MODE(X2));
             TERN_(Y2_HAS_STEALTHCHOP, SET_STEPPING_MODE(Y2));
             TERN_(Z2_HAS_STEALTHCHOP, SET_STEPPING_MODE(Z2));
@@ -3328,8 +3336,11 @@ void MarlinSettings::reset() {
     #if HAS_W_AXIS && !defined(DEFAULT_WJERK)
       #define DEFAULT_WJERK 0
     #endif
+    #if HAS_D_AXIS && !defined(DEFAULT_DJERK)
+      #define DEFAULT_DJERK 0
+    #endif
     planner.max_jerk.set(
-      NUM_AXIS_LIST(DEFAULT_XJERK, DEFAULT_YJERK, DEFAULT_ZJERK, DEFAULT_IJERK, DEFAULT_JJERK, DEFAULT_KJERK, DEFAULT_UJERK, DEFAULT_VJERK, DEFAULT_WJERK)
+      NUM_AXIS_LIST(DEFAULT_XJERK, DEFAULT_YJERK, DEFAULT_ZJERK, DEFAULT_IJERK, DEFAULT_JJERK, DEFAULT_KJERK, DEFAULT_UJERK, DEFAULT_VJERK, DEFAULT_WJERK, DEFAULT_DJERK)
     );
     TERN_(HAS_CLASSIC_E_JERK, planner.max_jerk.e = DEFAULT_EJERK);
   #endif
@@ -3516,7 +3527,7 @@ void MarlinSettings::reset() {
     #if HAS_PROBE_XY_OFFSET
       LOOP_NUM_AXES(a) probe.offset[a] = dpo[a];
     #else
-      probe.offset.set(NUM_AXIS_LIST(0, 0, dpo[Z_AXIS], 0, 0, 0, 0, 0, 0));
+      probe.offset.set(NUM_AXIS_LIST(0, 0, dpo[Z_AXIS], 0, 0, 0, 0, 0, 0, 0));
     #endif
   #endif
 
@@ -3644,6 +3655,7 @@ void MarlinSettings::reset() {
       OPTITEM(U_HAS_HOME_CURRENT,  U_CURRENT_HOME)
       OPTITEM(V_HAS_HOME_CURRENT,  V_CURRENT_HOME)
       OPTITEM(W_HAS_HOME_CURRENT,  W_CURRENT_HOME)
+      OPTITEM(D_HAS_HOME_CURRENT,  D_CURRENT_HOME)
     };
     homing_current_mA = base_homing_current_mA;
   #endif

@@ -685,6 +685,52 @@
       #warning "Note: Auto-assigned W sensorless endstop to E7_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
     #endif
   #endif
+  #if AUTO_ASSIGNED_D_STEPPER
+    #warning "Note: Auto-assigned D STEP/DIR/ENABLE_PINs to unused En_STEP/DIR/ENABLE_PINs. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+  #endif
+  #if AUTO_ASSIGNED_D_CS
+    #warning "Note: Auto-assigned D_CS_PIN to an unused En_CS_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+  #endif
+  #if AUTO_ASSIGNED_D_MS1
+    #warning "Note: Auto-assigned D_MS1_PIN to an unused En_MS1_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+  #endif
+  #if AUTO_ASSIGNED_D_MS2
+    #warning "Note: Auto-assigned D_MS2_PIN to an unused En_MS2_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+  #endif
+  #if AUTO_ASSIGNED_D_MS3
+    #warning "Note: Auto-assigned D_MS3_PIN to an unused En_MS3_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+  #endif
+  #if AUTO_ASSIGNED_D_DIAG
+    #if D_STOP_PIN == X_MIN_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to X_MIN_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == X_MAX_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to X_MAX_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == Y_MIN_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to Y_MIN_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == Y_MAX_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to Y_MAX_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == Z_MIN_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to Z_MIN_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == Z_MAX_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to Z_MAX_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == E0_DIAG_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to E0_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == E1_DIAG_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to E1_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == E2_DIAG_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to E2_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == E3_DIAG_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to E3_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == E4_DIAG_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to E4_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == E5_DIAG_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to E5_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == E6_DIAG_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to E6_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #elif D_STOP_PIN == E7_DIAG_PIN
+      #warning "Note: Auto-assigned D sensorless endstop to E7_DIAG_PIN. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    #endif
+  #endif
 
   #if ENABLED(CHAMBER_FAN) && !defined(CHAMBER_FAN_INDEX)
     #warning "Note: Auto-assigned CHAMBER_FAN_INDEX to the first free FAN pin. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"

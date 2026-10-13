@@ -57,4 +57,6 @@ void setup_endstop_interrupts() {
   TERN_(USE_V_MIN, _ATTACH(V_MIN_PIN));
   TERN_(USE_W_MAX, _ATTACH(W_MAX_PIN));
   TERN_(USE_W_MIN, _ATTACH(W_MIN_PIN));
+  TERN_(USE_D_MAX, _ATTACH(D_MAX_PIN));
+  TERN_(USE_D_MIN, _ATTACH(D_MIN_PIN));
 }

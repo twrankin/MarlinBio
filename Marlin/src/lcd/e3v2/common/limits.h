@@ -84,7 +84,7 @@ constexpr xyze_float_t max_acceleration_edit_values =
                              DEFAULT_EJERK,
                              DEFAULT_XJERK, DEFAULT_YJERK, DEFAULT_ZJERK,
                              DEFAULT_IJERK, DEFAULT_JJERK, DEFAULT_KJERK,
-                             DEFAULT_UJERK, DEFAULT_VJERK, DEFAULT_WJERK
+                             DEFAULT_UJERK, DEFAULT_VJERK, DEFAULT_WJERK, DEFAULT_DJERK
                            );
   #endif
   constexpr xyze_float_t max_jerk_edit_values =

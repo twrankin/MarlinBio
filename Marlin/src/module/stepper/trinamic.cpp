@@ -33,7 +33,7 @@
 #include "../stepper.h"
 
 enum StealthIndex : uint8_t {
-  LOGICAL_AXIS_LIST(STEALTH_AXIS_E, STEALTH_AXIS_X, STEALTH_AXIS_Y, STEALTH_AXIS_Z, STEALTH_AXIS_I, STEALTH_AXIS_J, STEALTH_AXIS_K, STEALTH_AXIS_U, STEALTH_AXIS_V, STEALTH_AXIS_W)
+  LOGICAL_AXIS_LIST(STEALTH_AXIS_E, STEALTH_AXIS_X, STEALTH_AXIS_Y, STEALTH_AXIS_Z, STEALTH_AXIS_I, STEALTH_AXIS_J, STEALTH_AXIS_K, STEALTH_AXIS_U, STEALTH_AXIS_V, STEALTH_AXIS_W, STEALTH_AXIS_D)
 };
 #define TMC_INIT(ST, STEALTH_INDEX) tmc_init(stepper##ST, ST##_CURRENT, ST##_MICROSTEPS, ST##_HYBRID_THRESHOLD, stealthchop_by_axis[STEALTH_INDEX], chopper_timing_##ST, ST##_INTERPOLATE, ST##_HOLD_MULTIPLIER)
 
@@ -129,6 +129,9 @@ enum StealthIndex : uint8_t {
 #if AXIS_HAS_SPI(W)
   TMC_SPI_DEFINE(W, W);
 #endif
+#if AXIS_HAS_SPI(D)
+  TMC_SPI_DEFINE(D, D);
+#endif
 #if AXIS_HAS_SPI(E0)
   TMC_SPI_DEFINE_E(0);
 #endif
@@ -201,6 +204,9 @@ enum StealthIndex : uint8_t {
     #endif
     #if AXIS_HAS_SPI(W)
       INIT_CS_PIN(W);
+    #endif
+    #if AXIS_HAS_SPI(D)
+      INIT_CS_PIN(D);
     #endif
     #if AXIS_HAS_SPI(E0)
       INIT_CS_PIN(E0);
@@ -280,6 +286,9 @@ enum StealthIndex : uint8_t {
 #endif
 #ifndef TMC_W_BAUD_RATE
   #define TMC_W_BAUD_RATE TMC_BAUD_RATE
+#endif
+#ifndef TMC_D_BAUD_RATE
+  #define TMC_D_BAUD_RATE TMC_BAUD_RATE
 #endif
 #ifndef TMC_E0_BAUD_RATE
   #define TMC_E0_BAUD_RATE TMC_BAUD_RATE
@@ -515,6 +524,15 @@ enum StealthIndex : uint8_t {
       #define W_HAS_SW_SERIAL 1
     #endif
   #endif
+  #if AXIS_HAS_UART(D)
+    #ifdef D_HARDWARE_SERIAL
+      TMC_UART_DEFINE(HW, D, D);
+      #define D_HAS_HW_SERIAL 1
+    #else
+      TMC_UART_DEFINE(SW, D, D);
+      #define D_HAS_SW_SERIAL 1
+    #endif
+  #endif
 
   #if AXIS_HAS_UART(E0)
     #ifdef E0_HARDWARE_SERIAL
@@ -703,6 +721,13 @@ enum StealthIndex : uint8_t {
         HW_SERIAL_BEGIN(W);
       #else
         stepperW.beginSerial(TMC_W_BAUD_RATE);
+      #endif
+    #endif
+    #if AXIS_HAS_UART(D)
+      #ifdef D_HARDWARE_SERIAL
+        HW_SERIAL_BEGIN(D);
+      #else
+        stepperD.beginSerial(TMC_D_BAUD_RATE);
       #endif
     #endif
     #if AXIS_HAS_UART(E0)
@@ -1046,6 +1071,7 @@ void restore_trinamic_drivers() {
   TERN_(U_IS_TRINAMIC,  stepperU.push());
   TERN_(V_IS_TRINAMIC,  stepperV.push());
   TERN_(W_IS_TRINAMIC,  stepperW.push());
+  TERN_(D_IS_TRINAMIC,  stepperD.push());
   TERN_(E0_IS_TRINAMIC, stepperE0.push());
   TERN_(E1_IS_TRINAMIC, stepperE1.push());
   TERN_(E2_IS_TRINAMIC, stepperE2.push());
@@ -1061,7 +1087,7 @@ void reset_trinamic_drivers() {
     ENABLED(STEALTHCHOP_E),
     ENABLED(STEALTHCHOP_XY), ENABLED(STEALTHCHOP_XY), ENABLED(STEALTHCHOP_Z),
     ENABLED(STEALTHCHOP_I), ENABLED(STEALTHCHOP_J), ENABLED(STEALTHCHOP_K),
-    ENABLED(STEALTHCHOP_U), ENABLED(STEALTHCHOP_V), ENABLED(STEALTHCHOP_W)
+    ENABLED(STEALTHCHOP_U), ENABLED(STEALTHCHOP_V), ENABLED(STEALTHCHOP_W), ENABLED(STEALTHCHOP_D)
   );
 
   TERN_(X_IS_TRINAMIC,  TMC_INIT(X,  STEALTH_AXIS_X));
@@ -1078,6 +1104,7 @@ void reset_trinamic_drivers() {
   TERN_(U_IS_TRINAMIC,  TMC_INIT(U,  STEALTH_AXIS_U));
   TERN_(V_IS_TRINAMIC,  TMC_INIT(V,  STEALTH_AXIS_V));
   TERN_(W_IS_TRINAMIC,  TMC_INIT(W,  STEALTH_AXIS_W));
+  TERN_(D_IS_TRINAMIC,  TMC_INIT(D,  STEALTH_AXIS_D));
   TERN_(E0_IS_TRINAMIC, TMC_INIT(E0, STEALTH_AXIS_E));
   TERN_(E1_IS_TRINAMIC, TMC_INIT(E1, STEALTH_AXIS_E));
   TERN_(E2_IS_TRINAMIC, TMC_INIT(E2, STEALTH_AXIS_E));
@@ -1102,6 +1129,7 @@ void reset_trinamic_drivers() {
     TERN_(U_SENSORLESS,  stepperU.homing_threshold(U_STALL_SENSITIVITY));
     TERN_(V_SENSORLESS,  stepperV.homing_threshold(V_STALL_SENSITIVITY));
     TERN_(W_SENSORLESS,  stepperW.homing_threshold(W_STALL_SENSITIVITY));
+    TERN_(D_SENSORLESS,  stepperD.homing_threshold(D_STALL_SENSITIVITY));
   #endif
 
   #ifdef TMC_ADV

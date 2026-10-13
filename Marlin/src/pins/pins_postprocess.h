@@ -230,6 +230,9 @@
 #if !AXIS_HAS_SPI(W)
   #undef W_CS_PIN
 #endif
+#if !AXIS_HAS_SPI(D)
+  #undef D_CS_PIN
+#endif
 #if E_STEPPERS && !AXIS_HAS_SPI(E0)
   #undef E0_CS_PIN
 #endif
@@ -281,6 +284,9 @@
 #endif
 #ifndef W_CS_PIN
   #define W_CS_PIN -1
+#endif
+#ifndef D_CS_PIN
+  #define D_CS_PIN -1
 #endif
 #ifndef E0_CS_PIN
   #define E0_CS_PIN -1
@@ -351,6 +357,9 @@
   #if !defined(W_SERIAL_RX_PIN) && PIN_EXISTS(W_SERIAL_TX)
     #define W_SERIAL_RX_PIN      W_SERIAL_TX_PIN
   #endif
+  #if !defined(D_SERIAL_RX_PIN) && PIN_EXISTS(D_SERIAL_TX)
+    #define D_SERIAL_RX_PIN      D_SERIAL_TX_PIN
+  #endif
   #if !defined(EX_SERIAL_RX_PIN) && PIN_EXISTS(EX_SERIAL_TX)
     #define EX_SERIAL_RX_PIN    EX_SERIAL_TX_PIN
   #endif
@@ -385,6 +394,12 @@
 // Some RX depend on TX, so RX needs to be un-defined before TX
 // or it breaks "PIN_EXISTS(NAME_OF_UNDEF)".
 //
+#if !PIN_EXISTS(D_SERIAL_RX)
+  #undef D_SERIAL_RX_PIN
+#endif
+#if !PIN_EXISTS(D_SERIAL_TX)
+  #undef D_SERIAL_TX_PIN
+#endif
 #if !PIN_EXISTS(W_SERIAL_RX)
   #undef W_SERIAL_RX_PIN
 #endif
@@ -796,6 +811,20 @@
     #define W_STOP_PIN W_MIN_PIN
   #elif W_HOME_TO_MAX
     #define W_STOP_PIN W_MAX_PIN
+  #endif
+#endif
+
+#if HAS_D_AXIS
+  #if PIN_EXISTS(D_STOP)
+    #if D_HOME_TO_MIN
+      #define D_MIN_PIN D_STOP_PIN
+    #elif D_HOME_TO_MAX
+      #define D_MAX_PIN D_STOP_PIN
+    #endif
+  #elif D_HOME_TO_MIN
+    #define D_STOP_PIN D_MIN_PIN
+  #elif D_HOME_TO_MAX
+    #define D_STOP_PIN D_MAX_PIN
   #endif
 #endif
 
@@ -1793,6 +1822,91 @@
   #define W_MS3_PIN -1
 #endif
 
+// W auto-assignment will use up an E stepper, but not if it's chained
+#if HAS_W_AXIS && !defined(W_STEP_PIN) && !PIN_EXISTS(W_CS)
+  #define D_E_INDEX INCREMENT(W_E_INDEX)
+#else
+  #define D_E_INDEX W_E_INDEX
+#endif
+
+// The D axis, if any, should be the next open extruder port
+#if HAS_D_AXIS
+  #ifndef D_STEP_PIN
+    #define D_STEP_PIN   _EPIN(D_E_INDEX, STEP)
+    #define D_DIR_PIN    _EPIN(D_E_INDEX, DIR)
+    #define D_ENABLE_PIN _EPIN(D_E_INDEX, ENABLE)
+    #if D_E_INDEX >= MAX_E_STEPPERS || !PIN_EXISTS(D_STEP)
+      #error "No E stepper plug left for D!"
+    #else
+      #define AUTO_ASSIGNED_D_STEPPER 1
+    #endif
+  #endif
+  #if AXIS_HAS_SPI(D) && !defined(D_CS_PIN)
+    #define D_CS_PIN     _EPIN(D_E_INDEX, CS)
+    #if PIN_EXISTS(D_CS)
+      #define AUTO_ASSIGNED_D_CS 1
+    #endif
+  #endif
+  #ifndef D_MS1_PIN
+    #define D_MS1_PIN    _EPIN(D_E_INDEX, MS1)
+    #if PIN_EXISTS(D_MS1)
+      #define AUTO_ASSIGNED_D_MS1 1
+    #endif
+  #endif
+  #ifndef D_MS2_PIN
+    #define D_MS2_PIN    _EPIN(D_E_INDEX, MS2)
+    #if PIN_EXISTS(D_MS2)
+      #define AUTO_ASSIGNED_D_MS2 1
+    #endif
+  #endif
+  #ifndef D_MS3_PIN
+    #define D_MS3_PIN    _EPIN(D_E_INDEX, MS3)
+    #if PIN_EXISTS(D_MS3)
+      #define AUTO_ASSIGNED_D_MS3 1
+    #endif
+  #endif
+  #if AXIS_HAS_UART(D)
+    #ifndef D_SERIAL_TX_PIN
+      #define D_SERIAL_TX_PIN _EPIN(D_E_INDEX, SERIAL_TX)
+    #endif
+    #ifndef D_SERIAL_RX_PIN
+      #define D_SERIAL_RX_PIN _EPIN(D_E_INDEX, SERIAL_RX)
+    #endif
+  #endif
+  // Auto-assign pins for stallGuard sensorless homing
+  #if !defined(D_STOP_PIN) && defined(D_STALL_SENSITIVITY) && E_DIAG_EXISTS(D_E_INDEX)
+    #if   DIAG_REMAPPED(D, X_MIN)
+      #define D_STOP_PIN X_MIN_PIN
+    #elif DIAG_REMAPPED(D, Y_MIN)
+      #define D_STOP_PIN Y_MIN_PIN
+    #elif DIAG_REMAPPED(D, Z_MIN)
+      #define D_STOP_PIN Z_MIN_PIN
+    #elif DIAG_REMAPPED(D, X_MAX)
+      #define D_STOP_PIN X_MAX_PIN
+    #elif DIAG_REMAPPED(D, Y_MAX)
+      #define D_STOP_PIN Y_MAX_PIN
+    #elif DIAG_REMAPPED(D, Z_MAX)
+      #define D_STOP_PIN Z_MAX_PIN
+    #else
+      #define D_STOP_PIN _En_DIAG_PIN(D_E_INDEX)
+    #endif
+    #define AUTO_ASSIGNED_D_DIAG 1
+  #endif
+#endif // HAS_D_AXIS
+
+#ifndef D_CS_PIN
+  #define D_CS_PIN  -1
+#endif
+#ifndef D_MS1_PIN
+  #define D_MS1_PIN -1
+#endif
+#ifndef D_MS2_PIN
+  #define D_MS2_PIN -1
+#endif
+#ifndef D_MS3_PIN
+  #define D_MS3_PIN -1
+#endif
+
 /**
  * X_DUAL_ENDSTOPS endstop reassignment
  */
@@ -1909,6 +2023,9 @@
 #endif
 #if !HAS_W_AXIS
   #undef MOTOR_CURRENT_PWM_W_PIN
+#endif
+#if !HAS_D_AXIS
+  #undef MOTOR_CURRENT_PWM_D_PIN
 #endif
 #if !HAS_EXTRUDERS
   #undef MOTOR_CURRENT_PWM_E_PIN

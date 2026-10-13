@@ -125,7 +125,7 @@ void GcodeSuite::M425_report(const bool forReplay/*=true*/) {
       SP_K_STR, K_AXIS_UNIT(backlash.get_distance_mm(K_AXIS)),
       SP_U_STR, U_AXIS_UNIT(backlash.get_distance_mm(U_AXIS)),
       SP_V_STR, V_AXIS_UNIT(backlash.get_distance_mm(V_AXIS)),
-      SP_W_STR, W_AXIS_UNIT(backlash.get_distance_mm(W_AXIS))
+      SP_W_STR, W_AXIS_UNIT(backlash.get_distance_mm(W_AXIS)), SP_D_STR, D_AXIS_UNIT(backlash.get_distance_mm(D_AXIS))
     ));
   #endif
   SERIAL_EOL();

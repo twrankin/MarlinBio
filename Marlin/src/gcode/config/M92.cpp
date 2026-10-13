@@ -110,7 +110,7 @@ void GcodeSuite::M92_report(const bool forReplay/*=true*/, const int8_t e/*=-1*/
       SP_K_STR, K_AXIS_UNIT(planner.settings.axis_steps_per_mm[K_AXIS]),
       SP_U_STR, U_AXIS_UNIT(planner.settings.axis_steps_per_mm[U_AXIS]),
       SP_V_STR, V_AXIS_UNIT(planner.settings.axis_steps_per_mm[V_AXIS]),
-      SP_W_STR, W_AXIS_UNIT(planner.settings.axis_steps_per_mm[W_AXIS])
+      SP_W_STR, W_AXIS_UNIT(planner.settings.axis_steps_per_mm[W_AXIS]), SP_D_STR, D_AXIS_UNIT(planner.settings.axis_steps_per_mm[D_AXIS])
     ));
   #endif
 
