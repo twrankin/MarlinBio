@@ -146,9 +146,9 @@
 
 #define Z3_STEP_PIN                         PF9   // MOTOR 4
 #define Z3_DIR_PIN                          PF10
-#define Z3_ENABLE_PIN                       PA0
+#define Z3_ENABLE_PIN                       PG2
 #ifndef Z3_CS_PIN
-  #define Z3_CS_PIN                         PC7
+  #define Z3_CS_PIN                         PF2
 #endif
 
 #define E0_STEP_PIN                         PC13  // MOTOR 5
@@ -207,19 +207,21 @@
 //
 // Temperature Sensors
 //
-#define TEMP_BED_PIN                        PF3   // TB
+// #define TEMP_BED_PIN                        PF3   // TB
 #define TEMP_1_PIN                          PF5   // TH1
 #define TEMP_2_PIN                          PF6   // TH2
 #define TEMP_3_PIN                          PF7   // TH3
+#define TEMP_4_PIN                          PF3   // TB
 
 //
 // Heaters / Fans
 //
-#define HEATER_BED_PIN                      PA1   // Hotbed
+//#define HEATER_BED_PIN                      PA1   // Hotbed
 #define HEATER_0_PIN                        PA2   // Heater0
 #define HEATER_1_PIN                        PA3   // Heater1
 #define HEATER_2_PIN                        PB10  // Heater2
 #define HEATER_3_PIN                        PB11  // Heater3
+#define HEATER_4_PIN                        PA1  // Heater4
 
 #define FAN0_PIN                            PA8   // Fan0
 #define FAN1_PIN                            PE5   // Fan1
@@ -275,10 +277,10 @@
   #define Y_SERIAL_TX_PIN                   PD11
   #define Z_SERIAL_TX_PIN                   PC6
   #define Z2_SERIAL_TX_PIN                  PC7
-  #define E0_SERIAL_TX_PIN                  PF2
-  #define E1_SERIAL_TX_PIN                  PE4
-  #define E2_SERIAL_TX_PIN                  PE1
-  #define E3_SERIAL_TX_PIN                  PD3
+  #define Z3_SERIAL_TX_PIN                  PF2   // MOTOR 4
+  #define E0_SERIAL_TX_PIN                  PE4   // MOTOR 5
+  #define E1_SERIAL_TX_PIN                  PE1   // MOTOR 6
+  #define E2_SERIAL_TX_PIN                  PD3   // MOTOR 7
 
   // Reduce baud rate to improve software serial reliability
   #ifndef TMC_BAUD_RATE

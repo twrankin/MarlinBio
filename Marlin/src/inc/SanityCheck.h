@@ -808,25 +808,28 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
  * MarlinBio: Mixing Extruder requirements
  */
 #if ENABLED(MIXING_EXTRUDER)
-  #include <vector>
+  #include <initializer_list>
+  /// MarlinBio: std::initializer_list is used instead of std::vector so this can be constexpr in C++14.
   static constexpr bool verify_mixing() {
-    const std::vector<std::vector<uint8_t>> mix_config = MIXING_CONFIGURATION;
-    const std::vector<std::vector<float>>   mix_ratios = MIX_RATIOS;
+    const std::initializer_list<std::initializer_list<uint8_t>> mix_config = MIXING_CONFIGURATION;
+    const std::initializer_list<std::initializer_list<float>>   mix_ratios = MIX_RATIOS;
     int last_extruder = -1;
     int curr_extruder = -1;
 
     /// MarlinBio: MIXING_CONFIGURATION and MIX_RATIOS should have the same layout.
-    if (mix_config.empty() || mix_ratios.size() != mix_config.size()) return false;
-    for (int i = 0; i < mix_config.size(); i++) {
-      if (mix_config[i].size() < 2 || mix_ratios[i].size() != mix_config[i].size()) return false;
+    if (mix_config.size() == 0 || mix_ratios.size() != mix_config.size()) return false;
+    for (size_t i = 0; i < mix_config.size(); i++) {
+      const std::initializer_list<uint8_t> config = mix_config.begin()[i];
+      const std::initializer_list<float>   ratios = mix_ratios.begin()[i];
+      if (config.size() < 2 || ratios.size() != config.size()) return false;
       /// MarlinBio: The pairs should be in order.
-      if (mix_config[i][0] <= last_extruder) return false;
+      if (config.begin()[0] <= last_extruder) return false;
 
-      curr_extruder = mix_config[i][0];
-      for (int j = 1; j < mix_config[i].size(); j++) {
+      curr_extruder = config.begin()[0];
+      for (size_t j = 1; j < config.size(); j++) {
         /// MarlinBio: Linked extruders must be sequential.
-        if (mix_config[i][j] != ++curr_extruder) return false;
-        if (mix_ratios[i][j] < 0) return false;
+        if (config.begin()[j] != ++curr_extruder) return false;
+        if (ratios.begin()[j] < 0) return false;
       }
       last_extruder = curr_extruder;
     }
@@ -852,12 +855,15 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
 #endif
 
 #if HAS_HOTEND_OFFSET
+  #include <initializer_list>
+  /// MarlinBio: std::initializer_list is used instead of std::vector so this can be constexpr in C++14.
   static constexpr bool verify_offsets() {
-    const std::vector<std::vector<float>> offset_xyz = {NOZZLE_OFFSET_X, NOZZLE_OFFSET_Y, NOZZLE_OFFSET_Z};
+    const std::initializer_list<std::initializer_list<float>> offset_xyz = {NOZZLE_OFFSET_X, NOZZLE_OFFSET_Y, NOZZLE_OFFSET_Z};
     /// MarlinBio: Verify the size is equal to tool_num, but only if there is a non-zero entry.
-    for (int i = 0; i < offset_xyz.size(); i++) {
-      for (int j = 0; j < offset_xyz[i].size(); j++) {
-        if (offset_xyz[i][j] != 0 && offset_xyz[i].size() != TOOL_NUM) return false;
+    for (size_t i = 0; i < offset_xyz.size(); i++) {
+      const std::initializer_list<float> offsets = offset_xyz.begin()[i];
+      for (size_t j = 0; j < offsets.size(); j++) {
+        if (offsets.begin()[j] != 0 && offsets.size() != TOOL_NUM) return false;
       }
     }
 

@@ -162,13 +162,14 @@
 #endif
 
 #if ENABLED(MIXING_EXTRUDER)
-  #include <vector>
+  #include <initializer_list>
+  /// MarlinBio: std::initializer_list is used instead of std::vector so this can be constexpr in C++14.
   static constexpr uint8_t count_tools() {
     uint8_t tool_num = EXTRUDERS;
-    const std::vector<std::vector<uint8_t>> mix_config = MIXING_CONFIGURATION;
+    const std::initializer_list<std::initializer_list<uint8_t>> mix_config = MIXING_CONFIGURATION;
     /// MarlinBio: Linked extruders are one tool, so decrement tool_num by the size of the pairs - 1.
-    for (int i = 0; i < mix_config.size(); i++) {
-      tool_num -= mix_config[i].size() - 1;
+    for (size_t i = 0; i < mix_config.size(); i++) {
+      tool_num -= mix_config.begin()[i].size() - 1;
     }
     return tool_num;
   }
