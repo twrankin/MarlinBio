@@ -36,66 +36,72 @@
 //=============================================================================
 
 /*
+ * Independent axes.
+ * Each of the 8 motor drivers is its own axis, so every motor can be commanded
+ * directly in G-code (e.g., G1 Z1 A2 C0.5). There are no tool changes or E axes.
+ * The axes are mapped to the Octopus motor slots in order:
+ *   MOTOR 0 = X, MOTOR 1 = Y, MOTOR 2 = Z, MOTOR 3 = A, MOTOR 4 = B,
+ *   MOTOR 5 = C, MOTOR 6 = U, MOTOR 7 = V.
+ * All axes are linear (mm). Unless noted, the per-axis arrays below are in the order:
+ * X, Y, Z, A, B, C, U, V.
+ */
+#define AXIS4_NAME 'A'
+#define AXIS5_NAME 'B'
+#define AXIS6_NAME 'C'
+#define AXIS7_NAME 'U'
+#define AXIS8_NAME 'V'
+
+/*
  * Default axis mode.
  * true initializes an axis to relative mode (G91).
  * false initializes an axis to absolute mode (G90).
- * X, Y, Z, E.
  */
- #define AXIS_RELATIVE_MODES { true, true, true, true }
-
-/*
- * With this option, each E stepper can have its own factors for some
- * of the movement settings. If fewer factors are given than the
- * total number of extruders, the last value applies to the rest.
- */
-//#define DISTINCT_E_FACTORS
+#define AXIS_RELATIVE_MODES { true, true, true, true, true, true, true, true }
 
 /*
  * Default axis steps per unit (steps/mm).
  * This is how many steps will be issued to move an axis 1mm.
  * If the MICROSTEPS setting is changed, this needs to be multiplied
- * accordingly. E.g. E = 256usteps/steps * 200steps/mm = 51200 usteps/mm.
+ * accordingly. E.g. C = 256usteps/steps * 200steps/mm = 51200 usteps/mm.
  * Override with M92.
- * X, Y, Z, E0 [, E1[, E2...]].
  */
- #define DEFAULT_AXIS_STEPS_PER_UNIT { 200, 200, 200, 51200 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT { 200, 200, 200, 200, 200, 51200, 51200, 51200 }
 
 /*
  * Default max feed rate (mm/s).
  * Too high of a feedrate will cause stalling.
  * Override with M203.
- * X, Y, Z, E0 [, E1[, E2...]].
  */
-#define DEFAULT_MAX_FEEDRATE { (600 / 60), (600 / 60), (600 / 60), (600 / 60) }
+#define DEFAULT_MAX_FEEDRATE { (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60), (600 / 60) }
 
 /*
  * Default max acceleration (mm/s^2).
  * Too high of an acceleration will cause stalling.
  * Override with M201.
- * X, Y, Z, E0 [, E1[, E2...]].
  */
-#define DEFAULT_MAX_ACCELERATION { 500, 500, 500, 500 }
+#define DEFAULT_MAX_ACCELERATION { 500, 500, 500, 500, 500, 500, 500, 500 }
 
 /*
  * Default acceleration (mm/s^2).
  * Override with M204.
  */
 
-// X, Y, Z and E acceleration for printing moves.
+// Acceleration for printing moves.
 #define DEFAULT_ACCELERATION 500
-// Acceleration when only E is specified.
+// Unused without extruders, but required by the settings code.
 #define DEFAULT_RETRACT_ACCELERATION 500
-// X, Y, Z acceleration for travel (non printing) moves.
+// Acceleration for travel (non printing) moves.
 #define DEFAULT_TRAVEL_ACCELERATION 500
 
 // Invert the stepper direction if an axis goes the wrong way.
 #define INVERT_X_DIR  true
 #define INVERT_Y_DIR  true
 #define INVERT_Z_DIR  true
-#define INVERT_E0_DIR false
-#define INVERT_E1_DIR false
-#define INVERT_E2_DIR false
-#define INVERT_E3_DIR false
+#define INVERT_I_DIR  true  // A
+#define INVERT_J_DIR  false  // B
+#define INVERT_K_DIR  false // C
+#define INVERT_U_DIR  true // U
+#define INVERT_V_DIR  false // V
 
 // Travel limits.
 #define X_MIN_POS 0
@@ -104,6 +110,17 @@
 #define Y_MAX_POS 100
 #define Z_MIN_POS 0
 #define Z_MAX_POS 100
+#define I_MIN_POS 0   // A
+#define I_MAX_POS 100
+#define J_MIN_POS 0   // B
+#define J_MAX_POS 100
+// C, U, and V don't home and have no software endstops, so these are nominal.
+#define K_MIN_POS 0   // C
+#define K_MAX_POS 100
+#define U_MIN_POS 0
+#define U_MAX_POS 100
+#define V_MIN_POS 0
+#define V_MAX_POS 100
 
 /*
  * Software endstops prevent moves outside of the set machine bounds.
@@ -114,6 +131,8 @@
   #define MIN_SOFTWARE_ENDSTOP_X
   #define MIN_SOFTWARE_ENDSTOP_Y
   #define MIN_SOFTWARE_ENDSTOP_Z
+  #define MIN_SOFTWARE_ENDSTOP_I // A
+  #define MIN_SOFTWARE_ENDSTOP_J // B
 #endif
 
 #define MAX_SOFTWARE_ENDSTOPS
@@ -121,6 +140,8 @@
   #define MAX_SOFTWARE_ENDSTOP_X
   #define MAX_SOFTWARE_ENDSTOP_Y
   #define MAX_SOFTWARE_ENDSTOP_Z
+  #define MAX_SOFTWARE_ENDSTOP_I // A
+  #define MAX_SOFTWARE_ENDSTOP_J // B
 #endif
 
 // Minimum Z height before homing (to make sure the nozzle doesn't hit anything).
@@ -134,13 +155,18 @@
 // Commands to run after G28.
 //#define EVENT_GCODE_AFTER_HOMING "M300 P440 S200"
 
-// Direction of endstops when homing; 1 = MAX, -1 = MIN.
-#define X_HOME_DIR 1
+// Direction of endstops when homing; 1 = MAX, -1 = MIN, 0 = no homing.
+#define X_HOME_DIR  1
 #define Y_HOME_DIR -1
 #define Z_HOME_DIR  1
+#define I_HOME_DIR  1 // A
+#define J_HOME_DIR  1 // B
+#define K_HOME_DIR  0 // C
+#define U_HOME_DIR  0
+#define V_HOME_DIR  0
 
 // Homing speeds (mm/min).
-#define HOMING_FEEDRATE_MM_M { 300, 300, 300 }
+#define HOMING_FEEDRATE_MM_M { 300, 300, 300, 300, 300, 300, 300, 300 }
 
 // This validates that the endstops are triggered on homing moves.
 // Disable this if the kill on failed homing becomes a nuisance.
@@ -173,109 +199,14 @@
 //===========================================================================
 
 /*
- * This defines the number of extruders (and correspondingly the number of Z axes); 0, 1, 2, 3, or 4.
- * Some per-extruder parameters will need to be updated when EXTRUDERS is changed.
- * When enabling MIXING_EXTRUDERS, still use the actual number of extruders here.
+ * All 8 motor drivers are used as independent axes (see "Independent axes" above),
+ * so there are no extruders, and no E axis or T (tool change) commands.
+ * Syringe plungers are driven directly as axes, e.g. G1 C0.5.
+ * Features that depend on extruders (constant extrusion, mixing extruders,
+ * tool changes and nozzle offsets) are unavailable in this configuration.
+ * Temperature modules are not affected and are still controlled with M104 I<index>.
  */
-#define EXTRUDERS 3
-
-/*
- * The following are parameters for constant extrusion based on a syringe extruder system.
- * When constant extrusion is enabled, the speed of the current extruder motor(s) is statically
- * set during a print move (G1/G2/G3), and runs constantly until the next non-print move or
- * until no more print moves are queued. Constant extrusion also uses small movements to
- * pressurize before print moves and subsequently depressurize before the next non-print move.
- * We determine the speed of extrusion based on the equation:
- * Speed * (π * syringe_diam^2 / 4) = feedrate * K * (π * needle_diam^2 / 4),
- * i.e., what is pushed out of the syringe comes out of the needle at a different speed.
- * The correction coefficient, K, is essentially the means to alter this speed and consequently
- * the width of the extruded line. Each parameter is an array of values for each extruder.
- */
-
-// Constant extrusion can be enabled by default here, and enabled/disabled live by the M789 command.
-#define CONSTANT_EXTRUSION_DEFAULT_ON
-
-// The inner diameter of the syringe in mm.
-#define SYRINGE_INNER_DIAMETER { 4.78, 4.78, 4.78 }
-
-// The inner diameter of the needle in mm.
-#define NEEDLE_INNER_DIAMETER { 0.838, 0.838, 0.838 }
-
-// The coefficient to scale the extrusion rate.
-#define EXTRUSION_COEFFICIENT { 2.0, 2.0, 2.0 }
-
-// The distance to pressurize/depressurize the syringe before/after printing in mm.
-#define PRESSURIZATION_LENGTH { 0.5, 0.5, 0.5 }
-
-/*
- * This enables the use of mixing materials together using a mixing module or printhead to extrude
- * out of one nozzle. Linking extruders into one tool will cause them to both move when extruder
- * movement is specified for that tool, scaled by the ratios specified here. Extruders in a mix
- * are assumed to be physically connected; as such, their Z axes will be moved in unison at all times.
- * The original MarlinFirmware implementation of mixing extruders was not sufficient for our needs
- * and has been completely reworked. The M164 and M165 commands are not supported. Gradient
- * functionality will be added in the future, let us know if this is needed sooner.
- * Make sure to update the nozzle offsets below.
- */
-//#define MIXING_EXTRUDER
-#if ENABLED(MIXING_EXTRUDER)
-  // The configuration of mixing extruders is specified as an array of arrays,
-  // where the inner arrays link extruders together. Linked extruders must be sequential,
-  // { { 0, 2 } } is not a valid combination, but { { 0, 1, 2 } } is.
-  // Unlisted extruders will operate as normal.
-  #define MIXING_CONFIGURATION { { 1, 2 } }
-  // The mixing ratio for each linked extruder is specified in the same format
-  // as the configuration. The ratio for an extruder simply scales the distance or speed
-  // of that extruder when moving. For example, if extruders 0 and 1 are linked with ratios
-  // of 1 and 0.5, an extrusion of 10mm for tool 0 would move extruder 0 by 10mm and extruder
-  // 1 by 5mm. Ratios can be changed live using the M163 G-code command.
-  // I.E. "M163 E0 R0.75" would set extruder 0's ratio to 0.75.
-  #define MIX_RATIOS { { 1.0, 0.5 } }
-#endif
-
-#if EXTRUDERS > 1
-  /*
-   * The offset of each nozzle in relation to nozzle 0 in mm. Defining these will move the X/Y/Z
-   * axes according to the offsets when changing tools. The offsets for nozzle 0 must all be zero.
-   * The number of nozzles is calculated using the number of extruders and their linkages (if using MIXING_EXTRUDER).
-   * E.g., 4 extruders with one linked pair is 3 nozzles. These can be altered live using the M218 G-code command.
-   * WARNING: If using offsets, the specified axes must be homed before a tool change!
-   */
-  #define NOZZLE_OFFSET_X { 0.0, 30.0, 60.0 }
-  //#define NOZZLE_OFFSET_Y { 0.0, 0.2, 0.0, -0.1 }
-  //#define NOZZLE_OFFSET_Z { 0.0, -0.23, -0.05, 1.0}
-
-  /*
-   * The absolute Z position to raise the current Z axis to before changing tools,
-   * if it is currently below this position. This can be changed
-   * live using the M217 Z command. The other M217 parameters are not supported.
-   * If this is non-zero, the Z axes must have been homed at least once before a tool change.
-   */
-  #define TOOLCHANGE_ZRAISE Z_MAX_POS
-
-  /*
-   * After a tool change, the new tool will move to the previous tool's position,
-   * whether or not it was higher or lower. This is most useful when combined with
-   * TOOLCHANGE_ZRAISE. This feature can be disabled here.
-   */
-  //#define DISABLE_TOOLCHANGE_Z_RETURN
-
-  // Extra G-code to run after specific tool changes.
-  //#define EVENT_GCODE_TOOLCHANGE_T0 "G28 A\nG1 A0"
-  //#define EVENT_GCODE_TOOLCHANGE_T1 "G1 A10"
-
-  // Extra G-code to run after all tool changes.
-  //#define EVENT_GCODE_AFTER_TOOLCHANGE "G12X"
-
-  /*
-   * Consider coordinates for EVENT_GCODE_TOOLCHANGE_Tx as relative to T0
-   * so that moves in the specified axes are the same for all tools.
-   * This uses NOZZLE_OFFSET_... for the reference.
-   */
-  //#define TC_GCODE_USE_GLOBAL_X
-  //#define TC_GCODE_USE_GLOBAL_Y
-  //#define TC_GCODE_USE_GLOBAL_Z
-#endif // EXTRUDERS > 1
+#define EXTRUDERS 0
 
 //===========================================================================
 //================================ Temperature ==============================
@@ -405,30 +336,25 @@
   #define Z_CURRENT_HOME  450
   #define Z_MICROSTEPS    0
 
-  #define Z2_CURRENT      Z_CURRENT
-  #define Z2_CURRENT_HOME Z_CURRENT_HOME
-  #define Z2_MICROSTEPS   Z_MICROSTEPS
+  // A
+  #define I_CURRENT       Z_CURRENT
+  #define I_CURRENT_HOME  Z_CURRENT_HOME
+  #define I_MICROSTEPS    Z_MICROSTEPS
 
-  #define Z3_CURRENT      Z_CURRENT
-  #define Z3_CURRENT_HOME Z_CURRENT_HOME
-  #define Z3_MICROSTEPS   Z_MICROSTEPS
+  // B
+  #define J_CURRENT       Z_CURRENT
+  #define J_CURRENT_HOME  Z_CURRENT_HOME
+  #define J_MICROSTEPS    Z_MICROSTEPS
 
-  #define Z4_CURRENT      Z_CURRENT
-  #define Z4_CURRENT_HOME Z_CURRENT_HOME
-  #define Z4_MICROSTEPS   Z_MICROSTEPS
+  // C. High microsteps allow for smoother syringe plunger motion.
+  #define K_CURRENT       500
+  #define K_MICROSTEPS    256
 
-  // High E microsteps allows for smoother constant extrusion.
-  #define E0_CURRENT      500
-  #define E0_MICROSTEPS   256
+  #define U_CURRENT       K_CURRENT
+  #define U_MICROSTEPS    K_MICROSTEPS
 
-  #define E1_CURRENT      E0_CURRENT
-  #define E1_MICROSTEPS   E0_MICROSTEPS
-
-  #define E2_CURRENT      E0_CURRENT
-  #define E2_MICROSTEPS   E0_MICROSTEPS
-
-  #define E3_CURRENT      E0_CURRENT
-  #define E3_MICROSTEPS   E0_MICROSTEPS
+  #define V_CURRENT       K_CURRENT
+  #define V_MICROSTEPS    K_MICROSTEPS
 
   /*
    * Sensorless homing uses a feature on TMC drivers that detects when a
@@ -445,9 +371,8 @@
     #define X_STALL_SENSITIVITY  125
     #define Y_STALL_SENSITIVITY  125
     #define Z_STALL_SENSITIVITY  125
-    #define Z2_STALL_SENSITIVITY 125
-    #define Z3_STALL_SENSITIVITY 125
-    #define Z4_STALL_SENSITIVITY 125
+    #define I_STALL_SENSITIVITY  125 // A
+    #define J_STALL_SENSITIVITY  125 // B
   #endif
 #endif
 
@@ -496,13 +421,11 @@
 #define X_DRIVER_TYPE  TMC2209
 #define Y_DRIVER_TYPE  TMC2209
 #define Z_DRIVER_TYPE  TMC2209
-#define Z2_DRIVER_TYPE TMC2209
-#define Z3_DRIVER_TYPE TMC2209
-//#define Z4_DRIVER_TYPE TMC2209
-#define E0_DRIVER_TYPE TMC2209
-#define E1_DRIVER_TYPE TMC2209
-// #define E2_DRIVER_TYPE TMC2209
-// #define E3_DRIVER_TYPE TMC2209
+#define I_DRIVER_TYPE  TMC2209 // A
+#define J_DRIVER_TYPE  TMC2209 // B
+#define K_DRIVER_TYPE  TMC2209 // C
+#define U_DRIVER_TYPE  TMC2209
+#define V_DRIVER_TYPE  TMC2209
 
 #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
 
@@ -547,7 +470,11 @@
 #define X_ENABLE_ON LOW
 #define Y_ENABLE_ON LOW
 #define Z_ENABLE_ON LOW
-#define E_ENABLE_ON LOW
+#define I_ENABLE_ON LOW
+#define J_ENABLE_ON LOW
+#define K_ENABLE_ON LOW
+#define U_ENABLE_ON LOW
+#define V_ENABLE_ON LOW
 
 #define EDITABLE_HOMING_FEEDRATE
 
@@ -560,21 +487,29 @@
 
 #define PRINTJOB_TIMER_AUTOSTART
 
-#define HOMING_BUMP_MM      { 0, 0, 0 }
-#define HOMING_BUMP_DIVISOR { 2, 2, 4 }
+#define HOMING_BUMP_MM      { 0, 0, 0, 0, 0, 0, 0, 0 }
+#define HOMING_BUMP_DIVISOR { 2, 2, 4, 4, 4, 4, 4, 4 }
 #define QUICK_HOME
 #define HOME_Z_FIRST
 
 #define STEP_STATE_X HIGH
 #define STEP_STATE_Y HIGH
 #define STEP_STATE_Z HIGH
-#define STEP_STATE_E HIGH
+#define STEP_STATE_I HIGH
+#define STEP_STATE_J HIGH
+#define STEP_STATE_K HIGH
+#define STEP_STATE_U HIGH
+#define STEP_STATE_V HIGH
 
 #define DEFAULT_STEPPER_TIMEOUT_SEC 120
 #define DISABLE_IDLE_X
 #define DISABLE_IDLE_Y
 #define DISABLE_IDLE_Z
-#define DISABLE_IDLE_E
+#define DISABLE_IDLE_I
+#define DISABLE_IDLE_J
+#define DISABLE_IDLE_K
+#define DISABLE_IDLE_U
+#define DISABLE_IDLE_V
 
 #define DEFAULT_MINIMUMFEEDRATE 0.0
 #define DEFAULT_MINTRAVELFEEDRATE 0.0
@@ -619,26 +554,6 @@
 
 #define CONFIGURATION_ADV_H_VERSION 02010300
 
-#ifdef Z2_DRIVER_TYPE
-  #define Z_MULTI_ENDSTOPS
-  #if ENABLED(Z_MULTI_ENDSTOPS)
-    #define Z2_STOP_PIN Z2_DIAG_PIN
-    #define Z2_ENDSTOP_ADJUSTMENT 0
-  #endif
-  #ifdef Z3_DRIVER_TYPE
-    #if ENABLED(Z_MULTI_ENDSTOPS)
-      #define Z3_STOP_PIN E0_DIAG_PIN
-      #define Z3_ENDSTOP_ADJUSTMENT 0
-    #endif
-  #endif
-  #ifdef Z4_DRIVER_TYPE
-    #if ENABLED(Z_MULTI_ENDSTOPS)
-      #define Z4_STOP_PIN E1_DIAG_PIN
-      #define Z4_ENDSTOP_ADJUSTMENT 0
-    #endif
-  #endif
-#endif
-
 #if ENABLED(USING_TMC220x)
   #define HOLD_MULTIPLIER 0.5
   #define EDITABLE_HOMING_CURRENT
@@ -650,20 +565,16 @@
   #define Y_CHAIN_POS  -1
   #define Z_RSENSE     0.11
   #define Z_CHAIN_POS  -1
-  #define Z2_RSENSE    Z_RSENSE
-  #define Z2_CHAIN_POS -1
-  #define Z3_RSENSE    Z_RSENSE
-  #define Z3_CHAIN_POS -1
-  #define Z4_RSENSE    Z_RSENSE
-  #define Z4_CHAIN_POS -1
-  #define E0_RSENSE    0.11
-  #define E0_CHAIN_POS -1
-  #define E1_RSENSE    E0_RSENSE
-  #define E1_CHAIN_POS -1
-  #define E2_RSENSE    E0_RSENSE
-  #define E2_CHAIN_POS -1
-  #define E3_RSENSE    E0_RSENSE
-  #define E3_CHAIN_POS -1
+  #define I_RSENSE     0.11
+  #define I_CHAIN_POS  -1
+  #define J_RSENSE     0.11
+  #define J_CHAIN_POS  -1
+  #define K_RSENSE     0.11
+  #define K_CHAIN_POS  -1
+  #define U_RSENSE     0.11
+  #define U_CHAIN_POS  -1
+  #define V_RSENSE     0.11
+  #define V_CHAIN_POS  -1
 
   #define STEALTHCHOP_XY
   #define STEALTHCHOP_Z
@@ -686,13 +597,11 @@
   #define X_HYBRID_THRESHOLD  100
   #define Y_HYBRID_THRESHOLD  100
   #define Z_HYBRID_THRESHOLD  3
-  #define Z2_HYBRID_THRESHOLD 3
-  #define Z3_HYBRID_THRESHOLD 3
-  #define Z4_HYBRID_THRESHOLD 3
-  #define E0_HYBRID_THRESHOLD 30
-  #define E1_HYBRID_THRESHOLD 30
-  #define E2_HYBRID_THRESHOLD 30
-  #define E3_HYBRID_THRESHOLD 30
+  #define I_HYBRID_THRESHOLD  3
+  #define J_HYBRID_THRESHOLD  3
+  #define K_HYBRID_THRESHOLD  30
+  #define U_HYBRID_THRESHOLD  30
+  #define V_HYBRID_THRESHOLD  30
 
   #if ENABLED(SENSORLESS_HOMING)
     #define IMPROVE_HOMING_RELIABILITY

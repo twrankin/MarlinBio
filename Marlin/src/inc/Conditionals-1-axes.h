@@ -52,11 +52,8 @@
 #else
   #undef EXTRUDERS
   #define EXTRUDERS 0
-  #undef TEMP_SENSOR_0
-  #undef TEMP_SENSOR_1
-  #undef TEMP_SENSOR_2
-  #undef TEMP_SENSOR_3
-  #undef TEMP_SENSOR_4
+  /// MarlinBio: Temperature modules 0-4 (see HOTENDS below) are independent of
+  /// the extruders, so keep their sensors and settings without any extruders.
   #undef TEMP_SENSOR_5
   #undef TEMP_SENSOR_6
   #undef TEMP_SENSOR_7
@@ -67,7 +64,6 @@
   #undef MECHANICAL_SWITCHING_NOZZLE
   #undef MIXING_EXTRUDER
   #undef HOTEND_IDLE_TIMEOUT
-  #undef TEMPERATURE_OVERSHOOT
   #undef DISABLE_E
   #undef PREVENT_LENGTHY_EXTRUDE
   #undef FILAMENT_RUNOUT_SENSOR
